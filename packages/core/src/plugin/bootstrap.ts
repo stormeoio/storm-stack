@@ -1,4 +1,4 @@
-import type { Express } from "express";
+import type { Express, RequestHandler } from "express";
 import type { StormContext } from "./types";
 import { registry } from "./registry";
 
@@ -7,14 +7,28 @@ export interface BootstrapOptions {
   ctx: StormContext;
   /** Base path for all plugin API routes. Default: "/api" */
   apiPrefix?: string;
+  /**
+   * isAuthenticated middleware used by all plugins.
+   * If not provided, falls back to a basic req.user check.
+   * Typically obtained from @stormstack/auth's createAuthMiddleware().
+   */
+  isAuthenticated?: RequestHandler;
 }
+
+const defaultIsAuthenticated: RequestHandler = (req, res, next) => {
+  if (!req.user?.id) {
+    res.status(401).json({ error: "Non authentifié" });
+    return;
+  }
+  next();
+};
 
 /**
  * Mounts all registered plugins onto the Express app.
  * Call this after registering all plugins and before app.listen().
  */
 export async function bootstrapPlugins(opts: BootstrapOptions): Promise<void> {
-  const { app, ctx, apiPrefix = "/api" } = opts;
+  const { app, ctx, apiPrefix = "/api", isAuthenticated = defaultIsAuthenticated } = opts;
 
   // 1. Validate — fail fast if dependencies are missing
   const validation = registry.validate();
@@ -29,8 +43,19 @@ export async function bootstrapPlugins(opts: BootstrapOptions): Promise<void> {
   // 2. Boot in dependency order
   const orderedPlugins = registry.resolveLoadOrder();
 
+  // 3. Mount appMiddleware for all plugins first (before any routes)
   for (const plugin of orderedPlugins) {
-    // Run onBoot lifecycle hook
+    if (plugin.appMiddleware) {
+      const handlers = plugin.appMiddleware(ctx);
+      for (const handler of handlers) {
+        app.use(handler);
+      }
+      console.log(`[storm-stack] ✓ ${plugin.id} middleware mounted`);
+    }
+  }
+
+  // 4. Run onBoot lifecycle hooks and mount routes
+  for (const plugin of orderedPlugins) {
     if (plugin.lifecycle?.onBoot) {
       try {
         await plugin.lifecycle.onBoot(ctx);
@@ -41,24 +66,13 @@ export async function bootstrapPlugins(opts: BootstrapOptions): Promise<void> {
       }
     }
 
-    // Mount routes
     if (plugin.routes) {
-      const router = plugin.routes({
-        ctx,
-        isAuthenticated: (req, res, next) => {
-          if (!req.session?.userId) {
-            return res.status(401).json({ error: "Non authentifié" });
-          }
-          next();
-        },
-      });
+      const router = plugin.routes({ ctx, isAuthenticated });
       const pluginPath = `${apiPrefix}/${plugin.id.replace("@stormstack/", "").replace("/", "-")}`;
       app.use(pluginPath, router);
       console.log(`[storm-stack] ✓ ${plugin.id} routes → ${pluginPath}`);
     }
   }
 
-  console.log(
-    `[storm-stack] ✓ ${orderedPlugins.length} plugin(s) bootstrapped`
-  );
+  console.log(`[storm-stack] ✓ ${orderedPlugins.length} plugin(s) bootstrapped`);
 }

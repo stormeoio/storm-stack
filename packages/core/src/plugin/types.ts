@@ -1,5 +1,5 @@
-import type { Router } from "express";
-import type { AnyPgColumn, PgTableWithColumns } from "drizzle-orm/pg-core";
+import type { Router, RequestHandler } from "express";
+import type { PgTableWithColumns } from "drizzle-orm/pg-core";
 import type { NodePgDatabase } from "drizzle-orm/node-postgres";
 import type { z } from "zod";
 
@@ -34,6 +34,24 @@ export interface TenantContext {
 
 // ─── Plugin schema contribution ──────────────────────────────────────────────
 
+// ─── Authenticated request extension ─────────────────────────────────────────
+
+export interface StormUser {
+  id: string;
+  email: string;
+  role: string;
+}
+
+// Augment Express Request to carry the authenticated user
+declare global {
+  // eslint-disable-next-line @typescript-eslint/no-namespace
+  namespace Express {
+    interface Request {
+      user?: StormUser;
+    }
+  }
+}
+
 export type DrizzleTable = PgTableWithColumns<any>;
 
 export interface PluginSchema {
@@ -47,10 +65,10 @@ export interface PluginSchema {
 
 export interface PluginRouteOptions {
   ctx: StormContext;
-  /** Only present if @storm/core multi-tenant is enabled */
+  /** Only present if @stormstack/auth multi-tenant is enabled */
   getTenantContext?: (req: any) => TenantContext | null;
   /** isAuthenticated middleware — attach to any route that needs auth */
-  isAuthenticated: (req: any, res: any, next: any) => void;
+  isAuthenticated: RequestHandler;
 }
 
 export type PluginRouteFactory = (opts: PluginRouteOptions) => Router;
@@ -117,6 +135,7 @@ export interface PluginLifecycle {
 
 export type PluginId =
   | "@stormstack/core"
+  | "@stormstack/auth"
   | "@stormstack/billing"
   | "@stormstack/crm"
   | "@stormstack/ticketing"
@@ -172,6 +191,12 @@ export interface StormPlugin {
 
   /** Express routes this plugin registers */
   routes?: PluginRouteFactory;
+
+  /**
+   * Global Express middleware this plugin needs mounted before routes.
+   * Mounted in plugin load order, before any route handlers.
+   */
+  appMiddleware?: (ctx: StormContext) => RequestHandler[];
 
   /** Client-side manifest (nav, dock, routes, settings) */
   client?: PluginClientManifest;
