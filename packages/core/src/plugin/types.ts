@@ -116,27 +116,27 @@ export interface PluginLifecycle {
 // ─── Plugin dependencies ──────────────────────────────────────────────────────
 
 export type PluginId =
-  | "@storm/core"
-  | "@storm/billing"
-  | "@storm/crm"
-  | "@storm/ticketing"
-  | "@storm/messaging"
-  | "@storm/drive"
-  | "@storm/monitoring"
-  | "@storm/cms"
-  | "@storm/vault"
-  | "@storm/integrations"
-  | "@storm/auth-social"
-  | "@storm/rgpd"
-  | "@storm/design"
-  | "@storm/search"
-  | "@storm/dock"
+  | "@stormstack/core"
+  | "@stormstack/billing"
+  | "@stormstack/crm"
+  | "@stormstack/ticketing"
+  | "@stormstack/messaging"
+  | "@stormstack/drive"
+  | "@stormstack/monitoring"
+  | "@stormstack/cms"
+  | "@stormstack/vault"
+  | "@stormstack/integrations"
+  | "@stormstack/auth-social"
+  | "@stormstack/rgpd"
+  | "@stormstack/design"
+  | "@stormstack/search"
+  | "@stormstack/dock"
   | (string & {});
 
 // ─── Main plugin manifest ─────────────────────────────────────────────────────
 
 export interface StormPlugin {
-  /** Unique plugin identifier e.g. "@storm/billing" or "acme/my-plugin" */
+  /** Unique plugin identifier e.g. "@stormstack/billing" or "acme/my-plugin" */
   id: PluginId;
   /** Human-readable name */
   name: string;

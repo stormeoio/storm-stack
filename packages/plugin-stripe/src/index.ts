@@ -1,18 +1,18 @@
 import { Router } from "express";
 import { z } from "zod";
-import type { StormPlugin } from "@storm/core/plugin";
+import type { StormPlugin } from "@stormstack/core/plugin";
 
 export const stripePlugin: StormPlugin = {
-  id: "@storm/plugin-stripe",
+  id: "@stormstack/billing",
   name: "Stripe Billing",
   version: "0.1.0",
   description: "Subscriptions, invoices, and payment webhooks via Stripe",
   author: "Stormeo Technologies",
-  url: "https://stormeo.io/storm-catalog/stripe",
+  url: "https://stormstack.dev/catalog/billing",
   tags: ["billing", "payments", "subscriptions", "stripe"],
   pricing: "free",
 
-  requires: ["@storm/core"],
+  requires: ["@stormstack/core"],
 
   env: {
     STRIPE_SECRET_KEY: {

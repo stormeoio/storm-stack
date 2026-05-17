@@ -52,7 +52,7 @@ export async function bootstrapPlugins(opts: BootstrapOptions): Promise<void> {
           next();
         },
       });
-      const pluginPath = `${apiPrefix}/${plugin.id.replace("@storm/", "").replace("/", "-")}`;
+      const pluginPath = `${apiPrefix}/${plugin.id.replace("@stormstack/", "").replace("/", "-")}`;
       app.use(pluginPath, router);
       console.log(`[storm-stack] ✓ ${plugin.id} routes → ${pluginPath}`);
     }

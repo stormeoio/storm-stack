@@ -1,5 +1,5 @@
 {
-  "name": "@storm/core",
+  "name": "@stormstack/core",
   "version": "0.1.0",
   "description": "Storm Stack core — plugin registry, auth, multi-tenant, middleware",
   "main": "./dist/index.js",
@@ -23,6 +23,10 @@
     "build": "tsup",
     "dev": "tsup --watch",
     "typecheck": "tsc --noEmit"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
   },
   "dependencies": {
     "drizzle-orm": "^0.30.0",

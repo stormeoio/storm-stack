@@ -1,5 +1,5 @@
 {
-  "name": "@storm/plugin-stripe",
+  "name": "@stormstack/billing",
   "version": "0.1.0",
   "description": "Storm Stack — Stripe billing plugin (subscriptions, invoices, webhooks)",
   "main": "./dist/index.js",
@@ -8,8 +8,12 @@
     "build": "tsup src/index.ts",
     "typecheck": "tsc --noEmit"
   },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
   "peerDependencies": {
-    "@storm/core": "^0.1.0"
+    "@stormstack/core": "^0.1.0"
   },
   "dependencies": {
     "stripe": "^14.0.0",
