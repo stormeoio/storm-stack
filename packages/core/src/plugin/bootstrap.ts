@@ -1,6 +1,7 @@
 import type { Express, RequestHandler } from "express";
 import type { StormContext } from "./types";
 import { registry } from "./registry";
+import { mountManifestRoute } from "./manifest-route";
 
 export interface BootstrapOptions {
   app: Express;
@@ -73,6 +74,9 @@ export async function bootstrapPlugins(opts: BootstrapOptions): Promise<void> {
       console.log(`[storm-stack] ✓ ${plugin.id} routes → ${pluginPath}`);
     }
   }
+
+  // Mount /api/storm/plugins + /api/storm/manifest
+  app.use(`${apiPrefix}/storm`, mountManifestRoute(apiPrefix));
 
   console.log(`[storm-stack] ✓ ${orderedPlugins.length} plugin(s) bootstrapped`);
 }

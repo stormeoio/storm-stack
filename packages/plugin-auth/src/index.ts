@@ -3,7 +3,7 @@ import { users, tenants, tenantMembers } from "./schema";
 import { createAppMiddleware, isAuthenticated } from "./middleware";
 import { createAuthRoutes } from "./routes";
 
-export { isAuthenticated, requireRole, createAppMiddleware } from "./middleware";
+export { isAuthenticated, requireRole, createAppMiddleware, signToken, setAuthCookie, clearAuthCookie, verifyToken } from "./middleware";
 export { users, tenants, tenantMembers } from "./schema";
 export type { User, InsertUser, Tenant, TenantMember } from "./schema";
 export type { AuthTokenPayload } from "./middleware";

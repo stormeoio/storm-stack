@@ -29,7 +29,7 @@
     "registry": "https://registry.npmjs.org/"
   },
   "dependencies": {
-    "drizzle-orm": "^0.30.0",
+    "drizzle-orm": "^0.36.4",
     "express": "^5.0.0",
     "zod": "^3.22.0"
   },
