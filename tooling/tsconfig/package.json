@@ -1,0 +1,8 @@
+{
+  "name": "@stormstack/tsconfig",
+  "version": "0.0.1",
+  "description": "Shared TypeScript configs for Storm Stack",
+  "private": true,
+  "files": ["*.json"],
+  "publishConfig": { "access": "public" }
+}
