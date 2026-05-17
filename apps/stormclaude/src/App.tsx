@@ -2,6 +2,9 @@ import { Switch, Route, Redirect } from "wouter";
 import { Layout } from "@/components/Layout";
 import { DashboardPage } from "@/pages/DashboardPage";
 import { PluginsPage } from "@/pages/PluginsPage";
+import { ContactsPage } from "@/pages/ContactsPage";
+import { DealsPage } from "@/pages/DealsPage";
+import { TicketsPage } from "@/pages/TicketsPage";
 import { LoginPage } from "@/pages/LoginPage";
 import { useCurrentUser } from "@/lib/queries";
 
@@ -34,6 +37,9 @@ export default function App() {
             <Switch>
               <Route path="/" component={DashboardPage} />
               <Route path="/plugins" component={PluginsPage} />
+              <Route path="/contacts" component={ContactsPage} />
+              <Route path="/deals" component={DealsPage} />
+              <Route path="/tickets" component={TicketsPage} />
               <Route>
                 <div className="p-8 text-sm text-gray-500">Page introuvable.</div>
               </Route>

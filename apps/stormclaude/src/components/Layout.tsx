@@ -1,5 +1,5 @@
 import { Link, useLocation } from "wouter";
-import { LayoutDashboard, Puzzle, Settings, LogOut, Zap } from "lucide-react";
+import { LayoutDashboard, Puzzle, Settings, LogOut, Zap, Users, DollarSign, Ticket } from "lucide-react";
 import { clsx } from "clsx";
 import { useCurrentUser } from "@/lib/queries";
 import { api } from "@/lib/api";
@@ -7,6 +7,9 @@ import { useQueryClient } from "@tanstack/react-query";
 
 const NAV = [
   { href: "/", icon: LayoutDashboard, label: "Dashboard" },
+  { href: "/contacts", icon: Users, label: "Contacts" },
+  { href: "/deals", icon: DollarSign, label: "Pipeline" },
+  { href: "/tickets", icon: Ticket, label: "Tickets" },
   { href: "/plugins", icon: Puzzle, label: "Plugins" },
   { href: "/settings", icon: Settings, label: "Paramètres" },
 ];
@@ -72,7 +75,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
       </aside>
 
       {/* Main */}
-      <main className="flex-1 overflow-auto">
+      <main className="flex-1 overflow-auto bg-gray-50">
         {children}
       </main>
     </div>
