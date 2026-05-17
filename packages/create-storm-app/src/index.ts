@@ -36,19 +36,25 @@ async function main() {
   }
 
   const pm = opts.packageManager;
-  const installCmd = pm === "npm" ? "npm install" : `${pm} install`;
-  const devCmd = pm === "npm" ? "npm run dev" : `${pm} dev`;
+  const run = pm === "npm" ? "npm run" : pm;
 
-  p.note(
-    [
-      `cd ${opts.projectName}`,
-      `cp .env.example .env  ${pc.dim("# configure DATABASE_URL + secrets")}`,
-      installCmd,
-      `${pm === "npm" ? "npm run" : pm} db:push`,
-      devCmd,
-    ].join("\n"),
-    "Prochaines étapes"
-  );
+  const steps = [
+    `cd ${opts.projectName}`,
+    `docker compose up -d  ${pc.dim("# PostgreSQL local")}`,
+    `cp .env.example .env  ${pc.dim("# configure secrets")}`,
+    `${pm} install`,
+    `${run} db:push  ${pc.dim("# create tables")}`,
+    `${run} dev`,
+  ];
+
+  p.note(steps.join("\n"), "Prochaines étapes");
+
+  if (opts.withClient) {
+    p.log.info(`${pc.dim("Server")} → http://localhost:3000`);
+    p.log.info(`${pc.dim("Client")} → http://localhost:5173`);
+  } else {
+    p.log.info(`${pc.dim("Server")} → http://localhost:3000`);
+  }
 
   p.outro(`Bonne construction avec ${pc.cyan("Storm Stack")} ⚡`);
 }

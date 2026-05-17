@@ -2,12 +2,77 @@ import fs from "fs";
 import path from "path";
 import type { ScaffoldOptions } from "./prompts";
 
-const hasAuth = (plugins: string[]) => plugins.includes("@stormstack/auth");
+const hasPlugin = (plugins: string[], id: string) => plugins.includes(id);
+const hasAuth = (plugins: string[]) => hasPlugin(plugins, "@stormstack/auth");
+const hasCrm = (plugins: string[]) => hasPlugin(plugins, "@stormstack/crm");
+const hasTicketing = (plugins: string[]) => hasPlugin(plugins, "@stormstack/ticketing");
+const hasAuthSocial = (plugins: string[]) => hasPlugin(plugins, "@stormstack/auth-social");
 
-function renderPackageJson(opts: ScaffoldOptions): string {
-  const pluginDeps: Record<string, string> = {};
+function write(targetDir: string, file: string, content: string) {
+  const filePath = path.join(targetDir, file);
+  fs.mkdirSync(path.dirname(filePath), { recursive: true });
+  fs.writeFileSync(filePath, content, "utf8");
+}
+
+// ─── Server files ────────────────────────────────────────────────────────────
+
+function renderRootPackageJson(opts: ScaffoldOptions): string {
+  const scripts: Record<string, string> = {
+    dev: "concurrently \"npm run dev:server\" \"npm run dev:client\"",
+    "dev:server": "tsx watch server/index.ts",
+    build: "tsc -p server/tsconfig.json && vite build",
+    start: "node dist/server/index.js",
+    "db:push": "drizzle-kit push",
+    "db:generate": "drizzle-kit generate",
+    typecheck: "tsc --noEmit -p server/tsconfig.json",
+  };
+
+  if (!opts.withClient) {
+    scripts["dev"] = "tsx watch server/index.ts";
+    delete scripts["dev:client"];
+  } else {
+    scripts["dev:client"] = "vite";
+  }
+
+  const deps: Record<string, string> = {
+    "@stormstack/core": "^0.1.0",
+    cors: "^2.8.5",
+    dotenv: "^16.4.0",
+    "drizzle-orm": "^0.36.4",
+    express: "^5.0.0",
+    pg: "^8.13.0",
+    zod: "^3.22.0",
+  };
+
   for (const p of opts.plugins) {
-    pluginDeps[p] = "^0.1.0";
+    deps[p] = "^0.1.0";
+  }
+
+  const devDeps: Record<string, string> = {
+    "@types/cors": "^2.8.17",
+    "@types/express": "^5.0.0",
+    "@types/node": "^20.0.0",
+    "@types/pg": "^8.11.0",
+    concurrently: "^8.0.0",
+    "drizzle-kit": "^0.30.0",
+    tsx: "^4.0.0",
+    typescript: "^5.4.0",
+  };
+
+  if (opts.withClient) {
+    deps["react"] = "^18.3.0";
+    deps["react-dom"] = "^18.3.0";
+    deps["@tanstack/react-query"] = "^5.0.0";
+    deps["wouter"] = "^3.3.0";
+    deps["clsx"] = "^2.1.0";
+    deps["lucide-react"] = "^0.400.0";
+    devDeps["@types/react"] = "^18.3.0";
+    devDeps["@types/react-dom"] = "^18.3.0";
+    devDeps["@vitejs/plugin-react"] = "^4.3.0";
+    devDeps["autoprefixer"] = "^10.4.0";
+    devDeps["postcss"] = "^8.4.0";
+    devDeps["tailwindcss"] = "^3.4.0";
+    devDeps["vite"] = "^5.0.0";
   }
 
   return JSON.stringify(
@@ -15,52 +80,33 @@ function renderPackageJson(opts: ScaffoldOptions): string {
       name: opts.projectName,
       version: "0.1.0",
       private: true,
-      scripts: {
-        dev: "tsx watch src/index.ts",
-        build: "tsc",
-        start: "node dist/index.js",
-        "db:push": "drizzle-kit push",
-        typecheck: "tsc --noEmit",
-      },
-      dependencies: {
-        "@stormstack/core": "^0.1.0",
-        ...pluginDeps,
-        "drizzle-orm": "^0.30.0",
-        express: "^5.0.0",
-        pg: "^8.11.0",
-        zod: "^3.22.0",
-      },
-      devDependencies: {
-        "@types/express": "^5.0.0",
-        "@types/node": "^20.0.0",
-        "@types/pg": "^8.11.0",
-        "drizzle-kit": "^0.21.0",
-        tsx: "^4.0.0",
-        typescript: "^5.4.0",
-      },
+      type: "module",
+      scripts,
+      dependencies: deps,
+      devDependencies: devDeps,
     },
     null,
     2
   );
 }
 
-function renderTsConfig(): string {
+function renderServerTsConfig(): string {
   return JSON.stringify(
     {
       compilerOptions: {
         target: "ES2022",
-        module: "CommonJS",
-        moduleResolution: "node",
+        module: "ESNext",
+        moduleResolution: "bundler",
         lib: ["ES2022"],
         strict: true,
         esModuleInterop: true,
         skipLibCheck: true,
-        outDir: "./dist",
-        rootDir: "./src",
+        outDir: "../dist/server",
+        rootDir: ".",
         resolveJsonModule: true,
       },
-      include: ["src/**/*.ts"],
-      exclude: ["node_modules", "dist"],
+      include: ["./**/*.ts"],
+      exclude: ["node_modules"],
     },
     null,
     2
@@ -69,182 +115,683 @@ function renderTsConfig(): string {
 
 function renderEnvExample(opts: ScaffoldOptions): string {
   const lines = [
-    "DATABASE_URL=postgres://user:password@localhost:5432/mydb",
+    "DATABASE_URL=postgresql://postgres:postgres@localhost:5432/stormapp",
     "NODE_ENV=development",
+    "PORT=3000",
   ];
   if (hasAuth(opts.plugins)) {
     lines.push("SESSION_SECRET=change-me-to-a-random-32-char-secret-minimum");
   }
-  for (const plugin of opts.plugins) {
-    if (plugin === "@stormstack/billing") {
-      lines.push("STRIPE_SECRET_KEY=sk_test_...");
-      lines.push("STRIPE_WEBHOOK_SECRET=whsec_...");
-    }
+  if (hasAuthSocial(opts.plugins)) {
+    lines.push("");
+    lines.push("# OAuth (optionnel)");
+    lines.push("# GOOGLE_CLIENT_ID=");
+    lines.push("# GOOGLE_CLIENT_SECRET=");
+    lines.push("# GITHUB_CLIENT_ID=");
+    lines.push("# GITHUB_CLIENT_SECRET=");
+  }
+  if (hasPlugin(opts.plugins, "@stormstack/billing")) {
+    lines.push("");
+    lines.push("# Stripe");
+    lines.push("STRIPE_SECRET_KEY=sk_test_...");
+    lines.push("STRIPE_WEBHOOK_SECRET=whsec_...");
   }
   return lines.join("\n") + "\n";
 }
 
 function renderServerIndex(opts: ScaffoldOptions): string {
-  const importLines: string[] = [
+  const imports: string[] = [
+    `import "dotenv/config";`,
     `import express from "express";`,
-    `import { bootstrapPlugins, registry } from "@stormstack/core";`,
-    `import { db } from "./db";`,
-    `import { env } from "./env";`,
-  ];
-  const setupLines: string[] = [];
-  const authLines: string[] = [];
-
-  if (hasAuth(opts.plugins)) {
-    importLines.push(`import { authPlugin, createAppMiddleware, isAuthenticated } from "@stormstack/auth";`);
-    setupLines.push(`registry.register(authPlugin);`);
-    authLines.push(`const authMiddleware = createAppMiddleware(env.SESSION_SECRET);`);
-    authLines.push(`for (const mw of authMiddleware) app.use(mw);`);
-  }
-
-  for (const plugin of opts.plugins) {
-    if (plugin === "@stormstack/auth") continue;
-    const name = plugin.replace("@stormstack/", "") + "Plugin";
-    importLines.push(`import { ${name} } from "${plugin}";`);
-    setupLines.push(`registry.register(${name});`);
-  }
-
-  const bootstrapOpts = hasAuth(opts.plugins)
-    ? `{ app, ctx, isAuthenticated }`
-    : `{ app, ctx }`;
-
-  return `${importLines.join("\n")}
-
-const app = express();
-app.use(express.json());
-
-const ctx = { db, env, logger: console };
-
-${setupLines.join("\n")}
-${authLines.length ? "\n" + authLines.join("\n") : ""}
-
-await bootstrapPlugins(${bootstrapOpts});
-
-const PORT = Number(process.env["PORT"] ?? 3000);
-app.listen(PORT, () => {
-  console.log(\`[storm-stack] Server running on http://localhost:\${PORT}\`);
-});
-`;
-}
-
-function renderDb(): string {
-  return `import { drizzle } from "drizzle-orm/node-postgres";
-import { Pool } from "pg";
-import { env } from "./env";
-
-const pool = new Pool({ connectionString: env.DATABASE_URL });
-export const db = drizzle(pool);
-`;
-}
-
-function renderEnv(opts: ScaffoldOptions): string {
-  const fields: string[] = [
-    `DATABASE_URL: z.string().url(),`,
-    `NODE_ENV: z.enum(["development", "production", "test"]).default("development"),`,
+    `import cors from "cors";`,
+    `import { drizzle } from "drizzle-orm/node-postgres";`,
+    `import { Pool } from "pg";`,
+    `import { registry, bootstrapPlugins } from "@stormstack/core";`,
+    `import type { StormContext, StormEnv } from "@stormstack/core";`,
   ];
 
+  const registers: string[] = [];
+
   if (hasAuth(opts.plugins)) {
-    fields.push(`SESSION_SECRET: z.string().min(32),`);
+    imports.push(`import { authPlugin } from "@stormstack/auth";`);
+    registers.push(`registry.register(authPlugin);`);
   }
-  if (opts.plugins.includes("@stormstack/billing")) {
-    fields.push(`STRIPE_SECRET_KEY: z.string(),`);
-    fields.push(`STRIPE_WEBHOOK_SECRET: z.string(),`);
+  if (hasCrm(opts.plugins)) {
+    imports.push(`import { crmPlugin } from "@stormstack/crm";`);
+    registers.push(`registry.register(crmPlugin);`);
+  }
+  if (hasTicketing(opts.plugins)) {
+    imports.push(`import { ticketingPlugin } from "@stormstack/ticketing";`);
+    registers.push(`registry.register(ticketingPlugin);`);
+  }
+  if (hasAuthSocial(opts.plugins)) {
+    imports.push(`import { createSocialAuthPlugin } from "@stormstack/auth-social";`);
   }
 
-  return `import { z } from "zod";
+  const socialBlock = hasAuthSocial(opts.plugins)
+    ? `
+if (env["GOOGLE_CLIENT_ID"] || env["GITHUB_CLIENT_ID"]) {
+  const socialPlugin = createSocialAuthPlugin({
+    google: env["GOOGLE_CLIENT_ID"]
+      ? { clientId: env["GOOGLE_CLIENT_ID"]!, clientSecret: env["GOOGLE_CLIENT_SECRET"]!, callbackUrl: \`http://localhost:\${PORT}/api/auth-social/google/callback\` }
+      : undefined,
+    github: env["GITHUB_CLIENT_ID"]
+      ? { clientId: env["GITHUB_CLIENT_ID"]!, clientSecret: env["GITHUB_CLIENT_SECRET"]!, callbackUrl: \`http://localhost:\${PORT}/api/auth-social/github/callback\` }
+      : undefined,
+  });
+  registry.register(socialPlugin);
+}
+`
+    : "";
 
-const envSchema = z.object({
-  ${fields.join("\n  ")}
-});
+  return `${imports.join("\n")}
 
-const parsed = envSchema.safeParse(process.env);
-if (!parsed.success) {
-  console.error("[storm-stack] Invalid environment variables:");
-  console.error(parsed.error.flatten().fieldErrors);
+const PORT = parseInt(process.env["PORT"] ?? "3000", 10);
+
+const env: StormEnv = {
+  DATABASE_URL: process.env["DATABASE_URL"] ?? "",
+  SESSION_SECRET: process.env["SESSION_SECRET"] ?? "",
+  NODE_ENV: (process.env["NODE_ENV"] as StormEnv["NODE_ENV"]) ?? "development",
+};
+
+if (!env.DATABASE_URL) {
+  console.error("DATABASE_URL is required");
   process.exit(1);
 }
 
-export const env = parsed.data;
-export type Env = typeof env;
+const pool = new Pool({ connectionString: env.DATABASE_URL });
+const db = drizzle(pool);
+const logger = {
+  info: (msg: string, meta?: Record<string, unknown>) => console.log(\`[info] \${msg}\`, meta ?? ""),
+  warn: (msg: string, meta?: Record<string, unknown>) => console.warn(\`[warn] \${msg}\`, meta ?? ""),
+  error: (msg: string, meta?: Record<string, unknown>) => console.error(\`[error] \${msg}\`, meta ?? ""),
+};
+
+const ctx: StormContext = { db, env, logger };
+
+${registers.join("\n")}
+${socialBlock}
+async function main() {
+  const app = express();
+  app.use(cors({ origin: "http://localhost:5173", credentials: true }));
+  app.use(express.json());
+
+  await bootstrapPlugins({ app, ctx });
+
+  app.get("/api/health", (_req, res) => {
+    res.json({ ok: true, uptime: process.uptime() });
+  });
+
+  app.listen(PORT, () => {
+    console.log(\`[storm-stack] Server running on http://localhost:\${PORT}\`);
+  });
+}
+
+main().catch((err) => {
+  console.error("Fatal:", err);
+  process.exit(1);
+});
 `;
 }
 
 function renderDrizzleConfig(opts: ScaffoldOptions): string {
-  return `import type { Config } from "drizzle-kit";
+  const schemas: string[] = [];
+  if (hasAuth(opts.plugins)) schemas.push(`"node_modules/@stormstack/auth/dist/schema.js"`);
+  if (hasCrm(opts.plugins)) schemas.push(`"node_modules/@stormstack/crm/dist/schema.js"`);
+  if (hasTicketing(opts.plugins)) schemas.push(`"node_modules/@stormstack/ticketing/dist/schema.js"`);
+  if (hasAuthSocial(opts.plugins)) schemas.push(`"node_modules/@stormstack/auth-social/dist/schema.js"`);
 
-export default {
-  schema: "./src/schema.ts",
-  out: "./drizzle",
+  return `import { defineConfig } from "drizzle-kit";
+
+export default defineConfig({
   dialect: "postgresql",
+  schema: [${schemas.join(", ")}],
+  out: "./drizzle",
   dbCredentials: {
-    url: process.env["DATABASE_URL"] ?? "",
+    url: process.env["DATABASE_URL"]!,
   },
-} satisfies Config;
+});
 `;
 }
 
-function renderSchema(opts: ScaffoldOptions): string {
-  const exports: string[] = [];
-  if (hasAuth(opts.plugins)) {
-    exports.push(`export { users, tenants, tenantMembers } from "@stormstack/auth";`);
-  }
-  if (exports.length === 0) {
-    exports.push(`// Add your Drizzle tables here`);
-  }
-  return exports.join("\n") + "\n";
+function renderDockerCompose(): string {
+  return `services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: stormapp
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+volumes:
+  pgdata:
+`;
 }
+
+// ─── Client files ────────────────────────────────────────────────────────────
+
+function renderViteConfig(): string {
+  return `import { defineConfig } from "vite";
+import react from "@vitejs/plugin-react";
+import path from "path";
+
+export default defineConfig({
+  plugins: [react()],
+  root: "client",
+  resolve: {
+    alias: { "@": path.resolve(__dirname, "client/src") },
+  },
+  server: {
+    port: 5173,
+    proxy: {
+      "/api": { target: "http://localhost:3000", changeOrigin: true },
+    },
+  },
+  build: {
+    outDir: "../dist/client",
+  },
+});
+`;
+}
+
+function renderTailwindConfig(): string {
+  return `/** @type {import('tailwindcss').Config} */
+export default {
+  content: ["./client/**/*.{ts,tsx}"],
+  theme: {
+    extend: {
+      colors: {
+        storm: {
+          50: "#eff6ff",
+          100: "#dbeafe",
+          200: "#bfdbfe",
+          300: "#93c5fd",
+          400: "#60a5fa",
+          500: "#3b82f6",
+          600: "#1d4ed8",
+          700: "#1e40af",
+          800: "#1e3a8a",
+          900: "#1e3050",
+        },
+      },
+    },
+  },
+  plugins: [],
+};
+`;
+}
+
+function renderPostcssConfig(): string {
+  return `export default {
+  plugins: {
+    tailwindcss: {},
+    autoprefixer: {},
+  },
+};
+`;
+}
+
+function renderIndexHtml(opts: ScaffoldOptions): string {
+  return `<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>${opts.projectName}</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
+`;
+}
+
+function renderMainTsx(): string {
+  return `import React from "react";
+import ReactDOM from "react-dom/client";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import App from "./App";
+import "./index.css";
+
+const queryClient = new QueryClient({
+  defaultOptions: { queries: { retry: false, refetchOnWindowFocus: false } },
+});
+
+ReactDOM.createRoot(document.getElementById("root")!).render(
+  <React.StrictMode>
+    <QueryClientProvider client={queryClient}>
+      <App />
+    </QueryClientProvider>
+  </React.StrictMode>
+);
+`;
+}
+
+function renderIndexCss(): string {
+  return `@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+`;
+}
+
+function renderApiLib(): string {
+  return `const BASE = "/api";
+
+async function request<T>(path: string, init?: RequestInit): Promise<T> {
+  const res = await fetch(\`\${BASE}\${path}\`, {
+    credentials: "include",
+    headers: { "Content-Type": "application/json", ...init?.headers },
+    ...init,
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({})) as { error?: string };
+    throw new Error(body.error ?? \`HTTP \${res.status}\`);
+  }
+  return res.json() as Promise<T>;
+}
+
+export const api = {
+  get: <T>(path: string) => request<T>(path),
+  post: <T>(path: string, body: unknown) => request<T>(path, { method: "POST", body: JSON.stringify(body) }),
+  patch: <T>(path: string, body: unknown) => request<T>(path, { method: "PATCH", body: JSON.stringify(body) }),
+  delete: <T>(path: string) => request<T>(path, { method: "DELETE" }),
+};
+`;
+}
+
+function renderAppTsx(opts: ScaffoldOptions): string {
+  const imports: string[] = [
+    `import { Switch, Route, Redirect } from "wouter";`,
+    `import { useQuery } from "@tanstack/react-query";`,
+    `import { api } from "./lib/api";`,
+  ];
+
+  const routes: string[] = [`<Route path="/" component={DashboardPage} />`];
+
+  if (hasAuth(opts.plugins)) {
+    imports.push(`import { LoginPage } from "./pages/LoginPage";`);
+  }
+
+  imports.push(`import { DashboardPage } from "./pages/DashboardPage";`);
+
+  if (hasCrm(opts.plugins)) {
+    imports.push(`import { ContactsPage } from "./pages/ContactsPage";`);
+    routes.push(`<Route path="/contacts" component={ContactsPage} />`);
+  }
+  if (hasTicketing(opts.plugins)) {
+    imports.push(`import { TicketsPage } from "./pages/TicketsPage";`);
+    routes.push(`<Route path="/tickets" component={TicketsPage} />`);
+  }
+
+  const authGuard = hasAuth(opts.plugins)
+    ? `
+function AuthGuard({ children }: { children: React.ReactNode }) {
+  const { data: user, isLoading, isError } = useQuery({
+    queryKey: ["auth", "me"],
+    queryFn: () => api.get<{ user: { id: string } }>("/auth/me").then((r) => r.user),
+    retry: false,
+  });
+  if (isLoading) return <div className="min-h-screen flex items-center justify-center text-sm text-gray-400">Chargement…</div>;
+  if (isError || !user) return <Redirect to="/login" />;
+  return <>{children}</>;
+}
+`
+    : "";
+
+  const loginRoute = hasAuth(opts.plugins) ? `<Route path="/login" component={LoginPage} />` : "";
+  const wrapWithAuth = hasAuth(opts.plugins);
+
+  const routeBlock = routes.map((r) => `              ${r}`).join("\n");
+
+  if (wrapWithAuth) {
+    return `${imports.join("\n")}
+${authGuard}
+export default function App() {
+  return (
+    <Switch>
+      ${loginRoute}
+      <Route>
+        <AuthGuard>
+          <div className="min-h-screen bg-gray-50">
+            <nav className="bg-white border-b border-gray-200 px-6 py-3 flex items-center gap-6">
+              <span className="font-semibold text-storm-700">${opts.projectName}</span>
+              <a href="/" className="text-sm text-gray-600 hover:text-gray-900">Dashboard</a>
+${hasCrm(opts.plugins) ? `              <a href="/contacts" className="text-sm text-gray-600 hover:text-gray-900">Contacts</a>\n` : ""}${hasTicketing(opts.plugins) ? `              <a href="/tickets" className="text-sm text-gray-600 hover:text-gray-900">Tickets</a>\n` : ""}            </nav>
+            <Switch>
+${routeBlock}
+              <Route><div className="p-8 text-sm text-gray-500">Page introuvable.</div></Route>
+            </Switch>
+          </div>
+        </AuthGuard>
+      </Route>
+    </Switch>
+  );
+}
+`;
+  }
+
+  return `${imports.join("\n")}
+
+export default function App() {
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <nav className="bg-white border-b border-gray-200 px-6 py-3 flex items-center gap-6">
+        <span className="font-semibold text-storm-700">${opts.projectName}</span>
+        <a href="/" className="text-sm text-gray-600 hover:text-gray-900">Dashboard</a>
+      </nav>
+      <Switch>
+${routeBlock}
+        <Route><div className="p-8 text-sm text-gray-500">Page introuvable.</div></Route>
+      </Switch>
+    </div>
+  );
+}
+`;
+}
+
+function renderDashboardPage(opts: ScaffoldOptions): string {
+  return `import { useQuery } from "@tanstack/react-query";
+import { api } from "../lib/api";
+
+export function DashboardPage() {
+  const { data } = useQuery({
+    queryKey: ["health"],
+    queryFn: () => api.get<{ ok: boolean; uptime: number }>("/health"),
+  });
+
+  return (
+    <div className="p-6">
+      <h1 className="text-xl font-semibold text-gray-900 mb-4">Dashboard</h1>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="bg-white border border-gray-200 rounded-lg p-4">
+          <p className="text-xs text-gray-500 uppercase tracking-wide">Statut</p>
+          <p className="text-lg font-semibold text-green-600 mt-1">{data?.ok ? "En ligne" : "…"}</p>
+        </div>
+        <div className="bg-white border border-gray-200 rounded-lg p-4">
+          <p className="text-xs text-gray-500 uppercase tracking-wide">Uptime</p>
+          <p className="text-lg font-semibold text-gray-900 mt-1">{data?.uptime ? \`\${Math.floor(data.uptime)}s\` : "…"}</p>
+        </div>
+        <div className="bg-white border border-gray-200 rounded-lg p-4">
+          <p className="text-xs text-gray-500 uppercase tracking-wide">Plugins</p>
+          <p className="text-lg font-semibold text-gray-900 mt-1">${opts.plugins.length}</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+`;
+}
+
+function renderLoginPage(): string {
+  return `import { useState } from "react";
+import { api } from "../lib/api";
+import { useQueryClient } from "@tanstack/react-query";
+
+export function LoginPage() {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+  const qc = useQueryClient();
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+    setLoading(true);
+    try {
+      await api.post("/auth/login", { email, password });
+      await qc.invalidateQueries({ queryKey: ["auth"] });
+      window.location.href = "/";
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Erreur de connexion");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <form onSubmit={handleSubmit} className="w-full max-w-sm bg-white border border-gray-200 rounded-xl p-6 space-y-4">
+        <h1 className="text-lg font-semibold text-center text-gray-900">Connexion</h1>
+        {error && <p className="text-sm text-red-600 text-center">{error}</p>}
+        <input type="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} className="w-full px-3 py-2 border border-gray-200 rounded-md text-sm" required />
+        <input type="password" placeholder="Mot de passe" value={password} onChange={(e) => setPassword(e.target.value)} className="w-full px-3 py-2 border border-gray-200 rounded-md text-sm" required />
+        <button type="submit" disabled={loading} className="w-full py-2 bg-storm-600 text-white text-sm font-medium rounded-md hover:bg-storm-700 disabled:opacity-50">
+          {loading ? "Connexion…" : "Se connecter"}
+        </button>
+      </form>
+    </div>
+  );
+}
+`;
+}
+
+function renderContactsPage(): string {
+  return `import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
+import { api } from "../lib/api";
+
+interface Contact { id: string; firstName: string; lastName: string; email: string | null; status: string; }
+
+export function ContactsPage() {
+  const qc = useQueryClient();
+  const [form, setForm] = useState({ firstName: "", lastName: "", email: "" });
+  const [showForm, setShowForm] = useState(false);
+
+  const { data: contacts = [] } = useQuery({
+    queryKey: ["crm", "contacts"],
+    queryFn: () => api.get<{ contacts: Contact[] }>("/crm/contacts").then((r) => r.contacts),
+  });
+
+  const create = useMutation({
+    mutationFn: (data: typeof form) => api.post("/crm/contacts", data),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["crm", "contacts"] }); setShowForm(false); setForm({ firstName: "", lastName: "", email: "" }); },
+  });
+
+  return (
+    <div className="p-6">
+      <div className="flex items-center justify-between mb-4">
+        <h1 className="text-xl font-semibold text-gray-900">Contacts</h1>
+        <button onClick={() => setShowForm(!showForm)} className="px-3 py-2 bg-storm-600 text-white text-sm rounded-lg hover:bg-storm-700">+ Nouveau</button>
+      </div>
+      {showForm && (
+        <form onSubmit={(e) => { e.preventDefault(); create.mutate(form); }} className="mb-4 p-4 bg-white border rounded-lg grid grid-cols-3 gap-3">
+          <input placeholder="Prénom" value={form.firstName} onChange={(e) => setForm({ ...form, firstName: e.target.value })} className="px-3 py-2 border rounded-md text-sm" required />
+          <input placeholder="Nom" value={form.lastName} onChange={(e) => setForm({ ...form, lastName: e.target.value })} className="px-3 py-2 border rounded-md text-sm" required />
+          <input placeholder="Email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} className="px-3 py-2 border rounded-md text-sm" />
+          <button type="submit" className="px-4 py-2 bg-storm-600 text-white text-sm rounded-md">Créer</button>
+        </form>
+      )}
+      <div className="bg-white border rounded-lg divide-y">
+        {contacts.length === 0 ? (
+          <p className="p-4 text-sm text-gray-400 text-center">Aucun contact</p>
+        ) : contacts.map((c) => (
+          <div key={c.id} className="px-4 py-3 flex items-center justify-between">
+            <span className="text-sm font-medium">{c.firstName} {c.lastName}</span>
+            <span className="text-xs text-gray-500">{c.email ?? "—"}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+`;
+}
+
+function renderTicketsPage(): string {
+  return `import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
+import { api } from "../lib/api";
+
+interface Ticket { id: string; title: string; status: string; priority: string; createdAt: string; }
+
+export function TicketsPage() {
+  const qc = useQueryClient();
+  const [form, setForm] = useState({ title: "", priority: "medium" });
+  const [showForm, setShowForm] = useState(false);
+
+  const { data: tickets = [] } = useQuery({
+    queryKey: ["ticketing"],
+    queryFn: () => api.get<{ tickets: Ticket[] }>("/ticketing").then((r) => r.tickets),
+  });
+
+  const create = useMutation({
+    mutationFn: (data: typeof form) => api.post("/ticketing", data),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["ticketing"] }); setShowForm(false); setForm({ title: "", priority: "medium" }); },
+  });
+
+  return (
+    <div className="p-6">
+      <div className="flex items-center justify-between mb-4">
+        <h1 className="text-xl font-semibold text-gray-900">Tickets</h1>
+        <button onClick={() => setShowForm(!showForm)} className="px-3 py-2 bg-storm-600 text-white text-sm rounded-lg hover:bg-storm-700">+ Nouveau</button>
+      </div>
+      {showForm && (
+        <form onSubmit={(e) => { e.preventDefault(); create.mutate(form); }} className="mb-4 p-4 bg-white border rounded-lg flex gap-3">
+          <input placeholder="Titre" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} className="flex-1 px-3 py-2 border rounded-md text-sm" required />
+          <select value={form.priority} onChange={(e) => setForm({ ...form, priority: e.target.value })} className="px-3 py-2 border rounded-md text-sm">
+            <option value="low">Basse</option>
+            <option value="medium">Moyenne</option>
+            <option value="high">Haute</option>
+            <option value="urgent">Urgente</option>
+          </select>
+          <button type="submit" className="px-4 py-2 bg-storm-600 text-white text-sm rounded-md">Créer</button>
+        </form>
+      )}
+      <div className="space-y-2">
+        {tickets.length === 0 ? (
+          <p className="text-sm text-gray-400 text-center py-8">Aucun ticket</p>
+        ) : tickets.map((t) => (
+          <div key={t.id} className="flex items-center justify-between p-4 bg-white border rounded-lg">
+            <div>
+              <p className="text-sm font-medium">{t.title}</p>
+              <p className="text-xs text-gray-500">{t.priority} · {new Date(t.createdAt).toLocaleDateString("fr-FR")}</p>
+            </div>
+            <span className="px-2 py-0.5 text-xs font-medium bg-blue-50 text-blue-700 rounded-full">{t.status}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+`;
+}
+
+function renderClientTsConfig(): string {
+  return JSON.stringify(
+    {
+      compilerOptions: {
+        target: "ES2020",
+        module: "ESNext",
+        moduleResolution: "bundler",
+        lib: ["ES2020", "DOM", "DOM.Iterable"],
+        jsx: "react-jsx",
+        strict: true,
+        skipLibCheck: true,
+        noEmit: true,
+        paths: { "@/*": ["./src/*"] },
+      },
+      include: ["src/**/*.ts", "src/**/*.tsx"],
+    },
+    null,
+    2
+  );
+}
+
+// ─── README ──────────────────────────────────────────────────────────────────
 
 function renderReadme(opts: ScaffoldOptions): string {
   const pm = opts.packageManager;
+  const run = pm === "npm" ? "npm run" : pm;
+
   return `# ${opts.projectName}
 
 Built with [Storm Stack](https://github.com/stormeoio/storm-stack).
 
-## Getting started
+## Quick start
 
 \`\`\`bash
-cp .env.example .env
-# Edit .env with your database URL and secrets
+# Start PostgreSQL (or use your own)
+docker compose up -d
 
+# Configure
+cp .env.example .env
+
+# Install & run
 ${pm} install
-${pm === "npm" ? "npm run" : pm} db:push
-${pm === "npm" ? "npm run" : pm} dev
+${run} db:push
+${run} dev
 \`\`\`
 
-## Plugins installed
+${opts.withClient ? "Server: http://localhost:3000 | Client: http://localhost:5173\n" : "Server: http://localhost:3000\n"}
+## Plugins
 
 ${opts.plugins.map((p) => `- \`${p}\``).join("\n")}
 
-## API routes
+## Scripts
 
-${hasAuth(opts.plugins) ? `- \`POST /api/auth/register\` — Create account\n- \`POST /api/auth/login\` — Login\n- \`POST /api/auth/logout\` — Logout\n- \`GET  /api/auth/me\` — Current user` : ""}
+| Command | Description |
+|---------|-------------|
+| \`${run} dev\` | Start dev server${opts.withClient ? " + client" : ""} |
+| \`${run} build\` | Production build |
+| \`${run} db:push\` | Apply schema to database |
+| \`${run} typecheck\` | TypeScript check |
 `;
 }
 
+function renderGitignore(): string {
+  return `node_modules/
+dist/
+.env
+drizzle/meta/
+*.local
+`;
+}
+
+// ─── Main scaffold ───────────────────────────────────────────────────────────
+
 export function scaffold(opts: ScaffoldOptions, targetDir: string): void {
-  fs.mkdirSync(path.join(targetDir, "src"), { recursive: true });
-  fs.mkdirSync(path.join(targetDir, "drizzle"), { recursive: true });
+  // Server
+  write(targetDir, "package.json", renderRootPackageJson(opts));
+  write(targetDir, "server/tsconfig.json", renderServerTsConfig());
+  write(targetDir, "server/index.ts", renderServerIndex(opts));
+  write(targetDir, "drizzle.config.ts", renderDrizzleConfig(opts));
+  write(targetDir, ".env.example", renderEnvExample(opts));
+  write(targetDir, "docker-compose.yml", renderDockerCompose());
+  write(targetDir, ".gitignore", renderGitignore());
+  write(targetDir, "README.md", renderReadme(opts));
 
-  const write = (file: string, content: string) =>
-    fs.writeFileSync(path.join(targetDir, file), content, "utf8");
+  // Client
+  if (opts.withClient) {
+    write(targetDir, "vite.config.ts", renderViteConfig());
+    write(targetDir, "tailwind.config.ts", renderTailwindConfig());
+    write(targetDir, "postcss.config.js", renderPostcssConfig());
+    write(targetDir, "client/index.html", renderIndexHtml(opts));
+    write(targetDir, "client/src/main.tsx", renderMainTsx());
+    write(targetDir, "client/src/index.css", renderIndexCss());
+    write(targetDir, "client/src/App.tsx", renderAppTsx(opts));
+    write(targetDir, "client/src/lib/api.ts", renderApiLib());
+    write(targetDir, "client/src/pages/DashboardPage.tsx", renderDashboardPage(opts));
+    write(targetDir, "client/tsconfig.json", renderClientTsConfig());
 
-  write("package.json", renderPackageJson(opts));
-  write("tsconfig.json", renderTsConfig());
-  write(".env.example", renderEnvExample(opts));
-  write("drizzle.config.ts", renderDrizzleConfig(opts));
-  write("README.md", renderReadme(opts));
-  write("src/index.ts", renderServerIndex(opts));
-  write("src/db.ts", renderDb());
-  write("src/env.ts", renderEnv(opts));
-  write("src/schema.ts", renderSchema(opts));
-
-  // .gitignore
-  write(
-    ".gitignore",
-    ["node_modules/", "dist/", ".env", "drizzle/meta/", "*.local"].join("\n") + "\n"
-  );
+    if (hasAuth(opts.plugins)) {
+      write(targetDir, "client/src/pages/LoginPage.tsx", renderLoginPage());
+    }
+    if (hasCrm(opts.plugins)) {
+      write(targetDir, "client/src/pages/ContactsPage.tsx", renderContactsPage());
+    }
+    if (hasTicketing(opts.plugins)) {
+      write(targetDir, "client/src/pages/TicketsPage.tsx", renderTicketsPage());
+    }
+  }
 }
