@@ -13,7 +13,9 @@
     "dev": "turbo dev",
     "lint": "turbo lint",
     "typecheck": "turbo typecheck",
-    "clean": "turbo clean && rm -rf node_modules"
+    "clean": "turbo clean && rm -rf node_modules",
+    "publish:all": "npm run build && npm publish --workspace packages/core && npm publish --workspace packages/plugin-auth && npm publish --workspace packages/plugin-auth-social && npm publish --workspace packages/plugin-crm && npm publish --workspace packages/plugin-ticketing && npm publish --workspace packages/create-storm-app",
+    "version:all": "npm version patch --workspaces --no-git-tag-version"
   },
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": "^7.0.0",

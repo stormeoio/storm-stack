@@ -31,5 +31,25 @@
     "@types/node": "^20.0.0",
     "tsup": "^8.0.0",
     "typescript": "^5.4.0"
-  }
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/stormeoio/storm-stack",
+    "directory": "packages/plugin-crm"
+  },
+  "homepage": "https://stormstack.dev",
+  "keywords": [
+    "storm-stack",
+    "crm",
+    "contacts",
+    "deals",
+    "pipeline",
+    "sales"
+  ],
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "author": "Stormeo <dev@stormeo.io>"
 }

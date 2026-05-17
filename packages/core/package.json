@@ -38,5 +38,24 @@
     "@types/node": "^25.8.0",
     "tsup": "^8.0.0",
     "typescript": "^5.4.0"
-  }
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/stormeoio/storm-stack",
+    "directory": "packages/core"
+  },
+  "homepage": "https://stormstack.dev",
+  "keywords": [
+    "storm-stack",
+    "plugin-system",
+    "express",
+    "drizzle",
+    "multi-tenant"
+  ],
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "author": "Stormeo <dev@stormeo.io>"
 }
