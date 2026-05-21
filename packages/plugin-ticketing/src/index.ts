@@ -15,6 +15,16 @@ export const ticketingPlugin: StormPlugin = {
   pricing: "free",
   requires: ["@stormstack/auth"],
 
+  events: {
+    emits: [
+      "ticket.created",
+      "ticket.updated",
+      "ticket.resolved",
+      "ticket.closed",
+      "ticket.comment_added",
+    ],
+  },
+
   configSchema: z.object({
     defaultPriority: z.enum(["low", "medium", "high", "urgent"]).default("medium").describe("Default priority for new tickets"),
     autoAssign: z.boolean().default(false).describe("Auto-assign tickets to available agents"),

@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { registry } from "./registry";
 import { getPluginConfig, setPluginConfig, getAllConfigs, zodSchemaToDescriptor, type FieldDescriptor } from "./config-store";
+import { eventBus } from "./event-bus";
 
 // ─── Full catalog of known plugins (installed + available + coming-soon) ─────
 
@@ -114,6 +115,27 @@ export function mountManifestRoute(apiPrefix: string): Router {
       return;
     }
     res.json({ pluginId, config: getPluginConfig(pluginId) });
+  });
+
+  /** GET /api/storm/events — event bus introspection (registered events + history) */
+  router.get("/events", (req, res) => {
+    const plugins = registry.getAll();
+    const emitters: Record<string, string[]> = {};
+    const listeners: Record<string, string[]> = {};
+
+    for (const plugin of plugins) {
+      if (plugin.events?.emits?.length) {
+        emitters[plugin.id] = plugin.events.emits;
+      }
+      if (plugin.events?.on) {
+        listeners[plugin.id] = Object.keys(plugin.events.on);
+      }
+    }
+
+    const limit = Math.min(Number(req.query["limit"]) || 50, 200);
+    const history = eventBus.getHistory(limit);
+
+    res.json({ emitters, listeners, history });
   });
 
   /** PATCH /api/storm/config/:pluginId — update plugin config */

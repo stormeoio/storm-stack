@@ -19,7 +19,7 @@ const loginSchema = z.object({
 
 export function createAuthRoutes(ctx: StormContext): Router {
   const router = Router();
-  const { db, env } = ctx;
+  const { db, env, events } = ctx;
   const secret = env["SESSION_SECRET"] ?? "";
 
   // POST /register
@@ -51,6 +51,8 @@ export function createAuthRoutes(ctx: StormContext): Router {
     const token = signToken({ userId: user.id, email: user.email, role: user.role }, secret);
     setAuthCookie(res, token);
     res.status(201).json({ user: { id: user.id, email: user.email, name: user.name, role: user.role } });
+
+    events.emit("user.registered", { userId: user.id, email: user.email }, "@stormstack/auth").catch(() => {});
   });
 
   // POST /login
@@ -82,6 +84,8 @@ export function createAuthRoutes(ctx: StormContext): Router {
     const token = signToken({ userId: user.id, email: user.email, role: user.role }, secret);
     setAuthCookie(res, token);
     res.json({ user: { id: user.id, email: user.email, name: user.name, role: user.role } });
+
+    events.emit("user.logged_in", { userId: user.id, email: user.email }, "@stormstack/auth").catch(() => {});
   });
 
   // POST /logout

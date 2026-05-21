@@ -32,7 +32,7 @@ const labelSchema = z.object({
 
 export function createTicketingRoutes(ctx: StormContext, isAuthenticated: RequestHandler): Router {
   const router = Router();
-  const { db } = ctx;
+  const { db, events } = ctx;
 
   // ── Labels ─────────────────────────────────────────────────────────────────
 
@@ -84,6 +84,14 @@ export function createTicketingRoutes(ctx: StormContext, isAuthenticated: Reques
       .values({ ...parsed.data, tenantId: req.user!.id, reporterId: req.user!.id })
       .returning();
     res.status(201).json({ ticket: row });
+
+    // Fire-and-forget event
+    events.emit("ticket.created", {
+      ticketId: row!.id,
+      title: parsed.data.title,
+      reporterId: req.user!.id,
+      tenantId: req.user!.id,
+    }, "@stormstack/ticketing").catch(() => {});
   });
 
   router.get("/:id", isAuthenticated, async (req, res) => {
@@ -113,6 +121,17 @@ export function createTicketingRoutes(ctx: StormContext, isAuthenticated: Reques
       .returning();
     if (!row) { res.status(404).json({ error: "Ticket introuvable" }); return; }
     res.json({ ticket: row });
+
+    // Emit events based on status change
+    const tenantId = req.user!.id;
+    const changes = Object.keys(parsed.data);
+    events.emit("ticket.updated", { ticketId: id, changes, tenantId }, "@stormstack/ticketing").catch(() => {});
+    if (parsed.data.status === "resolved") {
+      events.emit("ticket.resolved", { ticketId: id, resolvedBy: req.user!.id, tenantId }, "@stormstack/ticketing").catch(() => {});
+    }
+    if (parsed.data.status === "closed") {
+      events.emit("ticket.closed", { ticketId: id, tenantId }, "@stormstack/ticketing").catch(() => {});
+    }
   });
 
   router.delete("/:id", isAuthenticated, async (req, res) => {
@@ -136,6 +155,13 @@ export function createTicketingRoutes(ctx: StormContext, isAuthenticated: Reques
       .values({ ...parsed.data, ticketId: ticket.id, authorId: req.user!.id })
       .returning();
     res.status(201).json({ comment: row });
+
+    events.emit("ticket.comment_added", {
+      ticketId: ticket.id,
+      commentId: row!.id,
+      authorId: req.user!.id,
+      isInternal: parsed.data.isInternal ?? false,
+    }, "@stormstack/ticketing").catch(() => {});
   });
 
   router.patch("/:id/comments/:commentId", isAuthenticated, async (req, res) => {

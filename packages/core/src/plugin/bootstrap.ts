@@ -3,6 +3,7 @@ import type { StormContext } from "./types";
 import { registry } from "./registry";
 import { mountManifestRoute } from "./manifest-route";
 import { initConfigStore } from "./config-store";
+import { eventBus } from "./event-bus";
 
 export interface BootstrapOptions {
   app: Express;
@@ -34,8 +35,10 @@ const defaultIsAuthenticated: RequestHandler = (req, res, next) => {
 export async function bootstrapPlugins(opts: BootstrapOptions): Promise<void> {
   const { app, ctx, apiPrefix = "/api", projectRoot = process.cwd(), isAuthenticated = defaultIsAuthenticated } = opts;
 
-  // 0. Initialize config store
+  // 0. Initialize config store + event bus
   initConfigStore(projectRoot);
+  eventBus.setContext(ctx);
+  ctx.events = eventBus;
 
   // 1. Validate — fail fast if dependencies are missing
   const validation = registry.validate();
@@ -61,7 +64,17 @@ export async function bootstrapPlugins(opts: BootstrapOptions): Promise<void> {
     }
   }
 
-  // 4. Run onBoot lifecycle hooks and mount routes
+  // 4. Register plugin event handlers (before boot, so handlers are ready)
+  for (const plugin of orderedPlugins) {
+    if (plugin.events?.on) {
+      for (const [eventName, handler] of Object.entries(plugin.events.on)) {
+        eventBus.on(eventName, handler);
+        console.log(`[storm-stack] ✓ ${plugin.id} listens → ${eventName}`);
+      }
+    }
+  }
+
+  // 5. Run onBoot lifecycle hooks and mount routes
   for (const plugin of orderedPlugins) {
     if (plugin.lifecycle?.onBoot) {
       try {
@@ -73,6 +86,9 @@ export async function bootstrapPlugins(opts: BootstrapOptions): Promise<void> {
       }
     }
 
+    // Emit plugin.booted event
+    await eventBus.emit("plugin.booted", { pluginId: plugin.id }, plugin.id);
+
     if (plugin.routes) {
       const router = plugin.routes({ ctx, isAuthenticated });
       const pluginPath = `${apiPrefix}/${plugin.id.replace("@stormstack/", "").replace("/", "-")}`;
@@ -81,7 +97,7 @@ export async function bootstrapPlugins(opts: BootstrapOptions): Promise<void> {
     }
   }
 
-  // Mount /api/storm/plugins + /api/storm/manifest
+  // Mount /api/storm/plugins + /api/storm/manifest + /api/storm/events
   app.use(`${apiPrefix}/storm`, mountManifestRoute(apiPrefix));
 
   console.log(`[storm-stack] ✓ ${orderedPlugins.length} plugin(s) bootstrapped`);

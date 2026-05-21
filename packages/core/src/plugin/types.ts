@@ -2,6 +2,7 @@ import type { Router, RequestHandler } from "express";
 import type { PgTableWithColumns } from "drizzle-orm/pg-core";
 import type { NodePgDatabase } from "drizzle-orm/node-postgres";
 import type { z } from "zod";
+import type { StormEventBus, StormEventName, StormEventPayload, StormEventHandler } from "./event-bus";
 
 // ─── Core context passed to every plugin ────────────────────────────────────
 
@@ -9,6 +10,8 @@ export interface StormContext {
   db: NodePgDatabase<any>;
   env: StormEnv;
   logger: StormLogger;
+  /** Event bus for inter-plugin communication */
+  events: StormEventBus;
 }
 
 export interface StormEnv {
@@ -131,6 +134,23 @@ export interface PluginLifecycle {
   onUninstall?(ctx: StormContext): Promise<void>;
 }
 
+// ─── Plugin event config ─────────────────────────────────────────────────────
+
+export interface PluginEventConfig {
+  /**
+   * Events this plugin may emit. Used for documentation and the admin UI.
+   * e.g. ["ticket.created", "ticket.resolved"]
+   */
+  emits?: string[];
+
+  /**
+   * Event handlers this plugin wants to register at boot.
+   * Keys are event names, values are handler functions.
+   * Uses `any` payload to avoid union narrowing issues across plugins.
+   */
+  on?: Record<string, StormEventHandler<any>>;
+}
+
 // ─── Plugin dependencies ──────────────────────────────────────────────────────
 
 export type PluginId =
@@ -205,6 +225,13 @@ export interface StormPlugin {
   lifecycle?: PluginLifecycle;
 
   /**
+   * Event declarations and handlers for inter-plugin communication.
+   * `emits` documents the events this plugin can fire.
+   * `on` registers handlers that run when other plugins emit events.
+   */
+  events?: PluginEventConfig;
+
+  /**
    * Zod config schema — if provided, the plugin exposes a settings UI
    * and users can configure it from the StormClaude dashboard.
    */
@@ -231,6 +258,9 @@ export interface PluginRegistry {
   has(id: PluginId): boolean;
   validate(): ValidationResult;
 }
+
+// Re-export event types for convenience
+export type { StormEventBus, StormEventName, StormEventPayload, StormEventHandler, StormEvent, StormEventSubscription, StormEvents } from "./event-bus";
 
 export interface ValidationResult {
   valid: boolean;

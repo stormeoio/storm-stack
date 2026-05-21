@@ -25,6 +25,10 @@ export const authPlugin: StormPlugin = {
     },
   },
 
+  events: {
+    emits: ["user.registered", "user.logged_in", "user.logged_out"],
+  },
+
   configSchema: z.object({
     sessionExpiryHours: z.number().min(1).max(720).default(72).describe("Session duration in hours"),
     passwordMinLength: z.number().min(6).max(64).default(8).describe("Minimum password length"),

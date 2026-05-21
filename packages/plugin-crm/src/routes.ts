@@ -37,7 +37,7 @@ const dealSchema = z.object({
 
 export function createCrmRoutes(ctx: StormContext, isAuthenticated: RequestHandler): Router {
   const router = Router();
-  const { db } = ctx;
+  const { db, events } = ctx;
 
   // ── Organizations ──────────────────────────────────────────────────────────
 
@@ -104,6 +104,12 @@ export function createCrmRoutes(ctx: StormContext, isAuthenticated: RequestHandl
       .values({ ...parsed.data, tenantId: req.user!.id })
       .returning();
     res.status(201).json({ contact: row });
+
+    events.emit("contact.created", {
+      contactId: row!.id,
+      email: parsed.data.email,
+      tenantId: req.user!.id,
+    }, "@stormstack/crm").catch(() => {});
   });
 
   router.get("/contacts/:id", isAuthenticated, async (req, res) => {
@@ -154,6 +160,12 @@ export function createCrmRoutes(ctx: StormContext, isAuthenticated: RequestHandl
       expectedCloseDate: expectedCloseDate ? new Date(expectedCloseDate) : null,
     }).returning();
     res.status(201).json({ deal: row });
+
+    events.emit("deal.created", {
+      dealId: row!.id,
+      title: parsed.data.title,
+      tenantId: req.user!.id,
+    }, "@stormstack/crm").catch(() => {});
   });
 
   router.patch("/deals/:id", isAuthenticated, async (req, res) => {
@@ -165,12 +177,31 @@ export function createCrmRoutes(ctx: StormContext, isAuthenticated: RequestHandl
     if (expectedCloseDate !== undefined) {
       setValues["expectedCloseDate"] = expectedCloseDate ? new Date(expectedCloseDate) : null;
     }
+    // Fetch previous stage for change detection
+    const [prev] = await db.select({ stage: deals.stage }).from(deals)
+      .where(and(eq(deals.id, id), eq(deals.tenantId, req.user!.id)))
+      .limit(1);
+
     const [row] = await db.update(deals)
       .set(setValues)
       .where(and(eq(deals.id, id), eq(deals.tenantId, req.user!.id)))
       .returning();
     if (!row) { res.status(404).json({ error: "Introuvable" }); return; }
     res.json({ deal: row });
+
+    // Emit stage change events
+    const tenantId = req.user!.id;
+    if (parsed.data.stage && prev && parsed.data.stage !== prev.stage) {
+      events.emit("deal.stage_changed", {
+        dealId: id, from: prev.stage ?? "new", to: parsed.data.stage, tenantId,
+      }, "@stormstack/crm").catch(() => {});
+      if (parsed.data.stage === "won") {
+        events.emit("deal.won", { dealId: id, value: row!.value, tenantId }, "@stormstack/crm").catch(() => {});
+      }
+      if (parsed.data.stage === "lost") {
+        events.emit("deal.lost", { dealId: id, tenantId }, "@stormstack/crm").catch(() => {});
+      }
+    }
   });
 
   router.delete("/deals/:id", isAuthenticated, async (req, res) => {
