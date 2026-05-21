@@ -77,6 +77,23 @@ export const myPlugin: StormPlugin = {
 };
 ```
 
+## Adding Plugins
+
+Use the `storm` CLI to add plugins to an existing project:
+
+```bash
+# Install as npm package
+npx @stormstack/cli add auth
+
+# Or copy source code into your project (shadcn-style)
+npx @stormstack/cli add crm --copy
+
+# List all available plugins
+npx @stormstack/cli list
+```
+
+The CLI auto-wires everything: imports, registry registration, Drizzle schema, npm dependencies.
+
 ## Development
 
 ```bash
@@ -98,9 +115,8 @@ npm run typecheck
 - [x] `@stormstack/ticketing` — tickets, comments, labels
 - [x] `create-storm-app` — full-stack scaffold CLI
 - [x] `apps/stormclaude` — admin dashboard
+- [x] `storm add <plugin>` CLI — shadcn-style plugin management
 - [ ] npm publish (v0.1.0)
-- [ ] Documentation site
-- [ ] `storm add <plugin>` CLI
 - [ ] Storm Catalog (plugin marketplace)
 
 ## License

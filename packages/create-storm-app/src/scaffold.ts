@@ -760,6 +760,17 @@ drizzle/meta/
 
 // ─── Main scaffold ───────────────────────────────────────────────────────────
 
+function renderStormJson(opts: ScaffoldOptions): string {
+  return JSON.stringify({
+    version: 1,
+    pluginsDir: "plugins",
+    serverEntry: "server/index.ts",
+    drizzleConfig: "drizzle.config.ts",
+    registry: "https://raw.githubusercontent.com/stormeoio/storm-stack/main/registry.json",
+    installed: opts.plugins,
+  }, null, 2);
+}
+
 export function scaffold(opts: ScaffoldOptions, targetDir: string): void {
   // Server
   write(targetDir, "package.json", renderRootPackageJson(opts));
@@ -770,6 +781,7 @@ export function scaffold(opts: ScaffoldOptions, targetDir: string): void {
   write(targetDir, "docker-compose.yml", renderDockerCompose());
   write(targetDir, ".gitignore", renderGitignore());
   write(targetDir, "README.md", renderReadme(opts));
+  write(targetDir, "storm.json", renderStormJson(opts));
 
   // Client
   if (opts.withClient) {
