@@ -60,7 +60,7 @@ export async function removeCommand(pluginArg: string | undefined): Promise<void
     const names = dependents.map((d) => pc.yellow(d.replace("@stormstack/", ""))).join(", ");
     p.log.error(`Impossible de retirer ${pc.cyan(plugin.shortName)} — requis par : ${names}`);
     p.log.info("Retirez d'abord les plugins dépendants.");
-    return;
+    process.exit(1);
   }
 
   const confirm = await p.confirm({
