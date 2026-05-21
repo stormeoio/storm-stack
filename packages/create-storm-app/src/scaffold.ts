@@ -18,17 +18,18 @@ function write(targetDir: string, file: string, content: string) {
 
 function renderRootPackageJson(opts: ScaffoldOptions): string {
   const scripts: Record<string, string> = {
-    dev: "concurrently \"npm run dev:server\" \"npm run dev:client\"",
+    dev: "storm dev",
     "dev:server": "tsx watch server/index.ts",
     build: "tsc -p server/tsconfig.json && vite build",
     start: "node dist/server/index.js",
     "db:push": "drizzle-kit push",
     "db:generate": "drizzle-kit generate",
     typecheck: "tsc --noEmit -p server/tsconfig.json",
+    info: "storm info",
   };
 
   if (!opts.withClient) {
-    scripts["dev"] = "tsx watch server/index.ts";
+    scripts["dev"] = "storm dev --no-client";
     delete scripts["dev:client"];
   } else {
     scripts["dev:client"] = "vite";
@@ -53,7 +54,6 @@ function renderRootPackageJson(opts: ScaffoldOptions): string {
     "@types/express": "^5.0.0",
     "@types/node": "^20.0.0",
     "@types/pg": "^8.11.0",
-    concurrently: "^8.0.0",
     "drizzle-kit": "^0.30.0",
     tsx: "^4.0.0",
     typescript: "^5.4.0",

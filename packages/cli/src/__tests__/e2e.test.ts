@@ -217,9 +217,11 @@ describe("storm --help", () => {
   it("prints usage", () => {
     const output = run("--help");
     expect(output).toContain("storm");
+    expect(output).toContain("dev");
     expect(output).toContain("add");
     expect(output).toContain("remove");
     expect(output).toContain("list");
+    expect(output).toContain("info");
     expect(output).toContain("init");
   });
 });
