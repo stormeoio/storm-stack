@@ -259,6 +259,78 @@ export function removeClientComponents(
   return { modified: true };
 }
 
+// ── CLAUDE.md generation ────────────────────────────────────────────────────
+
+/**
+ * Generates or updates the project-level CLAUDE.md with documentation
+ * for all installed plugins. Called after every storm add/remove.
+ */
+export function updateProjectClaudeMd(
+  projectRoot: string,
+  installedPlugins: PluginMeta[],
+): void {
+  const claudePath = path.join(projectRoot, "CLAUDE.md");
+
+  const pluginSections = installedPlugins.map((p) => {
+    const envVars = p.envVars
+      ? Object.entries(p.envVars).map(([k, v]) => `  - \`${k}\`${v.required ? " (required)" : ""} — ${v.description}`).join("\n")
+      : "  None";
+
+    const routes = p.clientComponents
+      ? p.clientComponents.map((c) => `  - ${c.manifestName} → ${c.exportName}`).join("\n")
+      : "  Server-only plugin";
+
+    return `### ${p.name} (\`${p.id}\`)
+${p.description}
+- **Requires:** ${p.requires.length > 0 ? p.requires.map((r) => `\`${r}\``).join(", ") : "none"}
+- **Server files:** ${p.files.join(", ")}
+- **Env vars:**
+${envVars}
+- **Client components:**
+${routes}`;
+  }).join("\n\n");
+
+  const content = `# Storm Stack Project — Claude Code Instructions
+
+## Stack
+- **Server:** Express 5 + TypeScript + Drizzle ORM + PostgreSQL
+- **Client:** React 18 + wouter + TanStack Query + Tailwind CSS
+- **Plugin system:** \`@stormstack/core\` registry + bootstrap
+
+## Commands
+\`\`\`bash
+npm run dev          # Start dev (server + client)
+npm run build        # Production build
+npm run db:push      # Apply Drizzle schema → PostgreSQL
+storm add <plugin>   # Install a Storm Stack plugin
+storm remove <name>  # Uninstall a plugin
+storm list           # Show available plugins
+\`\`\`
+
+## Project Structure
+\`\`\`
+server/index.ts          — Express entry (plugin registry + bootstrap)
+client/src/App.tsx       — React app (StormLayout + StormRouter)
+client/src/storm-components.ts — Maps plugin components to React imports
+drizzle.config.ts        — Schema paths for all plugins
+storm.json               — Installed plugins config
+\`\`\`
+
+## Installed Plugins (${installedPlugins.length})
+
+${pluginSections || "No plugins installed yet. Run `storm add auth` to get started."}
+
+## Conventions
+- All API routes are mounted at \`/api/<plugin-name>/\`
+- Auth-protected routes use \`isAuthenticated\` middleware from \`@stormstack/auth\`
+- Zod validation on all POST/PATCH/PUT bodies (\`safeParse\`)
+- Client uses \`@stormstack/react\` for dynamic nav/routes from plugin manifests
+- French UI text for user-facing strings
+`;
+
+  fs.writeFileSync(claudePath, content, "utf8");
+}
+
 // ── Helpers ─────────────────────────────────────────────────────────────────
 
 function findLastImportIndex(content: string): number {

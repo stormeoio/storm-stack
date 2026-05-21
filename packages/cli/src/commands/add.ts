@@ -4,7 +4,7 @@ import fs from "fs";
 import path from "path";
 import { findProjectRoot, readConfig, writeConfig } from "../config";
 import { resolvePlugin, pluginSourceUrl, PLUGINS, type PluginMeta } from "../registry";
-import { injectPluginRegistration, injectDrizzleSchema, injectClientComponents } from "../injector";
+import { injectPluginRegistration, injectDrizzleSchema, injectClientComponents, updateProjectClaudeMd } from "../injector";
 import { detectPackageManager, runInstall, fetchFile, writeFile } from "../utils";
 
 interface AddOptions {
@@ -148,6 +148,10 @@ async function addSinglePlugin(
     // Update config
     config!.installed.push(plugin.id);
     writeConfig(root, config!);
+
+    // Update project CLAUDE.md
+    const installedMetas = config!.installed.map((id) => PLUGINS.find((pl) => pl.id === id)).filter(Boolean) as PluginMeta[];
+    updateProjectClaudeMd(root, installedMetas);
 
     spinner.stop(`${pc.green("✓")} ${pc.cyan(plugin.shortName)} installé`);
 

@@ -722,6 +722,46 @@ function renderStormJson(opts: ScaffoldOptions): string {
   }, null, 2);
 }
 
+function renderClaudeMd(opts: ScaffoldOptions): string {
+  const pluginList = opts.plugins.map((p) => `- \`${p}\``).join("\n");
+  return `# ${opts.projectName} — Claude Code Instructions
+
+## Stack
+- **Server:** Express 5 + TypeScript + Drizzle ORM + PostgreSQL
+- **Client:** React 18 + wouter + TanStack Query + Tailwind CSS
+- **Plugin system:** \`@stormstack/core\` registry + bootstrap
+
+## Commands
+\`\`\`bash
+${opts.packageManager === "npm" ? "npm run" : opts.packageManager} dev          # Start dev (server + client)
+${opts.packageManager === "npm" ? "npm run" : opts.packageManager} build        # Production build
+${opts.packageManager === "npm" ? "npm run" : opts.packageManager} db:push      # Apply Drizzle schema to PostgreSQL
+storm add <plugin>   # Install a Storm Stack plugin
+storm remove <name>  # Uninstall a plugin
+storm list           # Show available plugins
+\`\`\`
+
+## Installed Plugins
+${pluginList || "None yet — run \`storm add auth\` to get started."}
+
+## Project Structure
+\`\`\`
+server/index.ts          — Express entry (plugin registry + bootstrap)
+${opts.withClient ? "client/src/App.tsx       — React app (StormLayout + StormRouter)\nclient/src/storm-components.ts — Plugin component map\n" : ""}drizzle.config.ts        — Schema paths for all plugins
+storm.json               — Plugin configuration
+CLAUDE.md                — This file (auto-updated by storm CLI)
+\`\`\`
+
+## Conventions
+- API routes mounted at \`/api/<plugin-name>/\`
+- Auth routes use \`isAuthenticated\` from \`@stormstack/auth\`
+- Zod validation on all POST/PATCH/PUT bodies
+- French UI text for user-facing strings
+
+This file is auto-updated when you run \`storm add\` or \`storm remove\`.
+`;
+}
+
 function renderStormComponents(opts: ScaffoldOptions): string {
   const imports: string[] = [];
   const entries: string[] = [];
@@ -759,6 +799,7 @@ export function scaffold(opts: ScaffoldOptions, targetDir: string): void {
   write(targetDir, ".gitignore", renderGitignore());
   write(targetDir, "README.md", renderReadme(opts));
   write(targetDir, "storm.json", renderStormJson(opts));
+  write(targetDir, "CLAUDE.md", renderClaudeMd(opts));
 
   // Client
   if (opts.withClient) {

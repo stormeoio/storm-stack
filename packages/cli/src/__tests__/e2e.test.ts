@@ -116,6 +116,12 @@ describe("storm add --copy --local", () => {
     // storm.json updated
     const config = readConfig();
     expect(config.installed).toContain("@stormstack/auth");
+
+    // CLAUDE.md generated
+    expect(fs.existsSync(path.join(FIXTURES, "CLAUDE.md"))).toBe(true);
+    const claude = readFixture("CLAUDE.md");
+    expect(claude).toContain("@stormstack/auth");
+    expect(claude).toContain("SESSION_SECRET");
   });
 
   it("adds crm plugin after auth", () => {

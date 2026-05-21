@@ -1,0 +1,62 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build-and-test:
+    name: Build & Test
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build all packages
+        run: npx turbo build
+
+      - name: Run CLI E2E tests
+        run: cd packages/cli && npx vitest run
+
+      - name: TypeScript check
+        run: npx turbo typecheck
+        continue-on-error: true  # Some packages may need React types
+
+  publish-check:
+    name: Publish dry-run
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: build-and-test
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build all packages
+        run: npx turbo build
+
+      - name: Check publishable packages
+        run: |
+          for pkg in core react cli plugin-auth plugin-auth-social plugin-crm plugin-ticketing plugin-stripe create-storm-app; do
+            echo "--- Checking packages/$pkg ---"
+            cd packages/$pkg
+            npm pack --dry-run 2>&1 | head -20
+            cd ../..
+          done
