@@ -38,7 +38,7 @@ export function createTicketingRoutes(ctx: StormContext, isAuthenticated: Reques
 
   router.get("/labels", isAuthenticated, async (req, res) => {
     const rows = await db.select().from(ticketLabels)
-      .where(eq(ticketLabels.tenantId, req.user!.id))
+      .where(eq(ticketLabels.tenantId, req.tenant!.tenantId))
       .limit(50);
     res.json({ labels: rows });
   });
@@ -47,7 +47,7 @@ export function createTicketingRoutes(ctx: StormContext, isAuthenticated: Reques
     const parsed = labelSchema.safeParse(req.body);
     if (!parsed.success) { res.status(400).json({ error: parsed.error.flatten().fieldErrors }); return; }
     const [row] = await db.insert(ticketLabels)
-      .values({ ...parsed.data, tenantId: req.user!.id })
+      .values({ ...parsed.data, tenantId: req.tenant!.tenantId })
       .returning();
     res.status(201).json({ label: row });
   });
@@ -55,7 +55,7 @@ export function createTicketingRoutes(ctx: StormContext, isAuthenticated: Reques
   router.delete("/labels/:id", isAuthenticated, async (req, res) => {
     const id = req.params["id"] as string;
     await db.delete(ticketLabels)
-      .where(and(eq(ticketLabels.id, id), eq(ticketLabels.tenantId, req.user!.id)));
+      .where(and(eq(ticketLabels.id, id), eq(ticketLabels.tenantId, req.tenant!.tenantId)));
     res.json({ ok: true });
   });
 
@@ -81,7 +81,7 @@ export function createTicketingRoutes(ctx: StormContext, isAuthenticated: Reques
     const parsed = ticketSchema.safeParse(req.body);
     if (!parsed.success) { res.status(400).json({ error: parsed.error.flatten().fieldErrors }); return; }
     const [row] = await db.insert(tickets)
-      .values({ ...parsed.data, tenantId: req.user!.id, reporterId: req.user!.id })
+      .values({ ...parsed.data, tenantId: req.tenant!.tenantId, reporterId: req.user!.id })
       .returning();
     res.status(201).json({ ticket: row });
 
@@ -90,14 +90,14 @@ export function createTicketingRoutes(ctx: StormContext, isAuthenticated: Reques
       ticketId: row!.id,
       title: parsed.data.title,
       reporterId: req.user!.id,
-      tenantId: req.user!.id,
+      tenantId: req.tenant!.tenantId,
     }, "@stormstack/ticketing").catch(() => {});
   });
 
   router.get("/:id", isAuthenticated, async (req, res) => {
     const id = req.params["id"] as string;
     const [ticket] = await db.select().from(tickets)
-      .where(and(eq(tickets.id, id), eq(tickets.tenantId, req.user!.id)))
+      .where(and(eq(tickets.id, id), eq(tickets.tenantId, req.tenant!.tenantId)))
       .limit(1);
     if (!ticket) { res.status(404).json({ error: "Ticket introuvable" }); return; }
     const comments = await db.select().from(ticketComments)
@@ -117,7 +117,7 @@ export function createTicketingRoutes(ctx: StormContext, isAuthenticated: Reques
     }
     const [row] = await db.update(tickets)
       .set(update)
-      .where(and(eq(tickets.id, id), eq(tickets.tenantId, req.user!.id)))
+      .where(and(eq(tickets.id, id), eq(tickets.tenantId, req.tenant!.tenantId)))
       .returning();
     if (!row) { res.status(404).json({ error: "Ticket introuvable" }); return; }
     res.json({ ticket: row });
@@ -137,7 +137,7 @@ export function createTicketingRoutes(ctx: StormContext, isAuthenticated: Reques
   router.delete("/:id", isAuthenticated, async (req, res) => {
     const id = req.params["id"] as string;
     await db.delete(tickets)
-      .where(and(eq(tickets.id, id), eq(tickets.tenantId, req.user!.id)));
+      .where(and(eq(tickets.id, id), eq(tickets.tenantId, req.tenant!.tenantId)));
     res.json({ ok: true });
   });
 
@@ -146,7 +146,7 @@ export function createTicketingRoutes(ctx: StormContext, isAuthenticated: Reques
   router.post("/:id/comments", isAuthenticated, async (req, res) => {
     const ticketId = req.params["id"] as string;
     const [ticket] = await db.select({ id: tickets.id }).from(tickets)
-      .where(and(eq(tickets.id, ticketId), eq(tickets.tenantId, req.user!.id)))
+      .where(and(eq(tickets.id, ticketId), eq(tickets.tenantId, req.tenant!.tenantId)))
       .limit(1);
     if (!ticket) { res.status(404).json({ error: "Ticket introuvable" }); return; }
     const parsed = commentSchema.safeParse(req.body);

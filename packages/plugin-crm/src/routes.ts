@@ -42,9 +42,8 @@ export function createCrmRoutes(ctx: StormContext, isAuthenticated: RequestHandl
   // ── Organizations ──────────────────────────────────────────────────────────
 
   router.get("/organizations", isAuthenticated, async (req, res) => {
-    const tenantId = req.user!.id;
     const rows = await db.select().from(organizations)
-      .where(eq(organizations.tenantId, tenantId))
+      .where(eq(organizations.tenantId, req.tenant!.tenantId))
       .orderBy(desc(organizations.createdAt))
       .limit(100);
     res.json({ organizations: rows });
@@ -54,7 +53,7 @@ export function createCrmRoutes(ctx: StormContext, isAuthenticated: RequestHandl
     const parsed = orgSchema.safeParse(req.body);
     if (!parsed.success) { res.status(400).json({ error: parsed.error.flatten().fieldErrors }); return; }
     const [row] = await db.insert(organizations)
-      .values({ ...parsed.data, tenantId: req.user!.id })
+      .values({ ...parsed.data, tenantId: req.tenant!.tenantId })
       .returning();
     res.status(201).json({ organization: row });
   });
@@ -62,7 +61,7 @@ export function createCrmRoutes(ctx: StormContext, isAuthenticated: RequestHandl
   router.get("/organizations/:id", isAuthenticated, async (req, res) => {
     const id = req.params["id"] as string;
     const [row] = await db.select().from(organizations)
-      .where(and(eq(organizations.id, id), eq(organizations.tenantId, req.user!.id)))
+      .where(and(eq(organizations.id, id), eq(organizations.tenantId, req.tenant!.tenantId)))
       .limit(1);
     if (!row) { res.status(404).json({ error: "Introuvable" }); return; }
     res.json({ organization: row });
@@ -74,7 +73,7 @@ export function createCrmRoutes(ctx: StormContext, isAuthenticated: RequestHandl
     if (!parsed.success) { res.status(400).json({ error: parsed.error.flatten().fieldErrors }); return; }
     const [row] = await db.update(organizations)
       .set({ ...parsed.data, updatedAt: new Date() })
-      .where(and(eq(organizations.id, id), eq(organizations.tenantId, req.user!.id)))
+      .where(and(eq(organizations.id, id), eq(organizations.tenantId, req.tenant!.tenantId)))
       .returning();
     if (!row) { res.status(404).json({ error: "Introuvable" }); return; }
     res.json({ organization: row });
@@ -83,7 +82,7 @@ export function createCrmRoutes(ctx: StormContext, isAuthenticated: RequestHandl
   router.delete("/organizations/:id", isAuthenticated, async (req, res) => {
     const id = req.params["id"] as string;
     await db.delete(organizations)
-      .where(and(eq(organizations.id, id), eq(organizations.tenantId, req.user!.id)));
+      .where(and(eq(organizations.id, id), eq(organizations.tenantId, req.tenant!.tenantId)));
     res.json({ ok: true });
   });
 
@@ -91,7 +90,7 @@ export function createCrmRoutes(ctx: StormContext, isAuthenticated: RequestHandl
 
   router.get("/contacts", isAuthenticated, async (req, res) => {
     const rows = await db.select().from(contacts)
-      .where(eq(contacts.tenantId, req.user!.id))
+      .where(eq(contacts.tenantId, req.tenant!.tenantId))
       .orderBy(desc(contacts.createdAt))
       .limit(100);
     res.json({ contacts: rows });
@@ -101,21 +100,21 @@ export function createCrmRoutes(ctx: StormContext, isAuthenticated: RequestHandl
     const parsed = contactSchema.safeParse(req.body);
     if (!parsed.success) { res.status(400).json({ error: parsed.error.flatten().fieldErrors }); return; }
     const [row] = await db.insert(contacts)
-      .values({ ...parsed.data, tenantId: req.user!.id })
+      .values({ ...parsed.data, tenantId: req.tenant!.tenantId })
       .returning();
     res.status(201).json({ contact: row });
 
     events.emit("contact.created", {
       contactId: row!.id,
       email: parsed.data.email,
-      tenantId: req.user!.id,
+      tenantId: req.tenant!.tenantId,
     }, "@stormstack/crm").catch(() => {});
   });
 
   router.get("/contacts/:id", isAuthenticated, async (req, res) => {
     const id = req.params["id"] as string;
     const [row] = await db.select().from(contacts)
-      .where(and(eq(contacts.id, id), eq(contacts.tenantId, req.user!.id)))
+      .where(and(eq(contacts.id, id), eq(contacts.tenantId, req.tenant!.tenantId)))
       .limit(1);
     if (!row) { res.status(404).json({ error: "Introuvable" }); return; }
     res.json({ contact: row });
@@ -127,7 +126,7 @@ export function createCrmRoutes(ctx: StormContext, isAuthenticated: RequestHandl
     if (!parsed.success) { res.status(400).json({ error: parsed.error.flatten().fieldErrors }); return; }
     const [row] = await db.update(contacts)
       .set({ ...parsed.data, updatedAt: new Date() })
-      .where(and(eq(contacts.id, id), eq(contacts.tenantId, req.user!.id)))
+      .where(and(eq(contacts.id, id), eq(contacts.tenantId, req.tenant!.tenantId)))
       .returning();
     if (!row) { res.status(404).json({ error: "Introuvable" }); return; }
     res.json({ contact: row });
@@ -136,7 +135,7 @@ export function createCrmRoutes(ctx: StormContext, isAuthenticated: RequestHandl
   router.delete("/contacts/:id", isAuthenticated, async (req, res) => {
     const id = req.params["id"] as string;
     await db.delete(contacts)
-      .where(and(eq(contacts.id, id), eq(contacts.tenantId, req.user!.id)));
+      .where(and(eq(contacts.id, id), eq(contacts.tenantId, req.tenant!.tenantId)));
     res.json({ ok: true });
   });
 
@@ -144,7 +143,7 @@ export function createCrmRoutes(ctx: StormContext, isAuthenticated: RequestHandl
 
   router.get("/deals", isAuthenticated, async (req, res) => {
     const rows = await db.select().from(deals)
-      .where(eq(deals.tenantId, req.user!.id))
+      .where(eq(deals.tenantId, req.tenant!.tenantId))
       .orderBy(desc(deals.createdAt))
       .limit(100);
     res.json({ deals: rows });
@@ -156,7 +155,7 @@ export function createCrmRoutes(ctx: StormContext, isAuthenticated: RequestHandl
     const { expectedCloseDate, ...rest } = parsed.data;
     const [row] = await db.insert(deals).values({
       ...rest,
-      tenantId: req.user!.id,
+      tenantId: req.tenant!.tenantId,
       expectedCloseDate: expectedCloseDate ? new Date(expectedCloseDate) : null,
     }).returning();
     res.status(201).json({ deal: row });
@@ -164,7 +163,7 @@ export function createCrmRoutes(ctx: StormContext, isAuthenticated: RequestHandl
     events.emit("deal.created", {
       dealId: row!.id,
       title: parsed.data.title,
-      tenantId: req.user!.id,
+      tenantId: req.tenant!.tenantId,
     }, "@stormstack/crm").catch(() => {});
   });
 
@@ -179,18 +178,18 @@ export function createCrmRoutes(ctx: StormContext, isAuthenticated: RequestHandl
     }
     // Fetch previous stage for change detection
     const [prev] = await db.select({ stage: deals.stage }).from(deals)
-      .where(and(eq(deals.id, id), eq(deals.tenantId, req.user!.id)))
+      .where(and(eq(deals.id, id), eq(deals.tenantId, req.tenant!.tenantId)))
       .limit(1);
 
     const [row] = await db.update(deals)
       .set(setValues)
-      .where(and(eq(deals.id, id), eq(deals.tenantId, req.user!.id)))
+      .where(and(eq(deals.id, id), eq(deals.tenantId, req.tenant!.tenantId)))
       .returning();
     if (!row) { res.status(404).json({ error: "Introuvable" }); return; }
     res.json({ deal: row });
 
     // Emit stage change events
-    const tenantId = req.user!.id;
+    const tenantId = req.tenant!.tenantId;
     if (parsed.data.stage && prev && parsed.data.stage !== prev.stage) {
       events.emit("deal.stage_changed", {
         dealId: id, from: prev.stage ?? "new", to: parsed.data.stage, tenantId,
@@ -207,7 +206,7 @@ export function createCrmRoutes(ctx: StormContext, isAuthenticated: RequestHandl
   router.delete("/deals/:id", isAuthenticated, async (req, res) => {
     const id = req.params["id"] as string;
     await db.delete(deals)
-      .where(and(eq(deals.id, id), eq(deals.tenantId, req.user!.id)));
+      .where(and(eq(deals.id, id), eq(deals.tenantId, req.tenant!.tenantId)));
     res.json({ ok: true });
   });
 

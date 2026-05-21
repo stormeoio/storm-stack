@@ -4,6 +4,7 @@ import { registry } from "./registry";
 import { mountManifestRoute } from "./manifest-route";
 import { initConfigStore } from "./config-store";
 import { eventBus } from "./event-bus";
+import { createTenantMiddleware, type TenantResolverOptions } from "./tenant";
 
 export interface BootstrapOptions {
   app: Express;
@@ -18,6 +19,12 @@ export interface BootstrapOptions {
    * Typically obtained from @stormstack/auth's createAuthMiddleware().
    */
   isAuthenticated?: RequestHandler;
+  /**
+   * Multi-tenant configuration. If provided, tenant resolution middleware
+   * is mounted globally after auth middleware.
+   * If omitted, falls back to single-tenant mode (userId = tenantId).
+   */
+  tenant?: Omit<TenantResolverOptions, "getDb">;
 }
 
 const defaultIsAuthenticated: RequestHandler = (req, res, next) => {
@@ -64,7 +71,15 @@ export async function bootstrapPlugins(opts: BootstrapOptions): Promise<void> {
     }
   }
 
-  // 4. Register plugin event handlers (before boot, so handlers are ready)
+  // 4. Mount tenant resolution middleware (after auth middleware from step 3)
+  const tenantMiddleware = createTenantMiddleware({
+    getDb: () => ctx.db,
+    ...opts.tenant,
+  });
+  app.use(tenantMiddleware);
+  console.log(`[storm-stack] ✓ tenant middleware mounted (${opts.tenant?.tables ? "multi-tenant" : "single-tenant"})`);
+
+  // 5. Register plugin event handlers (before boot, so handlers are ready)
   for (const plugin of orderedPlugins) {
     if (plugin.events?.on) {
       for (const [eventName, handler] of Object.entries(plugin.events.on)) {
@@ -74,7 +89,7 @@ export async function bootstrapPlugins(opts: BootstrapOptions): Promise<void> {
     }
   }
 
-  // 5. Run onBoot lifecycle hooks and mount routes
+  // 6. Run onBoot lifecycle hooks and mount routes
   for (const plugin of orderedPlugins) {
     if (plugin.lifecycle?.onBoot) {
       try {
