@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { registry } from "./registry";
+import { getPluginConfig, setPluginConfig, getAllConfigs, zodSchemaToDescriptor, type FieldDescriptor } from "./config-store";
 
 // ─── Full catalog of known plugins (installed + available + coming-soon) ─────
 
@@ -64,7 +65,16 @@ export function mountManifestRoute(apiPrefix: string): Router {
     const dockItems = registry.getAll().flatMap((p) => p.client?.dockItems ?? []);
     const routes = registry.getAll().flatMap((p) => p.client?.routes ?? []);
     const settingsPanels = registry.getAll().flatMap((p) => p.client?.settingsPanels ?? []);
-    res.json({ navItems, dockItems, routes, settingsPanels });
+
+    // Build config schemas for the settings UI
+    const configSchemas: Record<string, Record<string, FieldDescriptor>> = {};
+    for (const plugin of registry.getAll()) {
+      if (plugin.configSchema) {
+        configSchemas[plugin.id] = zodSchemaToDescriptor(plugin.configSchema);
+      }
+    }
+
+    res.json({ navItems, dockItems, routes, settingsPanels, configSchemas });
   });
 
   router.get("/catalog", (req, res) => {
@@ -82,6 +92,49 @@ export function mountManifestRoute(apiPrefix: string): Router {
     const categories = [...new Set(catalog.map((e) => e.category))].sort();
 
     res.json({ catalog, categories });
+  });
+
+  // ─── Plugin config API ──────────────────────────────────────────────────
+
+  /** GET /api/storm/config — all plugin configs */
+  router.get("/config", (req, res) => {
+    res.json({ configs: getAllConfigs() });
+  });
+
+  /** GET /api/storm/config/:pluginId — single plugin config */
+  router.get("/config/:pluginId", (req, res) => {
+    const pluginId = decodeURIComponent(req.params["pluginId"]!);
+    const plugin = registry.get(pluginId);
+    if (!plugin) {
+      res.status(404).json({ error: `Plugin "${pluginId}" not found` });
+      return;
+    }
+    if (!plugin.configSchema) {
+      res.status(404).json({ error: `Plugin "${pluginId}" has no configurable settings` });
+      return;
+    }
+    res.json({ pluginId, config: getPluginConfig(pluginId) });
+  });
+
+  /** PATCH /api/storm/config/:pluginId — update plugin config */
+  router.patch("/config/:pluginId", (req, res) => {
+    const pluginId = decodeURIComponent(req.params["pluginId"]!);
+    const plugin = registry.get(pluginId);
+    if (!plugin) {
+      res.status(404).json({ error: `Plugin "${pluginId}" not found` });
+      return;
+    }
+    if (!plugin.configSchema) {
+      res.status(400).json({ error: `Plugin "${pluginId}" has no configurable settings` });
+      return;
+    }
+
+    const result = setPluginConfig(pluginId, req.body);
+    if (!result.success) {
+      res.status(400).json({ error: "Validation failed", details: result.errors });
+      return;
+    }
+    res.json({ pluginId, config: result.data });
   });
 
   return router;

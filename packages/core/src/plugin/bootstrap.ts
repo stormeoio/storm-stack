@@ -2,12 +2,15 @@ import type { Express, RequestHandler } from "express";
 import type { StormContext } from "./types";
 import { registry } from "./registry";
 import { mountManifestRoute } from "./manifest-route";
+import { initConfigStore } from "./config-store";
 
 export interface BootstrapOptions {
   app: Express;
   ctx: StormContext;
   /** Base path for all plugin API routes. Default: "/api" */
   apiPrefix?: string;
+  /** Project root directory — used for config file storage. Default: process.cwd() */
+  projectRoot?: string;
   /**
    * isAuthenticated middleware used by all plugins.
    * If not provided, falls back to a basic req.user check.
@@ -29,7 +32,10 @@ const defaultIsAuthenticated: RequestHandler = (req, res, next) => {
  * Call this after registering all plugins and before app.listen().
  */
 export async function bootstrapPlugins(opts: BootstrapOptions): Promise<void> {
-  const { app, ctx, apiPrefix = "/api", isAuthenticated = defaultIsAuthenticated } = opts;
+  const { app, ctx, apiPrefix = "/api", projectRoot = process.cwd(), isAuthenticated = defaultIsAuthenticated } = opts;
+
+  // 0. Initialize config store
+  initConfigStore(projectRoot);
 
   // 1. Validate — fail fast if dependencies are missing
   const validation = registry.validate();

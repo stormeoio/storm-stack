@@ -1,4 +1,5 @@
 import type { StormPlugin } from "@stormstack/core";
+import { z } from "zod";
 import { tickets, ticketComments, ticketLabels, ticketStatusEnum, ticketPriorityEnum } from "./schema";
 import { createTicketingRoutes } from "./routes";
 
@@ -13,6 +14,13 @@ export const ticketingPlugin: StormPlugin = {
   tags: ["support", "tickets", "feedback", "helpdesk"],
   pricing: "free",
   requires: ["@stormstack/auth"],
+
+  configSchema: z.object({
+    defaultPriority: z.enum(["low", "medium", "high", "urgent"]).default("medium").describe("Default priority for new tickets"),
+    autoAssign: z.boolean().default(false).describe("Auto-assign tickets to available agents"),
+    closedAfterDays: z.number().min(1).max(365).default(30).describe("Auto-close resolved tickets after N days"),
+    allowPublicSubmission: z.boolean().default(true).describe("Allow unauthenticated ticket submission"),
+  }),
 
   schema: {
     tables: { tickets, ticketComments, ticketLabels },

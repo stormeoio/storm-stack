@@ -30,11 +30,27 @@ export interface StormSettingsPanel {
   component: string;
 }
 
+export interface FieldDescriptor {
+  key: string;
+  type: "string" | "number" | "boolean" | "enum";
+  label: string;
+  description?: string;
+  default?: unknown;
+  required: boolean;
+  options?: string[];
+  min?: number;
+  max?: number;
+  minLength?: number;
+  maxLength?: number;
+}
+
 export interface StormManifest {
   navItems: StormNavItem[];
   dockItems: StormDockItem[];
   routes: StormRoute[];
   settingsPanels: StormSettingsPanel[];
+  /** Zod schemas serialized as field descriptors, keyed by plugin ID */
+  configSchemas?: Record<string, Record<string, FieldDescriptor>>;
 }
 
 export interface StormUser {

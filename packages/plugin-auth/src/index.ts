@@ -1,4 +1,5 @@
 import type { StormPlugin } from "@stormstack/core";
+import { z } from "zod";
 import { users, tenants, tenantMembers } from "./schema";
 import { createAppMiddleware, isAuthenticated } from "./middleware";
 import { createAuthRoutes } from "./routes";
@@ -23,6 +24,13 @@ export const authPlugin: StormPlugin = {
       example: "a-very-long-random-secret-at-least-32-chars",
     },
   },
+
+  configSchema: z.object({
+    sessionExpiryHours: z.number().min(1).max(720).default(72).describe("Session duration in hours"),
+    passwordMinLength: z.number().min(6).max(64).default(8).describe("Minimum password length"),
+    allowRegistration: z.boolean().default(true).describe("Allow public sign-up"),
+    requireEmailVerification: z.boolean().default(false).describe("Require email verification before login"),
+  }),
 
   schema: {
     tables: { users, tenants, tenantMembers },

@@ -1,4 +1,5 @@
 import type { StormPlugin } from "@stormstack/core";
+import { z } from "zod";
 import { organizations, contacts, deals, contactStatusEnum, dealStageEnum } from "./schema";
 import { createCrmRoutes } from "./routes";
 
@@ -13,6 +14,13 @@ export const crmPlugin: StormPlugin = {
   tags: ["crm", "contacts", "pipeline", "sales"],
   pricing: "free",
   requires: ["@stormstack/auth"],
+
+  configSchema: z.object({
+    defaultContactStatus: z.enum(["lead", "prospect", "client", "churned"]).default("lead").describe("Default status for new contacts"),
+    defaultDealStage: z.enum(["discovery", "proposal", "negotiation", "closed_won", "closed_lost"]).default("discovery").describe("Default stage for new deals"),
+    currency: z.string().default("EUR").describe("Default currency for deals"),
+    pipelineStages: z.number().min(3).max(10).default(5).describe("Number of pipeline columns"),
+  }),
 
   schema: {
     tables: { organizations, contacts, deals },

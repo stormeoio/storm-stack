@@ -22,3 +22,5 @@ export { StormPluginRegistry, registry } from "./registry";
 export { bootstrapPlugins } from "./bootstrap";
 export type { BootstrapOptions } from "./bootstrap";
 export { mountManifestRoute } from "./manifest-route";
+export { initConfigStore, getPluginConfig, setPluginConfig, getAllConfigs, zodSchemaToDescriptor } from "./config-store";
+export type { FieldDescriptor } from "./config-store";

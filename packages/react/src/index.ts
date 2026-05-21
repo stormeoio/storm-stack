@@ -5,6 +5,8 @@ export { StormProvider, type StormProviderProps } from "./StormProvider";
 export { StormNav, type StormNavProps } from "./StormNav";
 export { StormRouter, type StormRouterProps } from "./StormRouter";
 export { StormLayout, type StormLayoutProps } from "./StormLayout";
+export { StormSettings, type StormSettingsProps } from "./StormSettings";
+export { StormConfigForm, type StormConfigFormProps } from "./StormConfigForm";
 export { useStorm } from "./context";
 export { useStormManifest } from "./use-storm-manifest";
 export { resolveIcon } from "./icon-resolver";
@@ -16,4 +18,5 @@ export type {
   StormSettingsPanel,
   StormUser,
   ComponentMap,
+  FieldDescriptor,
 } from "./types";
