@@ -2,6 +2,8 @@ import { Switch, Route, Redirect } from "wouter";
 import { Layout } from "@/components/Layout";
 import { DashboardPage } from "@/pages/DashboardPage";
 import { PluginsPage } from "@/pages/PluginsPage";
+import { CatalogPage } from "@/pages/CatalogPage";
+import { PluginDetailPage } from "@/pages/PluginDetailPage";
 import { ContactsPage } from "@/pages/ContactsPage";
 import { DealsPage } from "@/pages/DealsPage";
 import { TicketsPage } from "@/pages/TicketsPage";
@@ -37,6 +39,8 @@ export default function App() {
             <Switch>
               <Route path="/" component={DashboardPage} />
               <Route path="/plugins" component={PluginsPage} />
+              <Route path="/catalog" component={CatalogPage} />
+              <Route path="/catalog/:pluginId" component={PluginDetailPage} />
               <Route path="/contacts" component={ContactsPage} />
               <Route path="/deals" component={DealsPage} />
               <Route path="/tickets" component={TicketsPage} />

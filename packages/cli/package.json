@@ -3,9 +3,9 @@
   "version": "0.1.0",
   "description": "CLI for Storm Stack — add plugins, scaffold, manage your SaaS",
   "bin": {
-    "storm": "./dist/index.js"
+    "storm": "./dist/index.mjs"
   },
-  "main": "./dist/index.js",
+  "main": "./dist/index.mjs",
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
