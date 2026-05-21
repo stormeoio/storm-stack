@@ -3,7 +3,7 @@ import pc from "picocolors";
 import path from "path";
 import { findProjectRoot, readConfig, writeConfig } from "../config";
 import { resolvePlugin, PLUGINS, type PluginMeta } from "../registry";
-import { removePluginRegistration, removeDrizzleSchema } from "../injector";
+import { removePluginRegistration, removeDrizzleSchema, removeClientComponents } from "../injector";
 import { detectPackageManager, runUninstall, removeDir } from "../utils";
 
 export async function removeCommand(pluginArg: string | undefined): Promise<void> {
@@ -82,6 +82,9 @@ export async function removeCommand(pluginArg: string | undefined): Promise<void
     // Remove from drizzle config
     const drizzlePath = path.join(root, config.drizzleConfig);
     removeDrizzleSchema(drizzlePath, plugin);
+
+    // Remove from client storm-components.ts
+    removeClientComponents(root, plugin);
 
     // Remove local plugin files if they exist
     const localDir = path.join(root, config.pluginsDir, plugin.shortName);

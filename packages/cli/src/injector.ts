@@ -165,6 +165,100 @@ export function removeDrizzleSchema(
   return { modified: true };
 }
 
+// ── Client component map injection ──────────────────────────────────────────
+
+/**
+ * Adds a plugin's components to client/src/storm-components.ts.
+ * This maps the component names from the server manifest to actual imports.
+ */
+export function injectClientComponents(
+  projectRoot: string,
+  plugin: PluginMeta,
+  mode: "npm" | "copy",
+  pluginsDir: string,
+): { modified: boolean; reason?: string } {
+  const stormComponentsPath = path.join(projectRoot, "client/src/storm-components.ts");
+
+  if (!fs.existsSync(stormComponentsPath)) {
+    return { modified: false, reason: "client/src/storm-components.ts introuvable" };
+  }
+
+  if (!plugin.clientComponents || plugin.clientComponents.length === 0) {
+    return { modified: false, reason: "Plugin sans composants client" };
+  }
+
+  let content = fs.readFileSync(stormComponentsPath, "utf8");
+
+  // Check if already injected
+  const firstComponent = plugin.clientComponents[0]!;
+  if (content.includes(firstComponent.exportName)) {
+    return { modified: false, reason: "Composants déjà injectés" };
+  }
+
+  // Build import path
+  const importSource = mode === "npm"
+    ? `${plugin.id}/client`
+    : `../../${pluginsDir}/${plugin.shortName}/client`;
+
+  // Add import line after last existing import
+  const importNames = plugin.clientComponents.map((c) => c.exportName).join(", ");
+  const importLine = `import { ${importNames} } from "${importSource}";`;
+
+  const lastImportIdx = findLastImportIndex(content);
+  if (lastImportIdx === -1) {
+    content = importLine + "\n" + content;
+  } else {
+    content = content.slice(0, lastImportIdx) + importLine + "\n" + content.slice(lastImportIdx);
+  }
+
+  // Add entries to STORM_COMPONENTS object
+  for (const comp of plugin.clientComponents) {
+    const entry = `  ${comp.manifestName}: ${comp.exportName},`;
+    // Insert before the closing `};` of STORM_COMPONENTS
+    content = content.replace(
+      /^(\s*}\s*;\s*)$/m,
+      `${entry}\n$1`,
+    );
+  }
+
+  fs.writeFileSync(stormComponentsPath, content, "utf8");
+  return { modified: true };
+}
+
+/**
+ * Removes a plugin's components from client/src/storm-components.ts.
+ */
+export function removeClientComponents(
+  projectRoot: string,
+  plugin: PluginMeta,
+): { modified: boolean; reason?: string } {
+  const stormComponentsPath = path.join(projectRoot, "client/src/storm-components.ts");
+
+  if (!fs.existsSync(stormComponentsPath)) {
+    return { modified: false, reason: "client/src/storm-components.ts introuvable" };
+  }
+
+  if (!plugin.clientComponents || plugin.clientComponents.length === 0) {
+    return { modified: false, reason: "Plugin sans composants client" };
+  }
+
+  let content = fs.readFileSync(stormComponentsPath, "utf8");
+
+  // Remove import line
+  const importRegex = new RegExp(`^.*import.*\\{[^}]*\\}.*from.*["'].*${plugin.shortName}.*["'];?\\s*\\n`, "m");
+  content = content.replace(importRegex, "");
+
+  // Remove entries from STORM_COMPONENTS
+  for (const comp of plugin.clientComponents) {
+    const entryRegex = new RegExp(`^\\s*${comp.manifestName}:.*,?\\s*\\n`, "m");
+    content = content.replace(entryRegex, "");
+  }
+
+  content = content.replace(/\n{3,}/g, "\n\n");
+  fs.writeFileSync(stormComponentsPath, content, "utf8");
+  return { modified: true };
+}
+
 // ── Helpers ─────────────────────────────────────────────────────────────────
 
 function findLastImportIndex(content: string): number {

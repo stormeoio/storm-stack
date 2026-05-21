@@ -1,3 +1,10 @@
+export interface ClientComponentMapping {
+  /** Name used in the server manifest (e.g. "CrmPage") */
+  manifestName: string;
+  /** Export name from the client module (e.g. "ContactsPage") */
+  exportName: string;
+}
+
 export interface PluginMeta {
   id: string;
   shortName: string;
@@ -9,6 +16,10 @@ export interface PluginMeta {
   dependencies: Record<string, string>;
   devDependencies: Record<string, string>;
   files: string[];
+  /** Client-side component files (for --copy mode, relative to plugin src/) */
+  clientFiles?: string[];
+  /** Maps manifest component names to export names for storm-components.ts */
+  clientComponents?: ClientComponentMapping[];
   envVars?: Record<string, { description: string; required: boolean; example?: string }>;
   status: "available" | "coming-soon";
 }
@@ -27,6 +38,11 @@ export const PLUGINS: PluginMeta[] = [
     dependencies: { bcryptjs: "^2.4.3", jsonwebtoken: "^9.0.0", "cookie-parser": "^1.4.6" },
     devDependencies: { "@types/bcryptjs": "^2.4.6", "@types/jsonwebtoken": "^9.0.0", "@types/cookie-parser": "^1.4.7" },
     files: ["index.ts", "schema.ts", "routes.ts", "middleware.ts"],
+    clientFiles: ["client/LoginPage.tsx", "client/RegisterPage.tsx"],
+    clientComponents: [
+      { manifestName: "LoginPage", exportName: "LoginPage" },
+      { manifestName: "RegisterPage", exportName: "RegisterPage" },
+    ],
     envVars: {
       SESSION_SECRET: { description: "JWT signing secret (min 32 chars)", required: true, example: "change-me-to-a-long-random-secret" },
     },
@@ -62,6 +78,12 @@ export const PLUGINS: PluginMeta[] = [
     dependencies: {},
     devDependencies: {},
     files: ["index.ts", "schema.ts", "routes.ts"],
+    clientFiles: ["client/CrmPage.tsx", "client/ContactDetailPage.tsx", "client/DealsPage.tsx"],
+    clientComponents: [
+      { manifestName: "CrmPage", exportName: "CrmPage" },
+      { manifestName: "ContactDetailPage", exportName: "ContactDetailPage" },
+      { manifestName: "DealsPage", exportName: "DealsPage" },
+    ],
     status: "available",
   },
   {
@@ -75,6 +97,11 @@ export const PLUGINS: PluginMeta[] = [
     dependencies: {},
     devDependencies: {},
     files: ["index.ts", "schema.ts", "routes.ts"],
+    clientFiles: ["client/TicketsPage.tsx", "client/TicketDetailPage.tsx"],
+    clientComponents: [
+      { manifestName: "TicketsPage", exportName: "TicketsPage" },
+      { manifestName: "TicketDetailPage", exportName: "TicketDetailPage" },
+    ],
     status: "available",
   },
   {

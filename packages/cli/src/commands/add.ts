@@ -4,7 +4,7 @@ import fs from "fs";
 import path from "path";
 import { findProjectRoot, readConfig, writeConfig } from "../config";
 import { resolvePlugin, pluginSourceUrl, PLUGINS, type PluginMeta } from "../registry";
-import { injectPluginRegistration, injectDrizzleSchema } from "../injector";
+import { injectPluginRegistration, injectDrizzleSchema, injectClientComponents } from "../injector";
 import { detectPackageManager, runInstall, fetchFile, writeFile } from "../utils";
 
 interface AddOptions {
@@ -124,6 +124,14 @@ async function addSinglePlugin(
     if (plugin.files.includes("schema.ts")) {
       const drizzlePath = path.join(root, config!.drizzleConfig);
       injectDrizzleSchema(drizzlePath, plugin, mode, config!.pluginsDir);
+    }
+
+    // Wire up client components (storm-components.ts)
+    if (plugin.clientComponents && plugin.clientComponents.length > 0) {
+      const clientResult = injectClientComponents(root, plugin, mode, config!.pluginsDir);
+      if (clientResult.modified) {
+        spinner.message(`${pc.cyan(plugin.shortName)} — wiring client components…`);
+      }
     }
 
     // Install plugin-specific npm dependencies

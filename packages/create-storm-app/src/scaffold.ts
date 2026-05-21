@@ -62,6 +62,7 @@ function renderRootPackageJson(opts: ScaffoldOptions): string {
   if (opts.withClient) {
     deps["react"] = "^18.3.0";
     deps["react-dom"] = "^18.3.0";
+    deps["@stormstack/react"] = "^0.1.0";
     deps["@tanstack/react-query"] = "^5.0.0";
     deps["wouter"] = "^3.3.0";
     deps["clsx"] = "^2.1.0";
@@ -355,7 +356,9 @@ function renderMainTsx(): string {
   return `import React from "react";
 import ReactDOM from "react-dom/client";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { StormProvider } from "@stormstack/react";
 import App from "./App";
+import { STORM_COMPONENTS } from "./storm-components";
 import "./index.css";
 
 const queryClient = new QueryClient({
@@ -365,7 +368,9 @@ const queryClient = new QueryClient({
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
     <QueryClientProvider client={queryClient}>
-      <App />
+      <StormProvider components={STORM_COMPONENTS}>
+        <App />
+      </StormProvider>
     </QueryClientProvider>
   </React.StrictMode>
 );
@@ -410,90 +415,36 @@ export const api = {
 }
 
 function renderAppTsx(opts: ScaffoldOptions): string {
-  const imports: string[] = [
-    `import { Switch, Route, Redirect } from "wouter";`,
-    `import { useQuery } from "@tanstack/react-query";`,
-    `import { api } from "./lib/api";`,
-  ];
+  const hasAuthPlugin = hasAuth(opts.plugins);
 
-  const routes: string[] = [`<Route path="/" component={DashboardPage} />`];
-
-  if (hasAuth(opts.plugins)) {
-    imports.push(`import { LoginPage } from "./pages/LoginPage";`);
-  }
-
-  imports.push(`import { DashboardPage } from "./pages/DashboardPage";`);
-
-  if (hasCrm(opts.plugins)) {
-    imports.push(`import { ContactsPage } from "./pages/ContactsPage";`);
-    routes.push(`<Route path="/contacts" component={ContactsPage} />`);
-  }
-  if (hasTicketing(opts.plugins)) {
-    imports.push(`import { TicketsPage } from "./pages/TicketsPage";`);
-    routes.push(`<Route path="/tickets" component={TicketsPage} />`);
-  }
-
-  const authGuard = hasAuth(opts.plugins)
-    ? `
-function AuthGuard({ children }: { children: React.ReactNode }) {
-  const { data: user, isLoading, isError } = useQuery({
-    queryKey: ["auth", "me"],
-    queryFn: () => api.get<{ user: { id: string } }>("/auth/me").then((r) => r.user),
-    retry: false,
-  });
-  if (isLoading) return <div className="min-h-screen flex items-center justify-center text-sm text-gray-400">Chargement…</div>;
-  if (isError || !user) return <Redirect to="/login" />;
-  return <>{children}</>;
-}
-`
-    : "";
-
-  const loginRoute = hasAuth(opts.plugins) ? `<Route path="/login" component={LoginPage} />` : "";
-  const wrapWithAuth = hasAuth(opts.plugins);
-
-  const routeBlock = routes.map((r) => `              ${r}`).join("\n");
-
-  if (wrapWithAuth) {
-    return `${imports.join("\n")}
-${authGuard}
+  return `import { Route } from "wouter";
+import { StormLayout, StormRouter } from "@stormstack/react";
+import { useQueryClient } from "@tanstack/react-query";
+import { api } from "./lib/api";
+import { DashboardPage } from "./pages/DashboardPage";
+${hasAuthPlugin ? `import { LoginPage } from "./pages/LoginPage";\n` : ""}
 export default function App() {
-  return (
-    <Switch>
-      ${loginRoute}
-      <Route>
-        <AuthGuard>
-          <div className="min-h-screen bg-gray-50">
-            <nav className="bg-white border-b border-gray-200 px-6 py-3 flex items-center gap-6">
-              <span className="font-semibold text-storm-700">${opts.projectName}</span>
-              <a href="/" className="text-sm text-gray-600 hover:text-gray-900">Dashboard</a>
-${hasCrm(opts.plugins) ? `              <a href="/contacts" className="text-sm text-gray-600 hover:text-gray-900">Contacts</a>\n` : ""}${hasTicketing(opts.plugins) ? `              <a href="/tickets" className="text-sm text-gray-600 hover:text-gray-900">Tickets</a>\n` : ""}            </nav>
-            <Switch>
-${routeBlock}
-              <Route><div className="p-8 text-sm text-gray-500">Page introuvable.</div></Route>
-            </Switch>
-          </div>
-        </AuthGuard>
-      </Route>
-    </Switch>
-  );
-}
-`;
-  }
+  const qc = useQueryClient();
 
-  return `${imports.join("\n")}
+  const handleLogout = async () => {
+    await api.post("/auth/logout", {});
+    await qc.invalidateQueries({ queryKey: ["storm", "auth"] });
+    window.location.href = "/login";
+  };
 
-export default function App() {
   return (
-    <div className="min-h-screen bg-gray-50">
-      <nav className="bg-white border-b border-gray-200 px-6 py-3 flex items-center gap-6">
-        <span className="font-semibold text-storm-700">${opts.projectName}</span>
-        <a href="/" className="text-sm text-gray-600 hover:text-gray-900">Dashboard</a>
-      </nav>
-      <Switch>
-${routeBlock}
-        <Route><div className="p-8 text-sm text-gray-500">Page introuvable.</div></Route>
-      </Switch>
-    </div>
+    <StormLayout
+      appName="${opts.projectName}"
+      version="0.1.0"
+      onLogout={handleLogout}
+      navProps={{
+        prepend: [{ id: "dashboard", label: "Dashboard", icon: "LayoutDashboard", path: "/" }],
+      }}
+    >
+      <StormRouter loginPath="/login">
+        <Route path="/" component={DashboardPage} />
+${hasAuthPlugin ? `        <Route path="/login" component={LoginPage} />\n` : ""}      </StormRouter>
+    </StormLayout>
   );
 }
 `;
@@ -771,6 +722,32 @@ function renderStormJson(opts: ScaffoldOptions): string {
   }, null, 2);
 }
 
+function renderStormComponents(opts: ScaffoldOptions): string {
+  const imports: string[] = [];
+  const entries: string[] = [];
+
+  if (hasCrm(opts.plugins)) {
+    imports.push(`import { ContactsPage } from "./pages/ContactsPage";`);
+    entries.push(`  CrmPage: ContactsPage,`);
+    entries.push(`  DealsPage: ContactsPage, // TODO: create separate DealsPage`);
+  }
+  if (hasTicketing(opts.plugins)) {
+    imports.push(`import { TicketsPage } from "./pages/TicketsPage";`);
+    entries.push(`  TicketsPage,`);
+  }
+
+  return `${imports.length > 0 ? imports.join("\n") + "\n" : ""}import type { ComponentMap } from "@stormstack/react";
+
+/**
+ * Maps plugin component names (from server manifest) to actual React components.
+ * When you run "storm add <plugin>", this file gets updated automatically.
+ */
+export const STORM_COMPONENTS: ComponentMap = {
+${entries.join("\n")}
+};
+`;
+}
+
 export function scaffold(opts: ScaffoldOptions, targetDir: string): void {
   // Server
   write(targetDir, "package.json", renderRootPackageJson(opts));
@@ -793,6 +770,7 @@ export function scaffold(opts: ScaffoldOptions, targetDir: string): void {
     write(targetDir, "client/src/index.css", renderIndexCss());
     write(targetDir, "client/src/App.tsx", renderAppTsx(opts));
     write(targetDir, "client/src/lib/api.ts", renderApiLib());
+    write(targetDir, "client/src/storm-components.ts", renderStormComponents(opts));
     write(targetDir, "client/src/pages/DashboardPage.tsx", renderDashboardPage(opts));
     write(targetDir, "client/tsconfig.json", renderClientTsConfig());
 

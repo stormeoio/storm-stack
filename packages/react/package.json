@@ -1,0 +1,62 @@
+{
+  "name": "@stormstack/react",
+  "version": "0.1.0",
+  "description": "Storm Stack React bindings — dynamic nav, routes, and manifest from plugins",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "typecheck": "tsc --noEmit"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
+  "peerDependencies": {
+    "react": "^18.0.0 || ^19.0.0",
+    "react-dom": "^18.0.0 || ^19.0.0",
+    "@tanstack/react-query": "^5.0.0",
+    "wouter": "^3.0.0"
+  },
+  "dependencies": {
+    "lucide-react": "^0.400.0",
+    "clsx": "^2.1.0"
+  },
+  "devDependencies": {
+    "@tanstack/react-query": "^5.0.0",
+    "@types/react": "^18.3.0",
+    "@types/react-dom": "^18.3.0",
+    "react": "^18.3.0",
+    "react-dom": "^18.3.0",
+    "tsup": "^8.0.0",
+    "typescript": "^5.4.0",
+    "wouter": "^3.3.0"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/stormeoio/storm-stack",
+    "directory": "packages/react"
+  },
+  "homepage": "https://stormstack.dev",
+  "keywords": [
+    "storm-stack",
+    "react",
+    "plugin",
+    "dynamic-routing",
+    "saas"
+  ],
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "author": "Stormeo <dev@stormeo.io>"
+}
