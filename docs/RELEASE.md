@@ -43,7 +43,7 @@ npm run version:all
 
 This bumps the root and workspace package versions, then syncs internal `@stormstack/*` dependency ranges.
 
-For the normal release path, use the GitHub `Release` workflow with `bump` set to `patch`, `minor`, `major`, or `none`. The workflow runs `release:check`, commits version changes when needed, tags `vX.Y.Z`, and creates the GitHub release.
+For the normal release path, use the GitHub `Release` workflow with `bump` set to `patch`, `minor`, `major`, or `none`. The workflow applies the version change first, runs `release:check` on the exact tree that will be tagged, commits version changes when needed, tags `vX.Y.Z`, and creates the GitHub release.
 
 ## Publish to npm
 

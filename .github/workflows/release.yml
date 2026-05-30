@@ -35,9 +35,6 @@ jobs:
 
       - run: npm ci
 
-      - name: Build and test
-        run: npm run release:check
-
       - name: Resolve version
         id: bump
         run: |
@@ -51,6 +48,9 @@ jobs:
           fi
           VERSION=$(node -p "require('./package.json').version")
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Build and test release tree
+        run: npm run release:check
 
       - name: Commit and tag
         run: |
