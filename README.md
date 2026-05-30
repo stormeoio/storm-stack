@@ -111,6 +111,8 @@ npm test
 npm run pack:all
 ```
 
+Release preparation and npm publishing are documented in [`docs/RELEASE.md`](./docs/RELEASE.md).
+
 ## MVP Status
 
 Storm Stack v0.1.0 is release-ready locally: the monorepo lints, typechecks, builds, passes the full Vitest suite, smoke-tests an app generated outside the monorepo, and packs all public packages through `npm run release:check`. Publishing still requires a GitHub remote plus npm credentials.
