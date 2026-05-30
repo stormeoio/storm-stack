@@ -297,7 +297,7 @@ function renderPackageJson(id: string, description: string, requiresAuth: boolea
     peerDependencies: peerDeps,
     dependencies: deps,
     devDependencies: {
-      "@types/node": "^20.0.0",
+      "@types/node": "^20.19.0",
       tsup: "^8.0.0",
       typescript: "^5.4.0",
     },

@@ -4,7 +4,7 @@ This runbook describes the MVP release flow for Storm Stack packages.
 
 ## Prerequisites
 
-- Node.js `>=20.19.0`
+- Node.js `>=20.19.0` (`nvm use` selects the pinned `20.20.2`)
 - npm 10+
 - A GitHub remote for `stormeoio/storm-stack`
 - An npm automation token available as `NPM_TOKEN` in the GitHub `npm` environment

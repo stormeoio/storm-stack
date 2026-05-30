@@ -21,12 +21,12 @@
     "picocolors": "^1.0.0"
   },
   "devDependencies": {
-    "@types/node": "^20.0.0",
+    "@types/node": "^20.19.0",
     "tsup": "^8.0.0",
     "typescript": "^5.4.0"
   },
   "engines": {
-    "node": ">=20.0.0"
+    "node": ">=20.19.0"
   },
   "license": "MIT",
   "repository": {
