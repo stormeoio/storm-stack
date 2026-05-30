@@ -3,6 +3,17 @@ import path from "path";
 import type { PluginMeta } from "./registry";
 import { drizzleSchemaReference } from "./schema-paths";
 
+const DEFAULT_JSON_PARSER = "app.use(express.json());";
+
+const STRIPE_RAW_BODY_JSON_PARSER = `app.use(express.json({
+    verify: (req, _res, buf) => {
+      const request = req as typeof req & { originalUrl?: string; rawBody?: Buffer };
+      if (request.originalUrl?.startsWith("/api/stripe/webhook")) {
+        request.rawBody = Buffer.from(buf);
+      }
+    },
+  }));`;
+
 /**
  * Injects a plugin import + registration into server/index.ts.
  *
@@ -148,21 +159,31 @@ export function injectStripeWebhookRawBody(
     return { modified: false, reason: "Body brut Stripe déjà configuré" };
   }
 
-  const jsonParserCall = "app.use(express.json());";
-  if (!content.includes(jsonParserCall)) {
+  if (!content.includes(DEFAULT_JSON_PARSER)) {
     return { modified: false, reason: "app.use(express.json()) introuvable" };
   }
 
-  const stripeParser = `app.use(express.json({
-    verify: (req, _res, buf) => {
-      const request = req as typeof req & { originalUrl?: string; rawBody?: Buffer };
-      if (request.originalUrl?.startsWith("/api/stripe/webhook")) {
-        request.rawBody = Buffer.from(buf);
-      }
-    },
-  }));`;
+  content = content.replace(DEFAULT_JSON_PARSER, STRIPE_RAW_BODY_JSON_PARSER);
+  fs.writeFileSync(serverEntryPath, content, "utf8");
+  return { modified: true };
+}
 
-  content = content.replace(jsonParserCall, stripeParser);
+/**
+ * Restores the default JSON parser when Stripe's generated raw-body hook is removed.
+ */
+export function removeStripeWebhookRawBody(
+  serverEntryPath: string,
+): { modified: boolean; reason?: string } {
+  if (!fs.existsSync(serverEntryPath)) {
+    return { modified: false, reason: `Fichier introuvable: ${serverEntryPath}` };
+  }
+
+  let content = fs.readFileSync(serverEntryPath, "utf8");
+  if (!content.includes(STRIPE_RAW_BODY_JSON_PARSER)) {
+    return { modified: false, reason: "Body brut Stripe généré introuvable" };
+  }
+
+  content = content.replace(STRIPE_RAW_BODY_JSON_PARSER, DEFAULT_JSON_PARSER);
   fs.writeFileSync(serverEntryPath, content, "utf8");
   return { modified: true };
 }

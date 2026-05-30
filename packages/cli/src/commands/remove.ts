@@ -4,7 +4,13 @@ import path from "path";
 import fs from "fs";
 import { findProjectRoot, readConfig, writeConfig } from "../config";
 import { resolvePlugin, PLUGINS, type PluginMeta } from "../registry";
-import { removePluginRegistration, removeDrizzleSchema, removeClientComponents, updateProjectClaudeMd } from "../injector";
+import {
+  removePluginRegistration,
+  removeDrizzleSchema,
+  removeClientComponents,
+  removeStripeWebhookRawBody,
+  updateProjectClaudeMd,
+} from "../injector";
 import { detectPackageManager, runUninstall, removeDir } from "../utils";
 
 export async function removeCommand(pluginArg: string | undefined): Promise<void> {
@@ -82,6 +88,12 @@ export async function removeCommand(pluginArg: string | undefined): Promise<void
     // Remove from server entry
     const serverEntryPath = path.join(root, config.serverEntry);
     removePluginRegistration(serverEntryPath, plugin);
+    if (plugin.id === "@stormstack/stripe") {
+      const rawBodyResult = removeStripeWebhookRawBody(serverEntryPath);
+      if (rawBodyResult.modified) {
+        spinner.message(`${pc.cyan(plugin.shortName)} — restauration du parser JSON…`);
+      }
+    }
 
     // Remove from drizzle config
     const drizzlePath = path.join(root, config.drizzleConfig);

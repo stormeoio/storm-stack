@@ -209,6 +209,27 @@ describe("storm remove", () => {
     expect(config.installed).toEqual(["@stormstack/auth"]);
   });
 
+  it("removes stripe and restores the default JSON parser", () => {
+    run(`add stripe --copy --local ${MONOREPO} --yes`);
+
+    let server = readFixture("server/index.ts");
+    expect(server).toContain("rawBody");
+    expect(server).toContain("/api/stripe/webhook");
+
+    execSync(`echo y | node ${CLI} remove stripe`, { cwd: FIXTURES, encoding: "utf8" });
+
+    server = readFixture("server/index.ts");
+    expect(server).not.toContain("stripePlugin");
+    expect(server).not.toContain("rawBody");
+    expect(server).not.toContain("/api/stripe/webhook");
+    expect(server).toContain("app.use(express.json());");
+    expect(server).toContain("authPlugin");
+    expect(server).toContain("crmPlugin");
+
+    const config = readConfig();
+    expect(config.installed).toEqual(["@stormstack/auth", "@stormstack/crm"]);
+  });
+
   it("blocks removal of auth when crm depends on it", () => {
     const result = runSafe("remove auth --yes");
     // Should fail because CRM depends on auth
