@@ -3,16 +3,16 @@ import { z } from "zod";
 import type { StormPlugin } from "@stormstack/core/plugin";
 
 export const stripePlugin: StormPlugin = {
-  id: "@stormstack/billing",
+  id: "@stormstack/stripe",
   name: "Stripe Billing",
   version: "0.1.0",
   description: "Subscriptions, invoices, and payment webhooks via Stripe",
   author: "Stormeo Technologies",
-  url: "https://stormstack.dev/catalog/billing",
+  url: "https://stormstack.dev/catalog/stripe",
   tags: ["billing", "payments", "subscriptions", "stripe"],
   pricing: "free",
 
-  requires: ["@stormstack/core"],
+  requires: ["@stormstack/auth"],
 
   env: {
     STRIPE_SECRET_KEY: {
@@ -37,7 +37,7 @@ export const stripePlugin: StormPlugin = {
     const router = Router();
     const stripe = new (require("stripe"))(process.env.STRIPE_SECRET_KEY);
 
-    // GET /api/plugin-stripe/plans
+    // GET /api/stripe/plans
     router.get("/plans", isAuthenticated, async (req, res) => {
       try {
         const prices = await stripe.prices.list({ active: true, limit: 50 });
@@ -48,7 +48,7 @@ export const stripePlugin: StormPlugin = {
       }
     });
 
-    // POST /api/plugin-stripe/checkout
+    // POST /api/stripe/checkout
     router.post("/checkout", isAuthenticated, async (req, res) => {
       const schema = z.object({
         priceId: z.string(),
@@ -74,7 +74,7 @@ export const stripePlugin: StormPlugin = {
       }
     });
 
-    // POST /api/plugin-stripe/webhook (no auth — signed by Stripe)
+    // POST /api/stripe/webhook (no auth — signed by Stripe)
     router.post("/webhook", async (req, res) => {
       const sig = req.headers["stripe-signature"] as string;
       let event;

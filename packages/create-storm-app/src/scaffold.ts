@@ -7,6 +7,7 @@ const hasAuth = (plugins: string[]) => hasPlugin(plugins, "@stormstack/auth");
 const hasCrm = (plugins: string[]) => hasPlugin(plugins, "@stormstack/crm");
 const hasTicketing = (plugins: string[]) => hasPlugin(plugins, "@stormstack/ticketing");
 const hasAuthSocial = (plugins: string[]) => hasPlugin(plugins, "@stormstack/auth-social");
+const hasStripe = (plugins: string[]) => hasPlugin(plugins, "@stormstack/stripe");
 
 function write(targetDir: string, file: string, content: string) {
   const filePath = path.join(targetDir, file);
@@ -20,11 +21,15 @@ function renderRootPackageJson(opts: ScaffoldOptions): string {
   const scripts: Record<string, string> = {
     dev: "storm dev",
     "dev:server": "tsx watch server/index.ts",
-    build: "tsc -p server/tsconfig.json && vite build",
+    build: opts.withClient
+      ? "tsc --noEmit -p server/tsconfig.json && tsc --noEmit -p client/tsconfig.json && tsc -p server/tsconfig.json && vite build"
+      : "tsc --noEmit -p server/tsconfig.json && tsc -p server/tsconfig.json",
     start: "node dist/server/index.js",
     "db:push": "drizzle-kit push",
     "db:generate": "drizzle-kit generate",
-    typecheck: "tsc --noEmit -p server/tsconfig.json",
+    typecheck: opts.withClient
+      ? "tsc --noEmit -p server/tsconfig.json && tsc --noEmit -p client/tsconfig.json"
+      : "tsc --noEmit -p server/tsconfig.json",
     info: "storm info",
   };
 
@@ -50,6 +55,7 @@ function renderRootPackageJson(opts: ScaffoldOptions): string {
   }
 
   const devDeps: Record<string, string> = {
+    "@stormstack/cli": "^0.1.0",
     "@types/cors": "^2.8.17",
     "@types/express": "^5.0.0",
     "@types/node": "^20.0.0",
@@ -131,7 +137,7 @@ function renderEnvExample(opts: ScaffoldOptions): string {
     lines.push("# GITHUB_CLIENT_ID=");
     lines.push("# GITHUB_CLIENT_SECRET=");
   }
-  if (hasPlugin(opts.plugins, "@stormstack/billing")) {
+  if (hasStripe(opts.plugins)) {
     lines.push("");
     lines.push("# Stripe");
     lines.push("STRIPE_SECRET_KEY=sk_test_...");
@@ -147,7 +153,7 @@ function renderServerIndex(opts: ScaffoldOptions): string {
     `import cors from "cors";`,
     `import { drizzle } from "drizzle-orm/node-postgres";`,
     `import { Pool } from "pg";`,
-    `import { registry, bootstrapPlugins } from "@stormstack/core";`,
+    `import { registry, bootstrapPlugins, eventBus } from "@stormstack/core";`,
     `import type { StormContext, StormEnv } from "@stormstack/core";`,
   ];
 
@@ -167,6 +173,10 @@ function renderServerIndex(opts: ScaffoldOptions): string {
   }
   if (hasAuthSocial(opts.plugins)) {
     imports.push(`import { createSocialAuthPlugin } from "@stormstack/auth-social";`);
+  }
+  if (hasStripe(opts.plugins)) {
+    imports.push(`import { stripePlugin } from "@stormstack/stripe";`);
+    registers.push(`registry.register(stripePlugin);`);
   }
 
   const socialBlock = hasAuthSocial(opts.plugins)
@@ -208,7 +218,7 @@ const logger = {
   error: (msg: string, meta?: Record<string, unknown>) => console.error(\`[error] \${msg}\`, meta ?? ""),
 };
 
-const ctx: StormContext = { db, env, logger };
+const ctx: StormContext = { db, env, logger, events: eventBus };
 
 ${registers.join("\n")}
 ${socialBlock}
@@ -237,10 +247,10 @@ main().catch((err) => {
 
 function renderDrizzleConfig(opts: ScaffoldOptions): string {
   const schemas: string[] = [];
-  if (hasAuth(opts.plugins)) schemas.push(`"node_modules/@stormstack/auth/dist/schema.js"`);
-  if (hasCrm(opts.plugins)) schemas.push(`"node_modules/@stormstack/crm/dist/schema.js"`);
-  if (hasTicketing(opts.plugins)) schemas.push(`"node_modules/@stormstack/ticketing/dist/schema.js"`);
-  if (hasAuthSocial(opts.plugins)) schemas.push(`"node_modules/@stormstack/auth-social/dist/schema.js"`);
+  if (hasAuth(opts.plugins)) schemas.push(`"node_modules/@stormstack/auth/dist/index.js"`);
+  if (hasCrm(opts.plugins)) schemas.push(`"node_modules/@stormstack/crm/dist/index.js"`);
+  if (hasTicketing(opts.plugins)) schemas.push(`"node_modules/@stormstack/ticketing/dist/index.js"`);
+  if (hasAuthSocial(opts.plugins)) schemas.push(`"node_modules/@stormstack/auth-social/dist/index.js"`);
 
   return `import { defineConfig } from "drizzle-kit";
 
@@ -294,6 +304,7 @@ export default defineConfig({
   },
   build: {
     outDir: "../dist/client",
+    emptyOutDir: true,
   },
 });
 `;
