@@ -578,9 +578,100 @@ export function ContactsPage() {
         {contacts.length === 0 ? (
           <p className="p-4 text-sm text-gray-400 text-center">Aucun contact</p>
         ) : contacts.map((c) => (
-          <div key={c.id} className="px-4 py-3 flex items-center justify-between">
+          <a key={c.id} href={\`/crm/contacts/\${c.id}\`} className="px-4 py-3 flex items-center justify-between hover:bg-gray-50 transition-colors">
             <span className="text-sm font-medium">{c.firstName} {c.lastName}</span>
             <span className="text-xs text-gray-500">{c.email ?? "—"}</span>
+          </a>
+        ))}
+      </div>
+    </div>
+  );
+}
+`;
+}
+
+function renderContactDetailPage(): string {
+  return `import { useQuery } from "@tanstack/react-query";
+import { useParams } from "wouter";
+import { api } from "../lib/api";
+
+interface Contact {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email: string | null;
+  phone: string | null;
+  status: string;
+  createdAt: string;
+}
+
+export function ContactDetailPage() {
+  const { id } = useParams<{ id: string }>();
+
+  const { data: contact, isLoading } = useQuery({
+    queryKey: ["crm", "contacts", id],
+    queryFn: () => api.get<{ contact: Contact }>(\`/crm/contacts/\${id}\`).then((r) => r.contact),
+    enabled: !!id,
+  });
+
+  if (isLoading) return <div className="p-6 text-sm text-gray-400">Chargement...</div>;
+  if (!contact) return <div className="p-6 text-sm text-gray-500">Contact introuvable.</div>;
+
+  return (
+    <div className="p-6 max-w-2xl">
+      <a href="/crm" className="text-sm text-storm-600 hover:text-storm-700 mb-4 inline-block">&larr; Retour</a>
+      <h1 className="text-xl font-semibold text-gray-900 mb-4">{contact.firstName} {contact.lastName}</h1>
+      <div className="bg-white border rounded-lg divide-y">
+        <div className="px-4 py-3 flex justify-between">
+          <span className="text-sm text-gray-500">Email</span>
+          <span className="text-sm font-medium">{contact.email ?? "—"}</span>
+        </div>
+        <div className="px-4 py-3 flex justify-between">
+          <span className="text-sm text-gray-500">Téléphone</span>
+          <span className="text-sm font-medium">{contact.phone ?? "—"}</span>
+        </div>
+        <div className="px-4 py-3 flex justify-between">
+          <span className="text-sm text-gray-500">Statut</span>
+          <span className="text-xs font-medium bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full">{contact.status}</span>
+        </div>
+        <div className="px-4 py-3 flex justify-between">
+          <span className="text-sm text-gray-500">Créé le</span>
+          <span className="text-sm">{new Date(contact.createdAt).toLocaleDateString("fr-FR")}</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+`;
+}
+
+function renderDealsPage(): string {
+  return `import { useQuery } from "@tanstack/react-query";
+import { api } from "../lib/api";
+
+interface Deal { id: string; title: string; value: number; stage: string; createdAt: string; }
+
+export function DealsPage() {
+  const { data: deals = [] } = useQuery({
+    queryKey: ["crm", "deals"],
+    queryFn: () => api.get<{ deals: Deal[] }>("/crm/deals").then((r) => r.deals),
+  });
+
+  return (
+    <div className="p-6">
+      <h1 className="text-xl font-semibold text-gray-900 mb-4">Pipeline</h1>
+      <div className="space-y-2">
+        {deals.length === 0 ? (
+          <p className="text-sm text-gray-400 text-center py-8">Aucun deal</p>
+        ) : deals.map((d) => (
+          <div key={d.id} className="flex items-center justify-between p-4 bg-white border rounded-lg">
+            <div>
+              <p className="text-sm font-medium">{d.title}</p>
+              <p className="text-xs text-gray-500">{d.stage} · {new Date(d.createdAt).toLocaleDateString("fr-FR")}</p>
+            </div>
+            <span className="text-sm font-semibold text-gray-900">
+              {new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR" }).format(d.value)}
+            </span>
           </div>
         ))}
       </div>
@@ -779,8 +870,11 @@ function renderStormComponents(opts: ScaffoldOptions): string {
 
   if (hasCrm(opts.plugins)) {
     imports.push(`import { ContactsPage } from "./pages/ContactsPage";`);
+    imports.push(`import { ContactDetailPage } from "./pages/ContactDetailPage";`);
+    imports.push(`import { DealsPage } from "./pages/DealsPage";`);
     entries.push(`  CrmPage: ContactsPage,`);
-    entries.push(`  DealsPage: ContactsPage, // TODO: create separate DealsPage`);
+    entries.push(`  ContactDetailPage,`);
+    entries.push(`  DealsPage,`);
   }
   if (hasTicketing(opts.plugins)) {
     imports.push(`import { TicketsPage } from "./pages/TicketsPage";`);
@@ -831,6 +925,8 @@ export function scaffold(opts: ScaffoldOptions, targetDir: string): void {
     }
     if (hasCrm(opts.plugins)) {
       write(targetDir, "client/src/pages/ContactsPage.tsx", renderContactsPage());
+      write(targetDir, "client/src/pages/ContactDetailPage.tsx", renderContactDetailPage());
+      write(targetDir, "client/src/pages/DealsPage.tsx", renderDealsPage());
     }
     if (hasTicketing(opts.plugins)) {
       write(targetDir, "client/src/pages/TicketsPage.tsx", renderTicketsPage());

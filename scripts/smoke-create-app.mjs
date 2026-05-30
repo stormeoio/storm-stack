@@ -80,6 +80,20 @@ function assertGeneratedApp(appDir) {
   if (drizzleConfig.includes("/dist/schema.js")) {
     throw new Error("Generated drizzle config must point to package entrypoints, not missing schema.js files");
   }
+
+  const componentMap = readFileSync(path.join(appDir, "client/src/storm-components.ts"), "utf8");
+  if (!componentMap.includes("ContactDetailPage") || !componentMap.includes("DealsPage")) {
+    throw new Error("Generated CRM component map must include detail and deal pages");
+  }
+  if (componentMap.includes("TODO")) {
+    throw new Error("Generated CRM component map must not contain placeholder TODO mappings");
+  }
+
+  for (const file of ["client/src/pages/ContactDetailPage.tsx", "client/src/pages/DealsPage.tsx"]) {
+    if (!existsSync(path.join(appDir, file))) {
+      throw new Error(`Generated app is missing ${file}`);
+    }
+  }
 }
 
 async function main() {

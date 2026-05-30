@@ -59,7 +59,6 @@ export const crmPlugin: StormPlugin = {
     routes: [
       { path: "/crm", component: "CrmPage", auth: true },
       { path: "/crm/contacts/:id", component: "ContactDetailPage", auth: true },
-      { path: "/crm/organizations/:id", component: "OrganizationDetailPage", auth: true },
       { path: "/crm/deals", component: "DealsPage", auth: true },
     ],
   },
