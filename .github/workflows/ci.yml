@@ -63,6 +63,9 @@ jobs:
       - name: Check package metadata
         run: npm run metadata:check
 
+      - name: Check source size
+        run: npm run source:size
+
       - name: Audit production dependencies
         run: npm run audit:prod
 
