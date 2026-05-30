@@ -20,7 +20,8 @@
     "version:check": "node scripts/sync-internal-versions.mjs --check",
     "version:sync": "node scripts/sync-internal-versions.mjs --write && npm install --package-lock-only --ignore-scripts",
     "release:check": "npm run version:check && npm run lint && npm run typecheck && npm run build && npm test && npm run smoke:create-app && npm run pack:all",
-    "publish:all": "npm run build && npm publish --workspace packages/core && npm publish --workspace packages/react && npm publish --workspace packages/testing && npm publish --workspace packages/cli && npm publish --workspace packages/plugin-auth && npm publish --workspace packages/plugin-auth-social && npm publish --workspace packages/plugin-crm && npm publish --workspace packages/plugin-ticketing && npm publish --workspace packages/plugin-stripe && npm publish --workspace packages/create-storm-app",
+    "publish:dry-run": "npm run release:check && node scripts/publish-all.mjs --dry-run",
+    "publish:all": "npm run release:check && node scripts/publish-all.mjs --live",
     "version:all": "npm version patch --workspaces --no-git-tag-version && npm version patch --no-git-tag-version && npm run version:sync"
   },
   "devDependencies": {
