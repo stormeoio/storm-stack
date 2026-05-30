@@ -262,7 +262,7 @@ export function create${pascalName}Routes(ctx: StormContext, isAuthenticated: Re
 function renderPackageJson(id: string, description: string, requiresAuth: boolean): string {
   const shortName = id.split("/")[1]!;
   const deps: Record<string, string> = {
-    "drizzle-orm": "^0.36.4",
+    "drizzle-orm": "^0.45.2",
     "zod": "^3.22.0",
   };
   const peerDeps: Record<string, string> = {

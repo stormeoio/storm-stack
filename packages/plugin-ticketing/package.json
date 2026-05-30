@@ -29,7 +29,7 @@
     "@stormstack/core": "^0.1.0"
   },
   "dependencies": {
-    "drizzle-orm": "^0.36.4",
+    "drizzle-orm": "^0.45.2",
     "zod": "^3.22.0"
   },
   "devDependencies": {
