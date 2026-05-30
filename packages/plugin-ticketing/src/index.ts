@@ -2,6 +2,7 @@ import type { StormPlugin } from "@stormstack/core";
 import { z } from "zod";
 import { tickets, ticketComments, ticketLabels, ticketStatusEnum, ticketPriorityEnum } from "./schema";
 import { createTicketingRoutes } from "./routes";
+import { PACKAGE_VERSION } from "./version";
 
 export { tickets, ticketComments, ticketLabels } from "./schema";
 export type { Ticket, InsertTicket, TicketComment, TicketLabel } from "./schema";
@@ -9,7 +10,7 @@ export type { Ticket, InsertTicket, TicketComment, TicketLabel } from "./schema"
 export const ticketingPlugin: StormPlugin = {
   id: "@stormstack/ticketing",
   name: "Ticketing",
-  version: "0.1.0",
+  version: PACKAGE_VERSION,
   description: "Tickets support, commentaires internes et labels pour gérer les demandes clients",
   tags: ["support", "tickets", "feedback", "helpdesk"],
   pricing: "free",

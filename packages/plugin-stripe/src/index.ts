@@ -2,13 +2,14 @@ import { Router, type Request } from "express";
 import { z } from "zod";
 import type { StormPlugin } from "@stormstack/core/plugin";
 import Stripe from "stripe";
+import { PACKAGE_VERSION } from "./version";
 
 type StripeWebhookRequest = Request & { rawBody?: Buffer };
 
 export const stripePlugin: StormPlugin = {
   id: "@stormstack/stripe",
   name: "Stripe Billing",
-  version: "0.1.0",
+  version: PACKAGE_VERSION,
   description: "Subscriptions, invoices, and payment webhooks via Stripe",
   author: "Stormeo Technologies",
   url: "https://stormstack.dev/catalog/stripe",

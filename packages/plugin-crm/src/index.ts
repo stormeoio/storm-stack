@@ -2,6 +2,7 @@ import type { StormPlugin } from "@stormstack/core";
 import { z } from "zod";
 import { organizations, contacts, deals, contactStatusEnum, dealStageEnum } from "./schema";
 import { createCrmRoutes } from "./routes";
+import { PACKAGE_VERSION } from "./version";
 
 export { organizations, contacts, deals } from "./schema";
 export type { Organization, InsertOrganization, Contact, InsertContact, Deal, InsertDeal } from "./schema";
@@ -9,7 +10,7 @@ export type { Organization, InsertOrganization, Contact, InsertContact, Deal, In
 export const crmPlugin: StormPlugin = {
   id: "@stormstack/crm",
   name: "CRM",
-  version: "0.1.0",
+  version: PACKAGE_VERSION,
   description: "Contacts, organisations et pipeline commercial pour agences et SaaS",
   tags: ["crm", "contacts", "pipeline", "sales"],
   pricing: "free",

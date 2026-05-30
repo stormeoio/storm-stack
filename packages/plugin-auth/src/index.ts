@@ -3,6 +3,7 @@ import { z } from "zod";
 import { users, tenants, tenantMembers } from "./schema";
 import { createAppMiddleware } from "./middleware";
 import { createAuthRoutes } from "./routes";
+import { PACKAGE_VERSION } from "./version";
 
 export { isAuthenticated, requireRole, createAppMiddleware, signToken, setAuthCookie, clearAuthCookie, verifyToken } from "./middleware";
 export { users, tenants, tenantMembers } from "./schema";
@@ -12,7 +13,7 @@ export type { AuthTokenPayload } from "./middleware";
 export const authPlugin: StormPlugin = {
   id: "@stormstack/auth",
   name: "Auth",
-  version: "0.1.0",
+  version: PACKAGE_VERSION,
   description: "Email/password authentication with JWT cookies, RBAC, and multi-tenant support",
   tags: ["auth", "security", "rbac", "multi-tenant"],
   pricing: "free",

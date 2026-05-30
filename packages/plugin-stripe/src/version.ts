@@ -1,0 +1,17 @@
+import fs from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+
+const FALLBACK_VERSION = "0.1.0";
+
+function readPackageVersion(): string {
+  try {
+    const packageJsonPath = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../package.json");
+    const pkg = JSON.parse(fs.readFileSync(packageJsonPath, "utf8")) as { version?: unknown };
+    return typeof pkg.version === "string" ? pkg.version : FALLBACK_VERSION;
+  } catch {
+    return FALLBACK_VERSION;
+  }
+}
+
+export const PACKAGE_VERSION = readPackageVersion();

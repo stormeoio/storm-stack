@@ -1,6 +1,7 @@
 import type { StormPlugin } from "@stormstack/core";
 import { oauthAccounts, oauthProviderEnum } from "./schema";
 import { createSocialAuthRoutes, type SocialAuthConfig } from "./routes";
+import { PACKAGE_VERSION } from "./version";
 
 export { oauthAccounts } from "./schema";
 export type { OAuthAccount, InsertOAuthAccount, OAuthProvider } from "./schema";
@@ -12,7 +13,7 @@ export function createSocialAuthPlugin(config: SocialAuthConfig): StormPlugin {
   return {
     id: "@stormstack/auth-social",
     name: "Auth Social",
-    version: "0.1.0",
+    version: PACKAGE_VERSION,
     description: `OAuth2 login via ${enabledProviders.join(", ")}`,
     tags: ["auth", "oauth", "social", "google", "github"],
     pricing: "free",
