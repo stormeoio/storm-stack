@@ -324,8 +324,8 @@ describe("storm create-plugin", () => {
     expect(pkg.name).toBe("@stormstack/cool-feature");
     expect(pkg.version).toBe("0.1.0");
     expect(pkg.exports["."]).toBeDefined();
-    expect(pkg.peerDependencies["@stormstack/core"]).toBeDefined();
-    expect(pkg.peerDependencies["@stormstack/auth"]).toBeDefined();
+    expect(pkg.peerDependencies["@stormstack/core"]).toBe(`^${CLI_PACKAGE.version}`);
+    expect(pkg.peerDependencies["@stormstack/auth"]).toBe(`^${CLI_PACKAGE.version}`);
   });
 
   it("refuses to overwrite existing directory", () => {

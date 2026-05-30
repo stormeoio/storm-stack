@@ -9,6 +9,7 @@ import { fileURLToPath } from "node:url";
 
 const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const require = createRequire(import.meta.url);
+const rootPackageVersion = JSON.parse(readFileSync(path.join(rootDir, "package.json"), "utf8")).version;
 
 const packageWorkspaces = [
   ["@stormstack/core", "packages/core"],
@@ -20,6 +21,14 @@ const packageWorkspaces = [
   ["@stormstack/crm", "packages/plugin-crm"],
   ["@stormstack/ticketing", "packages/plugin-ticketing"],
   ["@stormstack/stripe", "packages/plugin-stripe"],
+];
+const generatedStormDependencies = [
+  "@stormstack/core",
+  "@stormstack/react",
+  "@stormstack/auth",
+  "@stormstack/crm",
+  "@stormstack/ticketing",
+  "@stormstack/stripe",
 ];
 
 function run(command, args, options = {}) {
@@ -67,8 +76,17 @@ function patchStormDependencies(appDir, tarballs) {
 
 function assertGeneratedApp(appDir) {
   const pkg = JSON.parse(readFileSync(path.join(appDir, "package.json"), "utf8"));
+  const expectedStormRange = `^${rootPackageVersion}`;
   if (!pkg.devDependencies?.["@stormstack/cli"]) {
     throw new Error("Generated app must include @stormstack/cli because scripts call storm dev");
+  }
+  if (pkg.devDependencies["@stormstack/cli"] !== expectedStormRange) {
+    throw new Error(`Generated app must use ${expectedStormRange} for @stormstack/cli`);
+  }
+  for (const name of generatedStormDependencies) {
+    if (pkg.dependencies?.[name] !== expectedStormRange) {
+      throw new Error(`Generated app must use ${expectedStormRange} for ${name}`);
+    }
   }
 
   const serverEntry = readFileSync(path.join(appDir, "server/index.ts"), "utf8");

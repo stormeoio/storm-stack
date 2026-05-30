@@ -3,6 +3,7 @@ import path from "path";
 import * as p from "@clack/prompts";
 import pc from "picocolors";
 import { findProjectRoot } from "../config";
+import { STORM_PACKAGE_RANGE } from "../version";
 
 interface CreatePluginOptions {
   yes?: boolean;
@@ -265,10 +266,10 @@ function renderPackageJson(id: string, description: string, requiresAuth: boolea
     "zod": "^3.22.0",
   };
   const peerDeps: Record<string, string> = {
-    "@stormstack/core": "^0.1.0",
+    "@stormstack/core": STORM_PACKAGE_RANGE,
   };
   if (requiresAuth) {
-    peerDeps["@stormstack/auth"] = "^0.1.0";
+    peerDeps["@stormstack/auth"] = STORM_PACKAGE_RANGE;
   }
 
   return JSON.stringify({

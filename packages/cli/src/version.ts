@@ -15,3 +15,4 @@ function readPackageVersion(): string {
 }
 
 export const VERSION = readPackageVersion();
+export const STORM_PACKAGE_RANGE = `^${VERSION}`;

@@ -12,6 +12,7 @@ import {
   updateProjectClaudeMd,
 } from "../injector";
 import { detectPackageManager, runInstall, fetchFile, writeFile } from "../utils";
+import { STORM_PACKAGE_RANGE } from "../version";
 
 interface AddOptions {
   copy?: boolean;
@@ -230,7 +231,7 @@ async function installNpmPlugin(
   pm: ReturnType<typeof detectPackageManager>,
   plugin: PluginMeta,
 ): Promise<void> {
-  runInstall(root, pm, [`${plugin.id}@^0.1.0`]);
+  runInstall(root, pm, [`${plugin.id}@${STORM_PACKAGE_RANGE}`]);
 }
 
 function rewritePluginImports(content: string, _plugin: PluginMeta, _pluginsDir: string): string {

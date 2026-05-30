@@ -1,6 +1,7 @@
 import fs from "fs";
 import path from "path";
 import type { ScaffoldOptions } from "./prompts";
+import { STORM_PACKAGE_RANGE } from "./version";
 
 const hasPlugin = (plugins: string[], id: string) => plugins.includes(id);
 const hasAuth = (plugins: string[]) => hasPlugin(plugins, "@stormstack/auth");
@@ -41,7 +42,7 @@ function renderRootPackageJson(opts: ScaffoldOptions): string {
   }
 
   const deps: Record<string, string> = {
-    "@stormstack/core": "^0.1.0",
+    "@stormstack/core": STORM_PACKAGE_RANGE,
     cors: "^2.8.5",
     dotenv: "^16.4.0",
     "drizzle-orm": "^0.36.4",
@@ -51,11 +52,11 @@ function renderRootPackageJson(opts: ScaffoldOptions): string {
   };
 
   for (const p of opts.plugins) {
-    deps[p] = "^0.1.0";
+    deps[p] = STORM_PACKAGE_RANGE;
   }
 
   const devDeps: Record<string, string> = {
-    "@stormstack/cli": "^0.1.0",
+    "@stormstack/cli": STORM_PACKAGE_RANGE,
     "@types/cors": "^2.8.17",
     "@types/express": "^5.0.0",
     "@types/node": "^20.0.0",
@@ -68,7 +69,7 @@ function renderRootPackageJson(opts: ScaffoldOptions): string {
   if (opts.withClient) {
     deps["react"] = "^18.3.0";
     deps["react-dom"] = "^18.3.0";
-    deps["@stormstack/react"] = "^0.1.0";
+    deps["@stormstack/react"] = STORM_PACKAGE_RANGE;
     deps["@tanstack/react-query"] = "^5.0.0";
     deps["wouter"] = "^3.3.0";
     deps["clsx"] = "^2.1.0";
