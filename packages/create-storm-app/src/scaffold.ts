@@ -59,7 +59,7 @@ function renderRootPackageJson(opts: ScaffoldOptions): string {
     "@stormstack/cli": STORM_PACKAGE_RANGE,
     "@types/cors": "^2.8.17",
     "@types/express": "^5.0.0",
-    "@types/node": "^20.0.0",
+    "@types/node": "^20.19.0",
     "@types/pg": "^8.11.0",
     "drizzle-kit": "^0.31.10",
     tsx: "^4.0.0",
@@ -76,11 +76,11 @@ function renderRootPackageJson(opts: ScaffoldOptions): string {
     deps["lucide-react"] = "^0.400.0";
     devDeps["@types/react"] = "^18.3.0";
     devDeps["@types/react-dom"] = "^18.3.0";
-    devDeps["@vitejs/plugin-react"] = "^4.3.0";
+    devDeps["@vitejs/plugin-react"] = "^6.0.2";
     devDeps["autoprefixer"] = "^10.4.0";
     devDeps["postcss"] = "^8.4.0";
     devDeps["tailwindcss"] = "^3.4.0";
-    devDeps["vite"] = "^5.0.0";
+    devDeps["vite"] = "^8.0.14";
   }
 
   return JSON.stringify(
@@ -89,6 +89,7 @@ function renderRootPackageJson(opts: ScaffoldOptions): string {
       version: "0.1.0",
       private: true,
       type: "module",
+      engines: { node: ">=20.19.0" },
       scripts,
       dependencies: deps,
       devDependencies: devDeps,
