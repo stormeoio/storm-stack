@@ -60,6 +60,9 @@ jobs:
       - name: Check catalog consistency
         run: npm run catalog:check
 
+      - name: Check package metadata
+        run: npm run metadata:check
+
       - name: Audit production dependencies
         run: npm run audit:prod
 
