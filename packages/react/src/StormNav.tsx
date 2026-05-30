@@ -36,18 +36,18 @@ export function StormNav({ prepend = [], append = [], className, userRole }: Sto
         const isActive = location === item.path || (item.path !== "/" && location.startsWith(item.path));
 
         return (
-          <Link key={item.id} href={item.path}>
-            <a
-              className={clsx(
-                "flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
-                isActive
-                  ? "bg-storm-50 text-storm-700"
-                  : "text-gray-600 hover:bg-gray-100 hover:text-gray-900",
-              )}
-            >
-              <Icon size={16} />
-              {item.label}
-            </a>
+          <Link
+            key={item.id}
+            href={item.path}
+            className={clsx(
+              "flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
+              isActive
+                ? "bg-storm-50 text-storm-700"
+                : "text-gray-600 hover:bg-gray-100 hover:text-gray-900",
+            )}
+          >
+            <Icon size={16} />
+            {item.label}
           </Link>
         );
       })}

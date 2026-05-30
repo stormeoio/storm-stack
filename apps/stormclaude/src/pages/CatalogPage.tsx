@@ -106,8 +106,8 @@ function CatalogCard({ entry }: { entry: CatalogEntry }) {
   if (!isAvailable) return inner;
 
   return (
-    <Link href={`/catalog/${entry.shortName}`}>
-      <a className="block h-full">{inner}</a>
+    <Link href={`/catalog/${entry.shortName}`} className="block h-full">
+      {inner}
     </Link>
   );
 }
