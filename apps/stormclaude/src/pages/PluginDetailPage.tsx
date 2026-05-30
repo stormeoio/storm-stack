@@ -77,7 +77,9 @@ export function PluginDetailPage() {
   if (!plugin) {
     return (
       <div className="p-6 max-w-3xl mx-auto">
-        <Link href="/catalog"><a className="text-sm text-storm-600 hover:underline flex items-center gap-1"><ArrowLeft size={14} /> Retour au catalogue</a></Link>
+        <Link href="/catalog" className="text-sm text-storm-600 hover:underline flex items-center gap-1">
+          <ArrowLeft size={14} /> Retour au catalogue
+        </Link>
         <div className="mt-8 text-center text-gray-400">Plugin introuvable.</div>
       </div>
     );
@@ -92,10 +94,8 @@ export function PluginDetailPage() {
   return (
     <div className="p-6 max-w-3xl mx-auto">
       {/* Back */}
-      <Link href="/catalog">
-        <a className="text-sm text-storm-600 hover:underline flex items-center gap-1 mb-6">
-          <ArrowLeft size={14} /> Catalogue
-        </a>
+      <Link href="/catalog" className="text-sm text-storm-600 hover:underline flex items-center gap-1 mb-6">
+        <ArrowLeft size={14} /> Catalogue
       </Link>
 
       {/* Header */}
@@ -174,8 +174,11 @@ export function PluginDetailPage() {
                   ) : (
                     <AlertTriangle size={12} className="text-amber-500" />
                   )}
-                  <Link href={`/catalog/${dep.replace("@stormstack/", "")}`}>
-                    <a className="font-mono text-xs text-storm-600 hover:underline">{dep}</a>
+                  <Link
+                    href={`/catalog/${dep.replace("@stormstack/", "")}`}
+                    className="font-mono text-xs text-storm-600 hover:underline"
+                  >
+                    {dep}
                   </Link>
                   <span className="text-xs text-gray-400">
                     {isInstalled ? "installé" : "requis"}

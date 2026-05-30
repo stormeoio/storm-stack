@@ -43,16 +43,18 @@ export function Layout({ children }: { children: React.ReactNode }) {
         {/* Nav */}
         <nav className="flex-1 p-3 space-y-0.5">
           {NAV.map(({ href, icon: Icon, label }) => (
-            <Link key={href} href={href}>
-              <a className={clsx(
+            <Link
+              key={href}
+              href={href}
+              className={clsx(
                 "flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
                 location === href
                   ? "bg-storm-50 text-storm-700"
-                  : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
-              )}>
-                <Icon size={16} />
-                {label}
-              </a>
+                  : "text-gray-600 hover:bg-gray-100 hover:text-gray-900",
+              )}
+            >
+              <Icon size={16} />
+              {label}
             </Link>
           ))}
         </nav>
