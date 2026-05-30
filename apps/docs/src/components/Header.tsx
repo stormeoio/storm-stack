@@ -14,22 +14,22 @@ export function Header() {
   return (
     <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-sm border-b border-gray-100">
       <div className="max-w-6xl mx-auto px-6 h-14 flex items-center gap-8">
-        <Link href="/">
-          <a className="flex items-center gap-2 font-bold text-storm-700">
-            <Zap size={18} />
-            Storm Stack
-          </a>
+        <Link href="/" className="flex items-center gap-2 font-bold text-storm-700">
+          <Zap size={18} />
+          Storm Stack
         </Link>
 
         <nav className="flex items-center gap-6 flex-1">
           {NAV.map(({ href, label }) => (
-            <Link key={href} href={href}>
-              <a className={clsx(
+            <Link
+              key={href}
+              href={href}
+              className={clsx(
                 "text-sm font-medium transition-colors",
-                location.startsWith(href) ? "text-storm-700" : "text-gray-600 hover:text-gray-900"
-              )}>
-                {label}
-              </a>
+                location.startsWith(href) ? "text-storm-700" : "text-gray-600 hover:text-gray-900",
+              )}
+            >
+              {label}
             </Link>
           ))}
         </nav>

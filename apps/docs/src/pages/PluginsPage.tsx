@@ -58,6 +58,14 @@ const PLUGINS: Plugin[] = [
     requires: ["@stormstack/auth"],
   },
   {
+    name: "CMS",
+    pkg: "@stormstack/cms",
+    description: "Content management for pages, articles, and editorial workflows.",
+    features: ["Pages", "Articles", "Draft publishing", "Content organization"],
+    status: "planned",
+    requires: ["@stormstack/auth"],
+  },
+  {
     name: "Messaging",
     pkg: "@stormstack/messaging",
     description: "In-app instant messaging and transactional email.",
