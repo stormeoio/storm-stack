@@ -4,7 +4,13 @@ import fs from "fs";
 import path from "path";
 import { findProjectRoot, readConfig, writeConfig } from "../config";
 import { resolvePlugin, pluginSourceUrl, PLUGINS, type PluginMeta } from "../registry";
-import { injectPluginRegistration, injectDrizzleSchema, injectClientComponents, updateProjectClaudeMd } from "../injector";
+import {
+  injectPluginRegistration,
+  injectDrizzleSchema,
+  injectClientComponents,
+  injectStripeWebhookRawBody,
+  updateProjectClaudeMd,
+} from "../injector";
 import { detectPackageManager, runInstall, fetchFile, writeFile } from "../utils";
 
 interface AddOptions {
@@ -118,6 +124,13 @@ async function addSinglePlugin(
     const injResult = injectPluginRegistration(serverEntryPath, plugin, mode, path.join(root, config!.pluginsDir));
     if (injResult.modified) {
       spinner.message(`${pc.cyan(plugin.shortName)} — wiring server entry…`);
+    }
+
+    if (plugin.id === "@stormstack/stripe") {
+      const rawBodyResult = injectStripeWebhookRawBody(serverEntryPath);
+      if (rawBodyResult.modified) {
+        spinner.message(`${pc.cyan(plugin.shortName)} — preserving webhook raw body…`);
+      }
     }
 
     // Wire up drizzle config

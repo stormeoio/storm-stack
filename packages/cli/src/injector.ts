@@ -134,6 +134,40 @@ export function injectDrizzleSchema(
 }
 
 /**
+ * Preserves the raw request body required by Stripe signature verification.
+ */
+export function injectStripeWebhookRawBody(
+  serverEntryPath: string,
+): { modified: boolean; reason?: string } {
+  if (!fs.existsSync(serverEntryPath)) {
+    return { modified: false, reason: `Fichier introuvable: ${serverEntryPath}` };
+  }
+
+  let content = fs.readFileSync(serverEntryPath, "utf8");
+  if (content.includes("rawBody") && content.includes("/api/stripe/webhook")) {
+    return { modified: false, reason: "Body brut Stripe déjà configuré" };
+  }
+
+  const jsonParserCall = "app.use(express.json());";
+  if (!content.includes(jsonParserCall)) {
+    return { modified: false, reason: "app.use(express.json()) introuvable" };
+  }
+
+  const stripeParser = `app.use(express.json({
+    verify: (req, _res, buf) => {
+      const request = req as typeof req & { originalUrl?: string; rawBody?: Buffer };
+      if (request.originalUrl?.startsWith("/api/stripe/webhook")) {
+        request.rawBody = Buffer.from(buf);
+      }
+    },
+  }));`;
+
+  content = content.replace(jsonParserCall, stripeParser);
+  fs.writeFileSync(serverEntryPath, content, "utf8");
+  return { modified: true };
+}
+
+/**
  * Removes a schema path from drizzle.config.ts
  */
 export function removeDrizzleSchema(

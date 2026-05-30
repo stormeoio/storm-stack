@@ -527,6 +527,10 @@ describe("storm docker", () => {
     run(`add stripe --copy --local ${MONOREPO} --yes`);
     run("docker --yes");
 
+    const server = readFixture("server/index.ts");
+    expect(server).toContain("rawBody");
+    expect(server).toContain("/api/stripe/webhook");
+
     const envExample = fs.readFileSync(path.join(FIXTURES, ".env.example"), "utf8");
     expect(envExample).toContain("STRIPE_SECRET_KEY");
     expect(envExample).toContain("STRIPE_WEBHOOK_SECRET");
