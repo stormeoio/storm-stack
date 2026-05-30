@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "description": "CLI for Storm Stack — add plugins, scaffold, manage your SaaS",
   "bin": {
-    "storm": "./dist/index.mjs"
+    "storm": "dist/index.mjs"
   },
   "main": "./dist/index.mjs",
   "scripts": {
@@ -31,7 +31,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/stormeoio/storm-stack",
+    "url": "git+https://github.com/stormeoio/storm-stack.git",
     "directory": "packages/cli"
   },
   "homepage": "https://stormstack.dev",

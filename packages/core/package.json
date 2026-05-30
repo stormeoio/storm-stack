@@ -39,7 +39,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/stormeoio/storm-stack",
+    "url": "git+https://github.com/stormeoio/storm-stack.git",
     "directory": "packages/core"
   },
   "homepage": "https://stormstack.dev",
