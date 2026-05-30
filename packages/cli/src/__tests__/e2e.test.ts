@@ -75,6 +75,12 @@ function readConfig(): { installed: string[] } {
   return JSON.parse(readFixture("storm.json"));
 }
 
+function writeFixture(file: string, content: string): void {
+  const target = path.join(FIXTURES, file);
+  fs.mkdirSync(path.dirname(target), { recursive: true });
+  fs.writeFileSync(target, content, "utf8");
+}
+
 // ── Tests ─────────────────────────────────────────────────────────────────
 
 describe("storm list", () => {
@@ -391,6 +397,29 @@ describe("storm migrate", () => {
 
     const sql = fs.readFileSync(path.join(drizzleDir, sqlFiles[0]!), "utf8");
     expect(sql).toContain("CREATE TABLE IF NOT EXISTS");
+  });
+
+  it("generates migrations from npm package entrypoint schemas", () => {
+    writeFixture("node_modules/@stormstack/auth/dist/index.js", `
+const { pgTable, text, timestamp } = require("drizzle-orm/pg-core");
+exports.users = pgTable("users", {
+  id: text("id").primaryKey(),
+  email: text("email").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+`);
+    const config = JSON.parse(readFixture("storm.json")) as { installed: string[] };
+    config.installed = ["@stormstack/auth"];
+    writeFixture("storm.json", `${JSON.stringify(config, null, 2)}\n`);
+
+    const output = run("migrate generate --yes");
+
+    expect(output).toContain("auth");
+    const drizzleDir = path.join(FIXTURES, "drizzle");
+    const sqlFiles = fs.readdirSync(drizzleDir).filter((f) => f.endsWith(".sql") && !f.includes("rollback"));
+    expect(sqlFiles.length).toBeGreaterThan(0);
+    const sql = fs.readFileSync(path.join(drizzleDir, sqlFiles[0]!), "utf8");
+    expect(sql).toContain('CREATE TABLE IF NOT EXISTS "users"');
   });
 
   it("generates rollback files alongside migrations", () => {

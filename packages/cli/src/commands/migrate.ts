@@ -4,7 +4,8 @@ import { execSync } from "child_process";
 import * as p from "@clack/prompts";
 import pc from "picocolors";
 import { findProjectRoot, readConfig } from "../config";
-import { PLUGINS, resolvePlugin } from "../registry";
+import { PLUGINS, resolvePlugin, type PluginMeta } from "../registry";
+import { resolvePluginSchemaFile } from "../schema-paths";
 
 type MigrateAction = "generate" | "run" | "rollback" | "status" | "reset";
 
@@ -51,7 +52,7 @@ export async function migrateCommand(action?: string, pluginArg?: string, opts: 
 
   switch (resolvedAction) {
     case "generate":
-      await generateMigrations(root, config.installed, migrationsDir, pluginArg);
+      await generateMigrations(root, config.installed, config.pluginsDir, migrationsDir, pluginArg);
       break;
     case "run":
       await runMigrations(root, migrationsDir, opts);
@@ -74,7 +75,13 @@ export async function migrateCommand(action?: string, pluginArg?: string, opts: 
 
 // ── Generate ────────────────────────────────────────────────────────────────
 
-async function generateMigrations(root: string, installed: string[], migrationsDir: string, pluginArg?: string): Promise<void> {
+async function generateMigrations(
+  root: string,
+  installed: string[],
+  pluginsDir: string,
+  migrationsDir: string,
+  pluginArg?: string,
+): Promise<void> {
   const plugins = pluginArg
     ? [resolvePlugin(pluginArg)].filter(Boolean)
     : installed.map((id) => PLUGINS.find((pl) => pl.id === id)).filter(Boolean);
@@ -96,7 +103,7 @@ async function generateMigrations(root: string, installed: string[], migrationsD
 
     const timestamp = Date.now();
     const migrationName = `${formatTimestamp(timestamp)}_${plugin.shortName}`;
-    const sqlContent = generatePluginSQL(root, plugin.shortName, plugin.id);
+    const sqlContent = generatePluginSQL(root, plugin, pluginsDir);
 
     if (!sqlContent.trim()) {
       spinner.stop(`${pc.dim("○")} ${pc.dim(plugin.shortName)} — aucun changement`);
@@ -142,13 +149,8 @@ async function generateMigrations(root: string, installed: string[], migrationsD
   }
 }
 
-function generatePluginSQL(root: string, shortName: string, pluginId: string): string {
-  const schemaFiles = [
-    path.join(root, "plugins", shortName, "schema.ts"),
-    path.join(root, `node_modules/${pluginId}/dist/schema.js`),
-  ];
-
-  const schemaFile = schemaFiles.find((f) => fs.existsSync(f));
+function generatePluginSQL(root: string, plugin: PluginMeta, pluginsDir: string): string {
+  const schemaFile = resolvePluginSchemaFile(root, plugin, pluginsDir);
   if (!schemaFile) return "";
 
   const content = fs.readFileSync(schemaFile, "utf8");
@@ -169,7 +171,7 @@ function generatePluginSQL(root: string, shortName: string, pluginId: string): s
 
   if (statements.length === 0) return "";
 
-  return `-- Migration: ${pluginId}\n-- Generated: ${new Date().toISOString()}\n\n${statements.join("\n\n")}\n`;
+  return `-- Migration: ${plugin.id}\n-- Generated: ${new Date().toISOString()}\n\n${statements.join("\n\n")}\n`;
 }
 
 function generateCreateTableFromSchema(content: string, tableName: string): string {

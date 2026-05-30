@@ -1,6 +1,7 @@
 import fs from "fs";
 import path from "path";
 import type { PluginMeta } from "./registry";
+import { drizzleSchemaReference } from "./schema-paths";
 
 /**
  * Injects a plugin import + registration into server/index.ts.
@@ -111,9 +112,7 @@ export function injectDrizzleSchema(
 
   let content = fs.readFileSync(drizzleConfigPath, "utf8");
 
-  const schemaPath = mode === "npm"
-    ? `"node_modules/${plugin.id}/dist/schema.js"`
-    : `"./${pluginsDir}/${plugin.shortName}/schema.ts"`;
+  const schemaPath = drizzleSchemaReference(plugin, mode, pluginsDir);
 
   if (content.includes(schemaPath)) {
     return { modified: false, reason: "Schema déjà dans drizzle.config.ts" };

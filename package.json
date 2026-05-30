@@ -17,7 +17,7 @@
     "clean": "turbo clean && rm -rf node_modules",
     "pack:all": "npm pack --dry-run --workspace packages/core && npm pack --dry-run --workspace packages/react && npm pack --dry-run --workspace packages/testing && npm pack --dry-run --workspace packages/cli && npm pack --dry-run --workspace packages/plugin-auth && npm pack --dry-run --workspace packages/plugin-auth-social && npm pack --dry-run --workspace packages/plugin-crm && npm pack --dry-run --workspace packages/plugin-ticketing && npm pack --dry-run --workspace packages/plugin-stripe && npm pack --dry-run --workspace packages/create-storm-app",
     "smoke:create-app": "node scripts/smoke-create-app.mjs",
-    "release:check": "npm run lint && npm run typecheck && npm test && npm run build && npm run smoke:create-app && npm run pack:all",
+    "release:check": "npm run lint && npm run typecheck && npm run build && npm test && npm run smoke:create-app && npm run pack:all",
     "publish:all": "npm run build && npm publish --workspace packages/core && npm publish --workspace packages/react && npm publish --workspace packages/testing && npm publish --workspace packages/cli && npm publish --workspace packages/plugin-auth && npm publish --workspace packages/plugin-auth-social && npm publish --workspace packages/plugin-crm && npm publish --workspace packages/plugin-ticketing && npm publish --workspace packages/plugin-stripe && npm publish --workspace packages/create-storm-app",
     "version:all": "npm version patch --workspaces --no-git-tag-version"
   },
