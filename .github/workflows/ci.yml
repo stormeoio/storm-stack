@@ -40,6 +40,29 @@ jobs:
           path: packages/*/dist
           retention-days: 1
 
+  quality:
+    name: Quality gates
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      - name: Check internal versions
+        run: npm run version:check
+
+      - name: Audit production dependencies
+        run: npm run audit:prod
+
+      - name: Lint
+        run: npm run lint
+
   typecheck:
     name: TypeScript
     runs-on: ubuntu-latest
@@ -89,10 +112,9 @@ jobs:
         run: npm test
 
   publish-check:
-    name: Publish dry-run
+    name: Release package checks
     runs-on: ubuntu-latest
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    needs: [build, typecheck, test]
+    needs: [build, quality, typecheck, test]
 
     steps:
       - uses: actions/checkout@v4
