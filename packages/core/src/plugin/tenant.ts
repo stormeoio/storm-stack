@@ -3,7 +3,7 @@
 import type { RequestHandler } from "express";
 import { eq, and, type SQL } from "drizzle-orm";
 import type { NodePgDatabase } from "drizzle-orm/node-postgres";
-import type { PgTableWithColumns } from "drizzle-orm/pg-core";
+import type { AnyPgColumn, AnyPgTable } from "drizzle-orm/pg-core";
 
 // ─── Tenant context on req ───────────────────────────────────────────────────
 
@@ -18,7 +18,6 @@ export interface TenantInfo {
 
 // Augment Express Request to carry tenant info
 declare global {
-  // eslint-disable-next-line @typescript-eslint/no-namespace
   namespace Express {
     interface Request {
       tenant?: TenantInfo;
@@ -33,7 +32,7 @@ export interface TenantResolverOptions {
    * DB instance — needed to query tenant_members.
    * This is set lazily so the middleware can be created before DB is ready.
    */
-  getDb: () => NodePgDatabase<any>;
+  getDb: () => NodePgDatabase;
 
   /**
    * Table references for tenant lookup.
@@ -41,7 +40,11 @@ export interface TenantResolverOptions {
    * (single-tenant per user, no storm_tenants table needed).
    */
   tables?: {
-    tenantMembers: PgTableWithColumns<any>;
+    tenantMembers: AnyPgTable & {
+      tenantId: AnyPgColumn<{ data: string; notNull: true }>;
+      userId: AnyPgColumn<{ data: string; notNull: true }>;
+      role: AnyPgColumn<{ data: string; notNull: true }>;
+    };
   };
 
   /**
@@ -184,7 +187,7 @@ export function requireTenantRole(...roles: string[]): RequestHandler {
  * ```
  */
 export function tenantScope(
-  table: { tenantId: any },
+  table: { tenantId: AnyPgColumn<{ data: string; notNull: true }> },
   tenantId: string,
 ): SQL {
   return eq(table.tenantId, tenantId);
@@ -201,7 +204,7 @@ export function tenantScope(
  * ```
  */
 export function tenantAnd(
-  table: { tenantId: any },
+  table: { tenantId: AnyPgColumn<{ data: string; notNull: true }> },
   tenantId: string,
   ...conditions: SQL[]
 ): SQL {

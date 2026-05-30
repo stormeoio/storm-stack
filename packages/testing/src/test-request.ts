@@ -4,7 +4,7 @@ import http from "http";
 export interface TestResponse {
   status: number;
   headers: Record<string, string | string[] | undefined>;
-  body: any;
+  body: unknown;
   text: string;
 }
 
@@ -48,7 +48,7 @@ function injectToServer(
           res.on("data", (chunk) => chunks.push(chunk));
           res.on("end", () => {
             const text = Buffer.concat(chunks).toString("utf8");
-            let body: any;
+            let body: unknown;
             try {
               body = JSON.parse(text);
             } catch {

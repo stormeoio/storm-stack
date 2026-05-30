@@ -1,7 +1,7 @@
 import type { StormPlugin } from "@stormstack/core";
 import { z } from "zod";
 import { users, tenants, tenantMembers } from "./schema";
-import { createAppMiddleware, isAuthenticated } from "./middleware";
+import { createAppMiddleware } from "./middleware";
 import { createAuthRoutes } from "./routes";
 
 export { isAuthenticated, requireRole, createAppMiddleware, signToken, setAuthCookie, clearAuthCookie, verifyToken } from "./middleware";

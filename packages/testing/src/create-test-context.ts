@@ -3,7 +3,7 @@ import { StormEventBus } from "@stormstack/core";
 
 export interface TestContextOptions {
   env?: Partial<StormEnv>;
-  db?: unknown;
+  db?: StormContext["db"];
   logger?: Partial<StormLogger>;
 }
 
@@ -29,7 +29,7 @@ export function createTestContext(opts: TestContextOptions = {}): StormContext {
   };
 
   const ctx: StormContext = {
-    db: (opts.db ?? {}) as any,
+    db: opts.db ?? ({} as StormContext["db"]),
     env,
     logger,
     events: eventBus,

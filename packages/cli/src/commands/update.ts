@@ -210,7 +210,7 @@ function detectCurrentVersion(
   return "0.0.0";
 }
 
-function resolveLatestVersion(plugin: PluginMeta): string {
+function resolveLatestVersion(_plugin: PluginMeta): string {
   // In monorepo context, latest is what the registry knows
   // In a real marketplace this would be an HTTP call
   return "0.1.0";

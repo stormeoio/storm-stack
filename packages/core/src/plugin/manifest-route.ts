@@ -46,7 +46,7 @@ const AVAILABLE_IDS = new Set(["@stormstack/auth", "@stormstack/auth-social", "@
  * Mounts GET /api/storm/catalog   → full catalog (installed + available + coming-soon)
  * Call this once inside bootstrapPlugins.
  */
-export function mountManifestRoute(apiPrefix: string): Router {
+export function mountManifestRoute(_apiPrefix: string): Router {
   const router = Router();
 
   router.get("/plugins", (req, res) => {

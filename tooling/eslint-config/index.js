@@ -1,6 +1,17 @@
 /** @type {import("eslint").Linter.Config[]} */
 module.exports = [
   {
+    ignores: [
+      "**/dist/**",
+      "**/node_modules/**",
+      "**/*.d.ts",
+      "**/*.config.ts",
+      "**/*.config.js",
+      "**/drizzle.config.ts",
+      "**/tailwind.config.ts",
+    ],
+  },
+  {
     files: ["**/*.ts", "**/*.tsx"],
     plugins: {
       "@typescript-eslint": require("@typescript-eslint/eslint-plugin"),
@@ -13,12 +24,9 @@ module.exports = [
     },
     rules: {
       "@typescript-eslint/no-explicit-any": "error",
-      "@typescript-eslint/no-unused-vars": ["warn", { argsIgnorePattern: "^_" }],
+      "@typescript-eslint/no-unused-vars": ["error", { argsIgnorePattern: "^_" }],
       "@typescript-eslint/consistent-type-imports": ["error", { prefer: "type-imports" }],
-      "no-console": ["warn", { allow: ["warn", "error"] }],
+      "no-console": "off",
     },
-  },
-  {
-    ignores: ["**/dist/**", "**/node_modules/**", "**/*.d.ts"],
   },
 ];

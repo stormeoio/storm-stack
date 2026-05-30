@@ -2,8 +2,6 @@
 // Plugins declare their events here via declaration merging on StormEvents.
 // This file is the canonical registry of all known event shapes.
 
-import type { StormEvents } from "./event-bus";
-
 /**
  * Extend StormEvents with standard plugin events.
  * This uses TypeScript declaration merging — each plugin can add its own events.

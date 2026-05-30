@@ -42,11 +42,11 @@ describe("createTestContext", () => {
     const ctx = createTestContext();
     const received: string[] = [];
 
-    ctx.events.on("test.event" as any, async (event) => {
+    ctx.events.on("test.event", async (event) => {
       received.push(event.name);
     });
 
-    await ctx.events.emit("test.event" as any, {} as any);
+    await ctx.events.emit("test.event", {});
     expect(received).toEqual(["test.event"]);
   });
 });

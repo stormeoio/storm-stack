@@ -1,13 +1,13 @@
-import type { Router, RequestHandler } from "express";
-import type { PgTableWithColumns } from "drizzle-orm/pg-core";
+import type { Router, Request, RequestHandler } from "express";
+import type { AnyPgTable } from "drizzle-orm/pg-core";
 import type { NodePgDatabase } from "drizzle-orm/node-postgres";
 import type { z } from "zod";
-import type { StormEventBus, StormEventName, StormEventPayload, StormEventHandler } from "./event-bus";
+import type { StormEventBus, StormEventHandler } from "./event-bus";
 
 // ─── Core context passed to every plugin ────────────────────────────────────
 
 export interface StormContext {
-  db: NodePgDatabase<any>;
+  db: NodePgDatabase;
   env: StormEnv;
   logger: StormLogger;
   /** Event bus for inter-plugin communication */
@@ -47,7 +47,6 @@ export interface StormUser {
 
 // Augment Express Request to carry the authenticated user
 declare global {
-  // eslint-disable-next-line @typescript-eslint/no-namespace
   namespace Express {
     interface Request {
       user?: StormUser;
@@ -55,13 +54,13 @@ declare global {
   }
 }
 
-export type DrizzleTable = PgTableWithColumns<any>;
+export type DrizzleTable = AnyPgTable;
 
 export interface PluginSchema {
   /** Tables this plugin owns. Drizzle will manage their migrations. */
   tables: Record<string, DrizzleTable>;
   /** Enum types this plugin registers */
-  enums?: Record<string, any>;
+  enums?: Record<string, unknown>;
 }
 
 // ─── Plugin route contribution ────────────────────────────────────────────────
@@ -69,7 +68,7 @@ export interface PluginSchema {
 export interface PluginRouteOptions {
   ctx: StormContext;
   /** Only present if @stormstack/auth multi-tenant is enabled */
-  getTenantContext?: (req: any) => TenantContext | null;
+  getTenantContext?: (req: Request) => TenantContext | null;
   /** isAuthenticated middleware — attach to any route that needs auth */
   isAuthenticated: RequestHandler;
 }
@@ -146,9 +145,9 @@ export interface PluginEventConfig {
   /**
    * Event handlers this plugin wants to register at boot.
    * Keys are event names, values are handler functions.
-   * Uses `any` payload to avoid union narrowing issues across plugins.
+   * Uses the generic event envelope so plugins can subscribe to custom events.
    */
-  on?: Record<string, StormEventHandler<any>>;
+  on?: Record<string, StormEventHandler>;
 }
 
 // ─── Plugin dependencies ──────────────────────────────────────────────────────
@@ -235,7 +234,7 @@ export interface StormPlugin {
    * Zod config schema — if provided, the plugin exposes a settings UI
    * and users can configure it from the StormClaude dashboard.
    */
-  configSchema?: z.ZodObject<any>;
+  configSchema?: z.ZodObject<z.ZodRawShape>;
 
   /**
    * Tags for the Storm Catalog — used for search and filtering.

@@ -84,7 +84,7 @@ export function getAllConfigs(): Record<string, Record<string, unknown>> {
  * Supports: string, number, boolean, enum, with defaults and descriptions.
  */
 export function zodSchemaToDescriptor(
-  schema: z.ZodObject<any>,
+  schema: z.ZodObject<z.ZodRawShape>,
 ): Record<string, FieldDescriptor> {
   const shape = schema.shape;
   const result: Record<string, FieldDescriptor> = {};
@@ -119,14 +119,16 @@ function zodFieldToDescriptor(key: string, field: z.ZodTypeAny): FieldDescriptor
 
   // Unwrap ZodDefault
   if (innerType instanceof z.ZodDefault) {
-    defaultValue = (innerType as any)._def.defaultValue();
-    innerType = (innerType as any)._def.innerType;
+    const defaultType = innerType as z.ZodDefault<z.ZodTypeAny>;
+    defaultValue = defaultType._def.defaultValue();
+    innerType = defaultType._def.innerType;
   }
 
   // Unwrap ZodOptional
   if (innerType instanceof z.ZodOptional) {
+    const optionalType = innerType as z.ZodOptional<z.ZodTypeAny>;
     isRequired = false;
-    innerType = (innerType as any)._def.innerType;
+    innerType = optionalType._def.innerType;
   }
 
   // Extract description
@@ -142,7 +144,7 @@ function zodFieldToDescriptor(key: string, field: z.ZodTypeAny): FieldDescriptor
 
   // Number
   if (innerType instanceof z.ZodNumber) {
-    const checks = (innerType as any)._def.checks as Array<{ kind: string; value: number }>;
+    const checks = innerType._def.checks;
     const min = checks?.find((c) => c.kind === "min")?.value;
     const max = checks?.find((c) => c.kind === "max")?.value;
     return { key, type: "number", label, description, default: defaultValue, required: isRequired, min, max };
@@ -155,13 +157,13 @@ function zodFieldToDescriptor(key: string, field: z.ZodTypeAny): FieldDescriptor
 
   // Enum
   if (innerType instanceof z.ZodEnum) {
-    const options = (innerType as any)._def.values as string[];
+    const options = innerType._def.values;
     return { key, type: "enum", label, description, default: defaultValue, required: isRequired, options };
   }
 
   // Default to string
   const strChecks = innerType instanceof z.ZodString
-    ? (innerType as any)._def.checks as Array<{ kind: string; value: number }> | undefined
+    ? innerType._def.checks
     : undefined;
   const minLength = strChecks?.find((c) => c.kind === "min")?.value;
   const maxLength = strChecks?.find((c) => c.kind === "max")?.value;

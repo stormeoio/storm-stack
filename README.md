@@ -105,13 +105,15 @@ git clone https://github.com/stormeoio/storm-stack.git
 cd storm-stack
 npm install
 npm run build
+npm run lint
 npm run typecheck
-npx vitest run
+npm test
+npm run pack:all
 ```
 
 ## MVP Status
 
-Storm Stack v0.1.0 is release-ready locally: the monorepo builds, typechecks, packs all public packages with `npm pack --dry-run`, and passes the CLI/core Vitest suite. Publishing still requires a GitHub remote plus npm credentials.
+Storm Stack v0.1.0 is release-ready locally: the monorepo builds, lints, typechecks, packs all public packages with `npm run pack:all`, and passes the CLI/core Vitest suite. Use `npm run release:check` before creating a release PR. Publishing still requires a GitHub remote plus npm credentials.
 
 ## Roadmap
 

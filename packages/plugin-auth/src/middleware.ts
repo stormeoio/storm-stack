@@ -1,4 +1,4 @@
-import type { RequestHandler } from "express";
+import type { RequestHandler, Response } from "express";
 import jwt from "jsonwebtoken";
 import cookieParser from "cookie-parser";
 
@@ -23,7 +23,7 @@ export function verifyToken(token: string, secret: string): AuthTokenPayload | n
   }
 }
 
-export function setAuthCookie(res: import("express").Response, token: string): void {
+export function setAuthCookie(res: Response, token: string): void {
   res.cookie(COOKIE_NAME, token, {
     httpOnly: true,
     secure: process.env["NODE_ENV"] === "production",
@@ -33,7 +33,7 @@ export function setAuthCookie(res: import("express").Response, token: string): v
   });
 }
 
-export function clearAuthCookie(res: import("express").Response): void {
+export function clearAuthCookie(res: Response): void {
   res.clearCookie(COOKIE_NAME, { path: "/" });
 }
 

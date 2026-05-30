@@ -1,5 +1,3 @@
-import type { StormContext } from "@stormstack/core";
-
 export interface OAuthProviderConfig {
   clientId: string;
   clientSecret: string;

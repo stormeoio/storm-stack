@@ -54,8 +54,8 @@ export interface StormEventSubscription {
 // ─── Event Bus implementation ────────────────────────────────────────────────
 
 export class StormEventBus {
-  private handlers = new Map<string, Set<StormEventHandler<any>>>();
-  private wildcardHandlers = new Set<StormEventHandler<any>>();
+  private handlers = new Map<string, Set<StormEventHandler>>();
+  private wildcardHandlers = new Set<StormEventHandler>();
   private ctx: StormContext | null = null;
   private history: StormEvent[] = [];
   private maxHistory = 100;
@@ -76,22 +76,24 @@ export class StormEventBus {
     handler: StormEventHandler<E>,
   ): StormEventSubscription {
     if (event === "*") {
-      this.wildcardHandlers.add(handler as StormEventHandler<any>);
+      const subscriptionHandler = handler as StormEventHandler;
+      this.wildcardHandlers.add(subscriptionHandler);
       return {
-        unsubscribe: () => this.wildcardHandlers.delete(handler as StormEventHandler<any>),
+        unsubscribe: () => this.wildcardHandlers.delete(subscriptionHandler),
       };
     }
 
     if (!this.handlers.has(event as string)) {
       this.handlers.set(event as string, new Set());
     }
-    this.handlers.get(event as string)!.add(handler as StormEventHandler<any>);
+    const subscriptionHandler = handler as StormEventHandler;
+    this.handlers.get(event as string)!.add(subscriptionHandler);
 
     return {
       unsubscribe: () => {
         const set = this.handlers.get(event as string);
         if (set) {
-          set.delete(handler as StormEventHandler<any>);
+          set.delete(subscriptionHandler);
           if (set.size === 0) this.handlers.delete(event as string);
         }
       },
@@ -130,7 +132,7 @@ export class StormEventBus {
 
     // Collect all matching handlers
     const targeted = this.handlers.get(event as string);
-    const handlers: StormEventHandler<any>[] = [
+    const handlers: StormEventHandler[] = [
       ...(targeted ?? []),
       ...this.wildcardHandlers,
     ];

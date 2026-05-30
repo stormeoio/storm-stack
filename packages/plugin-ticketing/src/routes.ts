@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { eq, and, desc, SQL } from "drizzle-orm";
+import { eq, and, desc, type SQL } from "drizzle-orm";
 import { z } from "zod";
 import { tickets, ticketComments, ticketLabels } from "./schema";
 import type { StormContext } from "@stormstack/core";
