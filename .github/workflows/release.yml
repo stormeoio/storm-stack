@@ -34,10 +34,7 @@ jobs:
       - run: npm ci
 
       - name: Build and test
-        run: |
-          npx turbo build
-          npx vitest run packages/cli/src/__tests__/e2e.test.ts
-          npx vitest run packages/cli/src/__tests__/integration.test.ts
+        run: npm run release:check
 
       - name: Bump versions
         id: bump

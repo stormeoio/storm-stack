@@ -64,8 +64,8 @@ jobs:
       - name: Typecheck all packages
         run: npx turbo typecheck
 
-  test-e2e:
-    name: CLI E2E tests
+  test:
+    name: Tests
     runs-on: ubuntu-latest
     needs: build
 
@@ -85,38 +85,14 @@ jobs:
           name: dist
           path: packages
 
-      - name: Run E2E tests
-        run: npx vitest run packages/cli/src/__tests__/e2e.test.ts
-
-  test-integration:
-    name: CLI integration tests
-    runs-on: ubuntu-latest
-    needs: build
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: npm
-
-      - run: npm ci
-
-      - name: Download build artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: dist
-          path: packages
-
-      - name: Run integration tests
-        run: npx vitest run packages/cli/src/__tests__/integration.test.ts
+      - name: Run test suite
+        run: npm test
 
   publish-check:
     name: Publish dry-run
     runs-on: ubuntu-latest
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    needs: [build, typecheck, test-e2e, test-integration]
+    needs: [build, typecheck, test]
 
     steps:
       - uses: actions/checkout@v4
@@ -134,12 +110,7 @@ jobs:
           name: dist
           path: packages
 
-      - name: Check publishable packages
+      - name: Check generated app and publishable packages
         run: |
-          PACKAGES=(core react cli plugin-auth plugin-auth-social plugin-crm plugin-ticketing plugin-stripe create-storm-app)
-          for pkg in "${PACKAGES[@]}"; do
-            echo "--- packages/$pkg ---"
-            cd "packages/$pkg"
-            npm pack --dry-run 2>&1 | head -20
-            cd ../..
-          done
+          npm run smoke:create-app
+          npm run pack:all

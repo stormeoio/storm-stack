@@ -38,17 +38,8 @@ jobs:
 
       - run: npm ci
 
-      - name: Build all packages
-        run: npx turbo build
-
-      - name: Typecheck
-        run: npx turbo typecheck
-
-      - name: E2E tests
-        run: npx vitest run packages/cli/src/__tests__/e2e.test.ts
-
-      - name: Integration tests
-        run: npx vitest run packages/cli/src/__tests__/integration.test.ts
+      - name: Release check
+        run: npm run release:check
 
   publish:
     name: Publish packages
@@ -109,6 +100,7 @@ jobs:
           PACKAGES=(
             "packages/core"
             "packages/react"
+            "packages/testing"
             "packages/plugin-auth"
             "packages/plugin-auth-social"
             "packages/plugin-crm"
