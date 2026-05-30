@@ -155,6 +155,7 @@ export interface PluginEventConfig {
 export type PluginId =
   | "@stormstack/core"
   | "@stormstack/auth"
+  | "@stormstack/stripe"
   | "@stormstack/billing"
   | "@stormstack/crm"
   | "@stormstack/ticketing"
@@ -174,7 +175,7 @@ export type PluginId =
 // ─── Main plugin manifest ─────────────────────────────────────────────────────
 
 export interface StormPlugin {
-  /** Unique plugin identifier e.g. "@stormstack/billing" or "acme/my-plugin" */
+  /** Unique plugin identifier e.g. "@stormstack/stripe" or "acme/my-plugin" */
   id: PluginId;
   /** Human-readable name */
   name: string;

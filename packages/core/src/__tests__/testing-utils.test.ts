@@ -33,7 +33,7 @@ describe("createTestContext", () => {
   });
 
   it("accepts a custom db", () => {
-    const fakeDb = { query: () => [] };
+    const fakeDb = { query: () => [] } as unknown as ReturnType<typeof createTestContext>["db"];
     const ctx = createTestContext({ db: fakeDb });
     expect(ctx.db).toBe(fakeDb);
   });

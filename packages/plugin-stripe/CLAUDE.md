@@ -1,17 +1,15 @@
 # @stormstack/stripe — Claude Copilot Guide
 
 ## What this plugin does
-Stripe integration for payments, subscriptions, and webhook handling. Provides customer management, checkout sessions, and real-time webhook processing.
+Stripe integration for payments, checkout sessions, and webhook handling.
 
 ## API Routes (mounted at `/api/stripe`)
 
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
-| POST | /customers | Yes | Create Stripe customer |
+| GET | /plans | Yes | List active Stripe prices |
 | POST | /checkout | Yes | Create checkout session |
-| POST | /portal | Yes | Create billing portal session |
-| POST | /webhooks | No* | Stripe webhook endpoint |
-| GET | /subscription | Yes | Get current subscription status |
+| POST | /webhook | No* | Stripe webhook endpoint |
 
 *Webhook endpoint uses Stripe signature verification instead of JWT auth.
 
@@ -45,5 +43,5 @@ case "invoice.payment_failed":
 
 ### Connect to Stripe CLI for local testing
 ```bash
-stripe listen --forward-to localhost:3000/api/stripe/webhooks
+stripe listen --forward-to localhost:3000/api/stripe/webhook
 ```

@@ -40,14 +40,14 @@ my-app/
 
 ## Features
 
-- Interactive plugin selection (auth, crm, ticketing, billing, etc.)
+- Interactive plugin selection (auth, auth-social, crm, ticketing, stripe)
 - Optional React frontend with TanStack Query + Tailwind
 - Docker Compose for PostgreSQL
 - Drizzle ORM with all plugin schemas aggregated
 - TypeScript throughout
 - Adaptive — only generates pages for selected plugins
 
-## Plugins available
+## Plugins selectable in v0.1
 
 | Plugin | Description |
 |--------|-------------|
@@ -55,10 +55,7 @@ my-app/
 | `@stormstack/auth-social` | OAuth2 Google/GitHub/GitLab |
 | `@stormstack/crm` | Contacts, orgs, pipeline |
 | `@stormstack/ticketing` | Support tickets + feedback |
-| `@stormstack/billing` | Stripe subscriptions |
-| `@stormstack/messaging` | In-app IM |
-| `@stormstack/drive` | File storage |
-| `@stormstack/monitoring` | Uptime monitoring |
+| `@stormstack/stripe` | Stripe payments + webhooks |
 
 ## License
 
