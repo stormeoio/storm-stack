@@ -62,4 +62,4 @@ export interface StormUser {
 
 // ─── Component registry — maps component string names to lazy React components ─
 
-export type ComponentMap = Record<string, React.ComponentType<any>>;
+export type ComponentMap = Record<string, React.ComponentType>;

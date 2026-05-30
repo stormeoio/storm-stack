@@ -1,0 +1,83 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      bump:
+        description: "Version bump type"
+        required: true
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Create release
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      - name: Build and test
+        run: |
+          npx turbo build
+          npx vitest run packages/cli/src/__tests__/e2e.test.ts
+          npx vitest run packages/cli/src/__tests__/integration.test.ts
+
+      - name: Bump versions
+        id: bump
+        run: |
+          BUMP="${{ inputs.bump }}"
+          npm version "$BUMP" --workspaces --no-git-tag-version
+          npm version "$BUMP" --no-git-tag-version
+          VERSION=$(node -p "require('./package.json').version")
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Update CLI version constant
+        run: |
+          VERSION="${{ steps.bump.outputs.version }}"
+          sed -i "s/const VERSION = \".*\"/const VERSION = \"$VERSION\"/" packages/cli/src/index.ts
+
+      - name: Commit and tag
+        run: |
+          VERSION="${{ steps.bump.outputs.version }}"
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "release: v$VERSION"
+          git tag "v$VERSION"
+          git push origin main --tags
+
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          VERSION="${{ steps.bump.outputs.version }}"
+          PREV_TAG=$(git tag --sort=-v:refname | head -2 | tail -1)
+          CHANGELOG=""
+          if [ -n "$PREV_TAG" ]; then
+            CHANGELOG=$(git log "$PREV_TAG..v$VERSION" --pretty=format:"- %s" --no-merges)
+          fi
+          gh release create "v$VERSION" \
+            --title "v$VERSION" \
+            --notes "## Changes
+
+          $CHANGELOG
+
+          ---
+          Packages are published automatically via the [Publish workflow](../../actions/workflows/publish.yml)."

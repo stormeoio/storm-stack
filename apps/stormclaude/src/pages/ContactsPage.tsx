@@ -110,3 +110,5 @@ export function ContactsPage() {
     </div>
   );
 }
+
+export default ContactsPage;

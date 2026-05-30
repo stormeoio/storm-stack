@@ -34,6 +34,7 @@ export type { FieldDescriptor } from "./config-store";
 export { StormEventBus, eventBus } from "./event-bus";
 export { createTenantMiddleware, requireTenant, requireTenantRole, tenantScope, tenantAnd } from "./tenant";
 export type { TenantInfo, TenantResolverOptions } from "./tenant";
+export { initLifecycleState, isPluginInstalled, markPluginInstalled, markPluginUninstalled, getInstalledPluginIds } from "./lifecycle-state";
 
 // Side-effect import — registers built-in event types via declaration merging
 import "./events";

@@ -1,56 +1,64 @@
-import { Switch, Route, Redirect } from "wouter";
-import { Layout } from "@/components/Layout";
-import { DashboardPage } from "@/pages/DashboardPage";
-import { PluginsPage } from "@/pages/PluginsPage";
-import { CatalogPage } from "@/pages/CatalogPage";
-import { PluginDetailPage } from "@/pages/PluginDetailPage";
-import { ContactsPage } from "@/pages/ContactsPage";
-import { DealsPage } from "@/pages/DealsPage";
-import { TicketsPage } from "@/pages/TicketsPage";
+import { lazy } from "react";
+import { Route } from "wouter";
+import { QueryClient } from "@tanstack/react-query";
+import { StormApp, createPluginLoader, mergeComponentMaps } from "@stormstack/react";
 import { LoginPage } from "@/pages/LoginPage";
-import { useCurrentUser } from "@/lib/queries";
+import { DashboardPage } from "@/pages/DashboardPage";
+import { api } from "@/lib/api";
 
-function AuthGuard({ children }: { children: React.ReactNode }) {
-  const { data: user, isLoading, isError } = useCurrentUser();
+const queryClient = new QueryClient({
+  defaultOptions: { queries: { refetchOnWindowFocus: false } },
+});
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center text-sm text-gray-400">
-        Chargement…
-      </div>
-    );
-  }
+const { components: pluginComponents } = createPluginLoader([
+  {
+    pluginId: "@stormstack/crm",
+    components: {
+      CrmPage: () => import("@/pages/ContactsPage"),
+      ContactDetailPage: () => import("@/pages/ContactsPage"),
+      DealsPage: () => import("@/pages/DealsPage"),
+    },
+  },
+  {
+    pluginId: "@stormstack/ticketing",
+    components: {
+      TicketsPage: () => import("@/pages/TicketsPage"),
+      TicketDetailPage: () => import("@/pages/TicketsPage"),
+    },
+  },
+]);
 
-  if (isError || !user) {
-    return <Redirect to="/login" />;
-  }
+const appComponents = mergeComponentMaps(pluginComponents, {
+  PluginsPage: lazy(() => import("@/pages/PluginsPage")),
+  CatalogPage: lazy(() => import("@/pages/CatalogPage")),
+  PluginDetailPage: lazy(() => import("@/pages/PluginDetailPage")),
+  AdminPage: lazy(() => import("@/pages/AdminPage")),
+});
 
-  return <>{children}</>;
-}
+const handleLogout = async () => {
+  await api.post("/auth/logout", {});
+  await queryClient.invalidateQueries({ queryKey: ["auth"] });
+  window.location.href = "/login";
+};
 
 export default function App() {
   return (
-    <Switch>
-      <Route path="/login" component={LoginPage} />
-
-      <Route>
-        <AuthGuard>
-          <Layout>
-            <Switch>
-              <Route path="/" component={DashboardPage} />
-              <Route path="/plugins" component={PluginsPage} />
-              <Route path="/catalog" component={CatalogPage} />
-              <Route path="/catalog/:pluginId" component={PluginDetailPage} />
-              <Route path="/contacts" component={ContactsPage} />
-              <Route path="/deals" component={DealsPage} />
-              <Route path="/tickets" component={TicketsPage} />
-              <Route>
-                <div className="p-8 text-sm text-gray-500">Page introuvable.</div>
-              </Route>
-            </Switch>
-          </Layout>
-        </AuthGuard>
-      </Route>
-    </Switch>
+    <StormApp
+      components={appComponents}
+      appName="StormClaude"
+      version="v0.1"
+      loginComponent={LoginPage}
+      dashboardComponent={DashboardPage}
+      onLogout={handleLogout}
+      queryClient={queryClient}
+      staticRoutes={
+        <>
+          <Route path="/plugins" component={appComponents.PluginsPage!} />
+          <Route path="/catalog" component={appComponents.CatalogPage!} />
+          <Route path="/catalog/:pluginId" component={appComponents.PluginDetailPage!} />
+          <Route path="/admin" component={appComponents.AdminPage!} />
+        </>
+      }
+    />
   );
 }

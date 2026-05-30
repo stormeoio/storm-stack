@@ -23,6 +23,10 @@ npm run dev
 | [`@stormstack/auth-social`](./packages/plugin-auth-social) | OAuth2 Google/GitHub/GitLab |
 | [`@stormstack/crm`](./packages/plugin-crm) | Contacts, organisations, pipeline |
 | [`@stormstack/ticketing`](./packages/plugin-ticketing) | Support tickets & helpdesk |
+| [`@stormstack/stripe`](./packages/plugin-stripe) | Stripe payments & webhooks |
+| [`@stormstack/react`](./packages/react) | React app shell, router, admin UI |
+| [`@stormstack/testing`](./packages/testing) | Plugin test helpers |
+| [`@stormstack/cli`](./packages/cli) | Plugin install, publish, migrations, Docker |
 | [`create-storm-app`](./packages/create-storm-app) | CLI scaffold |
 
 ## Architecture
@@ -102,22 +106,37 @@ cd storm-stack
 npm install
 npm run build
 npm run typecheck
+npx vitest run
 ```
+
+## MVP Status
+
+Storm Stack v0.1.0 is release-ready locally: the monorepo builds, typechecks, packs all public packages with `npm pack --dry-run`, and passes the CLI/core Vitest suite. Publishing still requires a GitHub remote plus npm credentials.
 
 ## Roadmap
 
 - [x] Plugin manifest TypeScript types
 - [x] Plugin registry + topological sort
 - [x] Bootstrap system (Express 5 mount)
+- [x] Plugin event bus with typed pub/sub
+- [x] Plugin lifecycle state (`onInstall`, `onBoot`, `onUninstall`)
+- [x] Multi-tenant middleware and scoped query helpers
+- [x] Auto-generated plugin settings UI from Zod schemas
 - [x] `@stormstack/auth` — JWT + RBAC + multi-tenant
 - [x] `@stormstack/auth-social` — OAuth2 (Google, GitHub, GitLab)
 - [x] `@stormstack/crm` — contacts, organisations, pipeline
 - [x] `@stormstack/ticketing` — tickets, comments, labels
+- [x] `@stormstack/stripe` — payments and webhooks
+- [x] `@stormstack/react` — app shell, dynamic router, admin dashboard
+- [x] `@stormstack/testing` — plugin test utilities
 - [x] `create-storm-app` — full-stack scaffold CLI
 - [x] `apps/stormclaude` — admin dashboard
 - [x] `storm add <plugin>` CLI — shadcn-style plugin management
+- [x] `storm search`, `storm publish`, `storm create-plugin`
+- [x] `storm deps`, `storm migrate`, `storm docker`, `storm update`
+- [x] Storm Catalog (plugin marketplace registry + UI)
 - [ ] npm publish (v0.1.0)
-- [ ] Storm Catalog (plugin marketplace)
+- [ ] Public GitHub remote + release tags
 
 ## License
 

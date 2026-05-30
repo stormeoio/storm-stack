@@ -1,7 +1,7 @@
 import * as p from "@clack/prompts";
 import pc from "picocolors";
 import fs from "fs";
-import { findProjectRoot, readConfig, writeConfig, createDefaultConfig, configPath } from "../config";
+import { findProjectRoot, readConfig, writeConfig, createDefaultConfig } from "../config";
 
 export async function initCommand(): Promise<void> {
   const root = findProjectRoot();

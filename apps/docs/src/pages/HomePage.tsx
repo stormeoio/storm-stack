@@ -1,12 +1,12 @@
 import { Link } from "wouter";
-import { Zap, Package, Terminal, Layers, ArrowRight, Check, Copy, Store, Code, Plug, Shield, Briefcase, CreditCard, FileText, Palette } from "lucide-react";
+import { Zap, Package, Terminal, Layers, ArrowRight, Check, Copy, Store, Plug, Shield, Briefcase, CreditCard } from "lucide-react";
 import { useState } from "react";
 
 const FEATURES = [
   { icon: Package, title: "Plugin Architecture", desc: "Assemble SaaS features from pre-built, composable plugins. Auth, CRM, Ticketing, Stripe — pick what you need." },
   { icon: Terminal, title: "storm add — shadcn for SaaS", desc: "Add plugins with one command. Copy source code into your project or install as npm packages. You own the code." },
-  { icon: Layers, title: "Full Stack TypeScript", desc: "Express 5 + React 18 + Drizzle ORM + PostgreSQL. Type-safe from database to UI, zero config." },
-  { icon: Store, title: "Storm Catalog", desc: "Browse 16+ plugins across security, business, payments, content. Install what you need, skip what you don't." },
+  { icon: Layers, title: "Full Stack TypeScript", desc: "Typed event bus, auto-generated settings UI, multi-tenant isolation, and admin dashboard — all built in." },
+  { icon: Store, title: "Plugin Marketplace", desc: "Search, install, and publish plugins from the registry. storm search, storm publish — community-ready." },
 ];
 
 const STEPS = [

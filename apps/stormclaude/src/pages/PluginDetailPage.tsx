@@ -4,7 +4,7 @@ import { api } from "@/lib/api";
 import {
   ArrowLeft, Check, Clock, Terminal, AlertTriangle, Tag,
   Copy, Shield, Briefcase, CreditCard, FileText, MessageCircle,
-  HardDrive, Activity, Palette, Plug, Lock,
+  Activity, Palette, Plug, Lock,
 } from "lucide-react";
 import { clsx } from "clsx";
 import { useState } from "react";
@@ -247,3 +247,5 @@ export function PluginDetailPage() {
     </div>
   );
 }
+
+export default PluginDetailPage;

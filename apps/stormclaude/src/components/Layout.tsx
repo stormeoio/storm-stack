@@ -1,5 +1,5 @@
 import { Link, useLocation } from "wouter";
-import { LayoutDashboard, Puzzle, Store, Settings, LogOut, Zap, Users, DollarSign, Ticket } from "lucide-react";
+import { LayoutDashboard, Puzzle, Store, Settings, LogOut, Zap, Users, DollarSign, Ticket, Shield } from "lucide-react";
 import { clsx } from "clsx";
 import { useCurrentUser } from "@/lib/queries";
 import { api } from "@/lib/api";
@@ -12,6 +12,7 @@ const NAV = [
   { href: "/tickets", icon: Ticket, label: "Tickets" },
   { href: "/plugins", icon: Puzzle, label: "Plugins" },
   { href: "/catalog", icon: Store, label: "Catalog" },
+  { href: "/admin", icon: Shield, label: "Admin" },
   { href: "/settings", icon: Settings, label: "Paramètres" },
 ];
 

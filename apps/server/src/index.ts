@@ -3,7 +3,7 @@ import express from "express";
 import cors from "cors";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { Pool } from "pg";
-import { registry, bootstrapPlugins } from "@stormstack/core";
+import { registry, bootstrapPlugins, eventBus } from "@stormstack/core";
 import type { StormContext, StormEnv } from "@stormstack/core";
 import { authPlugin } from "@stormstack/auth";
 import { crmPlugin } from "@stormstack/crm";
@@ -36,7 +36,7 @@ const logger = {
   error: (msg: string, meta?: Record<string, unknown>) => console.error(`[error] ${msg}`, meta ?? ""),
 };
 
-const ctx: StormContext = { db, env, logger };
+const ctx: StormContext = { db, env, logger, events: eventBus };
 
 registry.register(authPlugin);
 registry.register(crmPlugin);

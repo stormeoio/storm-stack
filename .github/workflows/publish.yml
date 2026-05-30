@@ -1,6 +1,9 @@
 name: Publish to npm
 
 on:
+  push:
+    tags:
+      - "v*"
   workflow_dispatch:
     inputs:
       version:
@@ -16,10 +19,42 @@ on:
           - "true"
           - "false"
 
+permissions:
+  contents: read
+  id-token: write
+
 jobs:
+  test:
+    name: Pre-publish tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      - name: Build all packages
+        run: npx turbo build
+
+      - name: Typecheck
+        run: npx turbo typecheck
+
+      - name: E2E tests
+        run: npx vitest run packages/cli/src/__tests__/e2e.test.ts
+
+      - name: Integration tests
+        run: npx vitest run packages/cli/src/__tests__/integration.test.ts
+
   publish:
     name: Publish packages
     runs-on: ubuntu-latest
+    needs: test
+    environment: npm
 
     steps:
       - uses: actions/checkout@v4
@@ -30,26 +65,47 @@ jobs:
           cache: npm
           registry-url: https://registry.npmjs.org
 
-      - name: Install dependencies
-        run: npm ci
+      - run: npm ci
 
       - name: Build all packages
         run: npx turbo build
 
-      - name: Run tests
-        run: cd packages/cli && npx vitest run
+      - name: Resolve version
+        id: version
+        run: |
+          if [ -n "${{ inputs.version }}" ]; then
+            echo "version=${{ inputs.version }}" >> "$GITHUB_OUTPUT"
+          else
+            TAG="${GITHUB_REF#refs/tags/v}"
+            echo "version=$TAG" >> "$GITHUB_OUTPUT"
+          fi
 
-      - name: Publish packages
+      - name: Resolve dry-run flag
+        id: flags
+        run: |
+          DRY_RUN="${{ inputs.dry_run }}"
+          if [ "$GITHUB_EVENT_NAME" = "push" ]; then
+            DRY_RUN="false"
+          fi
+          if [ "$DRY_RUN" = "true" ]; then
+            echo "flag=--dry-run" >> "$GITHUB_OUTPUT"
+            echo "label=DRY RUN" >> "$GITHUB_OUTPUT"
+          else
+            echo "flag=" >> "$GITHUB_OUTPUT"
+            echo "label=LIVE" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Publish (${{ steps.flags.outputs.label }})
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
-          PUBLISH_FLAG=""
-          if [ "${{ inputs.dry_run }}" = "true" ]; then
-            PUBLISH_FLAG="--dry-run"
-            echo "🔍 DRY RUN — no packages will be published"
-          fi
+          VERSION="${{ steps.version.outputs.version }}"
+          FLAG="${{ steps.flags.outputs.flag }}"
 
-          # Publish order matters — dependencies first
+          echo "Publishing v$VERSION (${{ steps.flags.outputs.label }})"
+          echo ""
+
+          # Dependencies first, then dependents
           PACKAGES=(
             "packages/core"
             "packages/react"
@@ -62,13 +118,26 @@ jobs:
             "packages/create-storm-app"
           )
 
+          FAILED=0
           for pkg in "${PACKAGES[@]}"; do
-            echo ""
-            echo "📦 Publishing $pkg..."
+            PKG_NAME=$(node -p "require('./$pkg/package.json').name")
+            echo "--- $PKG_NAME ---"
             cd "$pkg"
-            npm publish --access public $PUBLISH_FLAG || echo "⚠️  $pkg failed or already published"
+            npm publish --access public --provenance $FLAG 2>&1 || {
+              echo "::warning::$PKG_NAME publish failed or already published"
+              FAILED=$((FAILED + 1))
+            }
             cd ../..
+            echo ""
           done
 
-          echo ""
-          echo "✅ Done!"
+          echo "Published ${#PACKAGES[@]} packages ($FAILED warnings)"
+
+      - name: Summary
+        if: always()
+        run: |
+          echo "## Publish Summary" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "- **Version**: v${{ steps.version.outputs.version }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "- **Mode**: ${{ steps.flags.outputs.label }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "- **Trigger**: ${{ github.event_name }}" >> "$GITHUB_STEP_SUMMARY"

@@ -4,7 +4,7 @@ import { Link } from "wouter";
 import { api } from "@/lib/api";
 import {
   Store, Search, Check, Clock, ArrowRight, Shield, Briefcase,
-  CreditCard, FileText, MessageCircle, HardDrive, Activity,
+  CreditCard, FileText, MessageCircle,
   Palette, Terminal, Plug, Lock, LayoutGrid, Tag,
 } from "lucide-react";
 import { clsx } from "clsx";
@@ -245,3 +245,5 @@ export function CatalogPage() {
     </div>
   );
 }
+
+export default CatalogPage;

@@ -1,6 +1,7 @@
 import * as p from "@clack/prompts";
 import pc from "picocolors";
 import path from "path";
+import fs from "fs";
 import { findProjectRoot, readConfig, writeConfig } from "../config";
 import { resolvePlugin, PLUGINS, type PluginMeta } from "../registry";
 import { removePluginRegistration, removeDrizzleSchema, removeClientComponents, updateProjectClaudeMd } from "../injector";
@@ -73,6 +74,9 @@ export async function removeCommand(pluginArg: string | undefined): Promise<void
   spinner.start(`Suppression de ${pc.cyan(plugin.shortName)}…`);
 
   try {
+    // Run onUninstall lifecycle hook if the plugin exports one
+    await runUninstallHook(root, plugin);
+
     const pm = detectPackageManager(root);
 
     // Remove from server entry
@@ -124,10 +128,57 @@ export async function removeCommand(pluginArg: string | undefined): Promise<void
     const installedMetas = config.installed.map((id) => PLUGINS.find((pl) => pl.id === id)).filter(Boolean) as PluginMeta[];
     updateProjectClaudeMd(root, installedMetas);
 
+    // Remove from lifecycle state
+    removeFromLifecycleState(root, plugin.id);
+
     spinner.stop(`${pc.green("✓")} ${pc.cyan(plugin.shortName)} retiré`);
   } catch (err) {
     spinner.stop(`${pc.red("✗")} Erreur`);
     p.log.error(err instanceof Error ? err.message : String(err));
     process.exit(1);
+  }
+}
+
+async function runUninstallHook(root: string, plugin: PluginMeta): Promise<void> {
+  const localEntry = path.join(root, "plugins", plugin.shortName, "server", "index.ts");
+  const localEntryJs = path.join(root, "plugins", plugin.shortName, "server", "index.js");
+  let entryPath: string | undefined;
+
+  if (fs.existsSync(localEntry)) entryPath = localEntry;
+  else if (fs.existsSync(localEntryJs)) entryPath = localEntryJs;
+
+  if (!entryPath) {
+    try {
+      const resolved = require.resolve(plugin.id);
+      if (resolved) entryPath = resolved;
+    } catch {
+      // npm package not installed — nothing to call
+    }
+  }
+
+  if (!entryPath) return;
+
+  try {
+    const mod = await import(entryPath);
+    const pluginDef = mod.default ?? mod[plugin.shortName + "Plugin"];
+    if (pluginDef?.lifecycle?.onUninstall) {
+      const minimalCtx = { db: null, env: process.env, logger: console, events: null };
+      await pluginDef.lifecycle.onUninstall(minimalCtx);
+      p.log.info(`${pc.dim("↪")} Hook onUninstall exécuté`);
+    }
+  } catch (err) {
+    p.log.warn(`Hook onUninstall a échoué : ${err instanceof Error ? err.message : String(err)}`);
+  }
+}
+
+function removeFromLifecycleState(root: string, pluginId: string): void {
+  const lifecyclePath = path.join(root, "storm-lifecycle.json");
+  if (!fs.existsSync(lifecyclePath)) return;
+  try {
+    const state = JSON.parse(fs.readFileSync(lifecyclePath, "utf8"));
+    state.installed = (state.installed ?? []).filter((id: string) => id !== pluginId);
+    fs.writeFileSync(lifecyclePath, JSON.stringify(state, null, 2), "utf8");
+  } catch {
+    // best-effort
   }
 }

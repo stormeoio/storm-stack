@@ -1,0 +1,126 @@
+{
+  "version": 1,
+  "updatedAt": "2026-05-21T00:00:00.000Z",
+  "plugins": [
+    {
+      "id": "@stormstack/auth",
+      "name": "Auth",
+      "shortName": "auth",
+      "description": "Email/password + JWT cookies + RBAC + multi-tenant",
+      "version": "0.1.0",
+      "author": "stormeo",
+      "tags": ["auth", "jwt", "rbac", "multi-tenant", "session"],
+      "requires": [],
+      "status": "available",
+      "npmPackage": "@stormstack/auth"
+    },
+    {
+      "id": "@stormstack/auth-social",
+      "name": "Auth Social",
+      "shortName": "auth-social",
+      "description": "OAuth2 Google/GitHub/GitLab",
+      "version": "0.1.0",
+      "author": "stormeo",
+      "tags": ["auth", "oauth", "google", "github", "gitlab", "sso"],
+      "requires": ["@stormstack/auth"],
+      "status": "available",
+      "npmPackage": "@stormstack/auth-social"
+    },
+    {
+      "id": "@stormstack/crm",
+      "name": "CRM",
+      "shortName": "crm",
+      "description": "Contacts, organisations et pipeline commercial",
+      "version": "0.1.0",
+      "author": "stormeo",
+      "tags": ["crm", "contacts", "deals", "pipeline", "sales"],
+      "requires": ["@stormstack/auth"],
+      "status": "available",
+      "npmPackage": "@stormstack/crm"
+    },
+    {
+      "id": "@stormstack/ticketing",
+      "name": "Ticketing",
+      "shortName": "ticketing",
+      "description": "Support tickets, commentaires, labels",
+      "version": "0.1.0",
+      "author": "stormeo",
+      "tags": ["ticketing", "support", "helpdesk", "tickets"],
+      "requires": ["@stormstack/auth"],
+      "status": "available",
+      "npmPackage": "@stormstack/ticketing"
+    },
+    {
+      "id": "@stormstack/stripe",
+      "name": "Stripe",
+      "shortName": "stripe",
+      "description": "Paiements Stripe, webhooks, abonnements",
+      "version": "0.1.0",
+      "author": "stormeo",
+      "tags": ["stripe", "payments", "billing", "subscriptions", "webhooks"],
+      "requires": ["@stormstack/auth"],
+      "status": "available",
+      "npmPackage": "@stormstack/stripe"
+    },
+    {
+      "id": "@stormstack/billing",
+      "name": "Billing",
+      "shortName": "billing",
+      "description": "Facturation, abonnements recurrents, devis",
+      "version": "0.1.0",
+      "author": "stormeo",
+      "tags": ["billing", "invoices", "subscriptions", "quotes"],
+      "requires": ["@stormstack/auth"],
+      "status": "coming-soon",
+      "npmPackage": "@stormstack/billing"
+    },
+    {
+      "id": "@stormstack/cms",
+      "name": "CMS",
+      "shortName": "cms",
+      "description": "Gestion de contenu, pages, articles",
+      "version": "0.1.0",
+      "author": "stormeo",
+      "tags": ["cms", "content", "pages", "blog", "articles"],
+      "requires": ["@stormstack/auth"],
+      "status": "coming-soon",
+      "npmPackage": "@stormstack/cms"
+    },
+    {
+      "id": "@stormstack/messaging",
+      "name": "Messaging",
+      "shortName": "messaging",
+      "description": "Messagerie interne, emails transactionnels",
+      "version": "0.1.0",
+      "author": "stormeo",
+      "tags": ["messaging", "email", "notifications", "chat"],
+      "requires": ["@stormstack/auth"],
+      "status": "coming-soon",
+      "npmPackage": "@stormstack/messaging"
+    },
+    {
+      "id": "@stormstack/drive",
+      "name": "Drive",
+      "shortName": "drive",
+      "description": "Stockage de fichiers, GED, partage",
+      "version": "0.1.0",
+      "author": "stormeo",
+      "tags": ["drive", "files", "storage", "ged", "documents"],
+      "requires": ["@stormstack/auth"],
+      "status": "coming-soon",
+      "npmPackage": "@stormstack/drive"
+    },
+    {
+      "id": "@stormstack/monitoring",
+      "name": "Monitoring",
+      "shortName": "monitoring",
+      "description": "Uptime, health checks, alertes",
+      "version": "0.1.0",
+      "author": "stormeo",
+      "tags": ["monitoring", "uptime", "health", "alerts"],
+      "requires": ["@stormstack/auth"],
+      "status": "coming-soon",
+      "npmPackage": "@stormstack/monitoring"
+    }
+  ]
+}

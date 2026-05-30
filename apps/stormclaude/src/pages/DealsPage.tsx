@@ -96,3 +96,5 @@ export function DealsPage() {
     </div>
   );
 }
+
+export default DealsPage;

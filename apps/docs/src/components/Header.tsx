@@ -4,6 +4,7 @@ import { clsx } from "clsx";
 
 const NAV = [
   { href: "/docs", label: "Docs" },
+  { href: "/docs/cli", label: "CLI" },
   { href: "/plugins", label: "Plugins" },
 ];
 

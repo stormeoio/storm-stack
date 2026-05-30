@@ -1,6 +1,7 @@
 import { Switch, Route, Redirect } from "wouter";
 import { Suspense } from "react";
 import { useStorm } from "./context";
+import { PluginErrorBoundary } from "./plugin-loader";
 
 export interface StormRouterProps {
   /** Fallback component shown while lazy components load */
@@ -11,18 +12,24 @@ export interface StormRouterProps {
   children?: React.ReactNode;
   /** 404 fallback component */
   notFound?: React.ReactNode;
+  /** Callback when a plugin component fails to load */
+  onPluginError?: (error: Error) => void;
 }
 
 /**
  * Dynamic router that renders routes from all installed plugins.
  * Uses the component map from <StormProvider> to resolve component names
  * to actual React components. Supports auth guards per route.
+ *
+ * Each plugin route is wrapped in a PluginErrorBoundary so a broken
+ * plugin doesn't crash the entire app.
  */
 export function StormRouter({
   fallback,
   loginPath = "/login",
   children,
   notFound,
+  onPluginError,
 }: StormRouterProps) {
   const { manifest, components, user } = useStorm();
 
@@ -50,18 +57,18 @@ export function StormRouter({
           return (
             <Route key={route.path} path={route.path}>
               {() => {
-                // Auth guard
                 if (route.auth && !user) {
                   return <Redirect to={loginPath} />;
                 }
-                // Role guard
                 if (route.role && user?.role !== route.role) {
                   return <div className="p-8 text-sm text-red-500">Accès non autorisé.</div>;
                 }
                 return (
-                  <Suspense fallback={loadingFallback}>
-                    <Component />
-                  </Suspense>
+                  <PluginErrorBoundary onError={onPluginError}>
+                    <Suspense fallback={loadingFallback}>
+                      <Component />
+                    </Suspense>
+                  </PluginErrorBoundary>
                 );
               }}
             </Route>

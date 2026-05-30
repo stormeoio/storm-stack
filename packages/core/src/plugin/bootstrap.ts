@@ -5,6 +5,7 @@ import { mountManifestRoute } from "./manifest-route";
 import { initConfigStore } from "./config-store";
 import { eventBus } from "./event-bus";
 import { createTenantMiddleware, type TenantResolverOptions } from "./tenant";
+import { initLifecycleState, isPluginInstalled, markPluginInstalled } from "./lifecycle-state";
 
 export interface BootstrapOptions {
   app: Express;
@@ -42,8 +43,9 @@ const defaultIsAuthenticated: RequestHandler = (req, res, next) => {
 export async function bootstrapPlugins(opts: BootstrapOptions): Promise<void> {
   const { app, ctx, apiPrefix = "/api", projectRoot = process.cwd(), isAuthenticated = defaultIsAuthenticated } = opts;
 
-  // 0. Initialize config store + event bus
+  // 0. Initialize config store, lifecycle state + event bus
   initConfigStore(projectRoot);
+  initLifecycleState(projectRoot);
   eventBus.setContext(ctx);
   ctx.events = eventBus;
 
@@ -89,8 +91,25 @@ export async function bootstrapPlugins(opts: BootstrapOptions): Promise<void> {
     }
   }
 
-  // 6. Run onBoot lifecycle hooks and mount routes
+  // 6. Run lifecycle hooks (onInstall for first-time, then onBoot) and mount routes
   for (const plugin of orderedPlugins) {
+    const firstTime = !isPluginInstalled(plugin.id);
+
+    if (firstTime && plugin.lifecycle?.onInstall) {
+      try {
+        await plugin.lifecycle.onInstall(ctx);
+        console.log(`[storm-stack] ✓ ${plugin.id} installed`);
+      } catch (err) {
+        console.error(`[storm-stack] ✗ ${plugin.id} install hook failed:`, err);
+        process.exit(1);
+      }
+      await eventBus.emit("plugin.installed", { pluginId: plugin.id }, plugin.id);
+    }
+
+    if (firstTime) {
+      markPluginInstalled(plugin.id);
+    }
+
     if (plugin.lifecycle?.onBoot) {
       try {
         await plugin.lifecycle.onBoot(ctx);
@@ -101,7 +120,6 @@ export async function bootstrapPlugins(opts: BootstrapOptions): Promise<void> {
       }
     }
 
-    // Emit plugin.booted event
     await eventBus.emit("plugin.booted", { pluginId: plugin.id }, plugin.id);
 
     if (plugin.routes) {
