@@ -4,6 +4,7 @@ import fs from "fs";
 import path from "path";
 import { spawn, type ChildProcess } from "child_process";
 import { findProjectRoot, readConfig } from "../config";
+import { VERSION } from "../version";
 
 // ─── Port defaults ───────────────────────────────────────────────────────────
 
@@ -47,7 +48,7 @@ export async function devCommand(opts: DevOptions = {}): Promise<void> {
 
   console.log();
   console.log(
-    `  ${pc.bgCyan(pc.black(" ⚡ storm dev "))} ${pc.dim("v0.1.0")}`,
+    `  ${pc.bgCyan(pc.black(" ⚡ storm dev "))} ${pc.dim(`v${VERSION}`)}`,
   );
   console.log();
 

@@ -45,11 +45,6 @@ jobs:
           VERSION=$(node -p "require('./package.json').version")
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
 
-      - name: Update CLI version constant
-        run: |
-          VERSION="${{ steps.bump.outputs.version }}"
-          sed -i "s/const VERSION = \".*\"/const VERSION = \"$VERSION\"/" packages/cli/src/index.ts
-
       - name: Commit and tag
         run: |
           VERSION="${{ steps.bump.outputs.version }}"

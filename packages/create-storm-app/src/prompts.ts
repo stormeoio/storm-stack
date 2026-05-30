@@ -1,5 +1,6 @@
 import * as p from "@clack/prompts";
 import pc from "picocolors";
+import { VERSION } from "./version";
 
 export interface ScaffoldOptions {
   projectName: string;
@@ -17,7 +18,7 @@ const AVAILABLE_PLUGINS = [
 ];
 
 export async function runPrompts(nameArg?: string): Promise<ScaffoldOptions> {
-  p.intro(`${pc.bgCyan(pc.black(" create-storm-app "))} ${pc.dim("v0.1.0")}`);
+  p.intro(`${pc.bgCyan(pc.black(" create-storm-app "))} ${pc.dim(`v${VERSION}`)}`);
 
   const group = await p.group(
     {

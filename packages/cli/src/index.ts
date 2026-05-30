@@ -1,7 +1,6 @@
 import * as p from "@clack/prompts";
 import pc from "picocolors";
-
-const VERSION = "0.1.0";
+import { VERSION } from "./version";
 
 async function main() {
   const args = process.argv.slice(2);

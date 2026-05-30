@@ -6,6 +6,7 @@ import { execSync } from "child_process";
 const CLI = path.resolve(__dirname, "../../dist/index.mjs");
 const FIXTURES = path.resolve(__dirname, "../../.test-fixtures");
 const MONOREPO = path.resolve(__dirname, "../../../..");
+const CLI_PACKAGE = JSON.parse(fs.readFileSync(path.resolve(__dirname, "../../package.json"), "utf8")) as { version: string };
 
 function run(cmd: string, cwd: string = FIXTURES): string {
   return execSync(`node ${CLI} ${cmd}`, { cwd, encoding: "utf8", stdio: ["pipe", "pipe", "pipe"], env: { ...process.env, NO_COLOR: "1" } });
@@ -636,6 +637,6 @@ describe("storm --version", () => {
 
   it("prints version", () => {
     const output = run("--version");
-    expect(output.trim()).toBe("0.1.0");
+    expect(output.trim()).toBe(CLI_PACKAGE.version);
   });
 });
