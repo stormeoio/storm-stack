@@ -25,6 +25,7 @@ npm run publish:dry-run
 - internal workspace versions are synchronized with the root version
 - public plugin catalogs are synchronized with `registry.json`
 - public package metadata targets the npm registry explicitly
+- TypeScript source files stay under the 1000-line limit
 - production dependencies pass `npm audit --omit=dev --audit-level=moderate`
 - lint, typecheck, build, and Vitest pass
 - `create-storm-app` can generate and build an app outside the monorepo

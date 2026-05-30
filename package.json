@@ -19,10 +19,11 @@
     "smoke:create-app": "node scripts/smoke-create-app.mjs",
     "catalog:check": "node scripts/check-catalogs.mjs",
     "metadata:check": "node scripts/check-package-metadata.mjs",
+    "source:size": "node scripts/check-source-size.mjs",
     "version:check": "node scripts/sync-internal-versions.mjs --check",
     "version:sync": "node scripts/sync-internal-versions.mjs --write && npm install --package-lock-only --ignore-scripts",
     "audit:prod": "npm audit --omit=dev --audit-level=moderate",
-    "release:check": "npm run version:check && npm run catalog:check && npm run metadata:check && npm run audit:prod && npm run lint && npm run typecheck && npm run build && npm test && npm run smoke:create-app && npm run pack:all",
+    "release:check": "npm run version:check && npm run catalog:check && npm run metadata:check && npm run source:size && npm run audit:prod && npm run lint && npm run typecheck && npm run build && npm test && npm run smoke:create-app && npm run pack:all",
     "publish:dry-run": "npm run release:check && node scripts/publish-all.mjs --dry-run",
     "publish:all": "npm run release:check && node scripts/publish-all.mjs --live",
     "version:all": "npm version patch --workspaces --no-git-tag-version && npm version patch --no-git-tag-version && npm run version:sync"
