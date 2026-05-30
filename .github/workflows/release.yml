@@ -4,10 +4,12 @@ on:
   workflow_dispatch:
     inputs:
       bump:
-        description: "Version bump type"
+        description: "Version bump type (none tags the current version)"
         required: true
         type: choice
+        default: none
         options:
+          - none
           - patch
           - minor
           - major
@@ -36,12 +38,14 @@ jobs:
       - name: Build and test
         run: npm run release:check
 
-      - name: Bump versions
+      - name: Resolve version
         id: bump
         run: |
           BUMP="${{ inputs.bump }}"
-          npm version "$BUMP" --workspaces --no-git-tag-version
-          npm version "$BUMP" --no-git-tag-version
+          if [ "$BUMP" != "none" ]; then
+            npm version "$BUMP" --workspaces --no-git-tag-version
+            npm version "$BUMP" --no-git-tag-version
+          fi
           VERSION=$(node -p "require('./package.json').version")
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
 
@@ -50,20 +54,32 @@ jobs:
           VERSION="${{ steps.bump.outputs.version }}"
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          if git rev-parse "v$VERSION" >/dev/null 2>&1; then
+            echo "::error::Tag v$VERSION already exists"
+            exit 1
+          fi
+
           git add -A
-          git commit -m "release: v$VERSION"
+          if git diff --cached --quiet; then
+            echo "No version changes to commit; tagging current HEAD."
+          else
+            git commit -m "release: v$VERSION"
+          fi
           git tag "v$VERSION"
-          git push origin main --tags
+          git push origin HEAD:main --tags
 
       - name: Create GitHub release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           VERSION="${{ steps.bump.outputs.version }}"
-          PREV_TAG=$(git tag --sort=-v:refname | head -2 | tail -1)
+          PREV_TAG=$(git tag --sort=-v:refname | grep -v "^v$VERSION$" | head -1)
           CHANGELOG=""
           if [ -n "$PREV_TAG" ]; then
-            CHANGELOG=$(git log "$PREV_TAG..v$VERSION" --pretty=format:"- %s" --no-merges)
+            CHANGELOG=$(git log "$PREV_TAG..HEAD" --pretty=format:"- %s" --no-merges)
+          else
+            CHANGELOG=$(git log --pretty=format:"- %s" --no-merges)
           fi
           gh release create "v$VERSION" \
             --title "v$VERSION" \
