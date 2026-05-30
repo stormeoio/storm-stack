@@ -45,7 +45,7 @@ function renderRootPackageJson(opts: ScaffoldOptions): string {
     "@stormstack/core": STORM_PACKAGE_RANGE,
     cors: "^2.8.5",
     dotenv: "^16.4.0",
-    "drizzle-orm": "^0.36.4",
+    "drizzle-orm": "^0.45.2",
     express: "^5.0.0",
     pg: "^8.13.0",
     zod: "^3.22.0",
@@ -61,7 +61,7 @@ function renderRootPackageJson(opts: ScaffoldOptions): string {
     "@types/express": "^5.0.0",
     "@types/node": "^20.0.0",
     "@types/pg": "^8.11.0",
-    "drizzle-kit": "^0.30.0",
+    "drizzle-kit": "^0.31.10",
     tsx: "^4.0.0",
     typescript: "^5.4.0",
   };
