@@ -175,6 +175,7 @@ function renderServerIndex(opts: ScaffoldOptions): string {
     imports.push(`import { createSocialAuthPlugin } from "@stormstack/auth-social";`);
   }
   if (hasStripe(opts.plugins)) {
+    imports.push(`import type { Request } from "express";`);
     imports.push(`import { stripePlugin } from "@stormstack/stripe";`);
     registers.push(`registry.register(stripePlugin);`);
   }
@@ -194,6 +195,17 @@ if (env["GOOGLE_CLIENT_ID"] || env["GITHUB_CLIENT_ID"]) {
 }
 `
     : "";
+
+  const jsonParser = hasStripe(opts.plugins)
+    ? `express.json({
+    verify: (req, _res, buf) => {
+      const request = req as Request & { rawBody?: Buffer };
+      if (request.originalUrl.startsWith("/api/stripe/webhook")) {
+        request.rawBody = Buffer.from(buf);
+      }
+    },
+  })`
+    : `express.json()`;
 
   return `${imports.join("\n")}
 
@@ -225,7 +237,7 @@ ${socialBlock}
 async function main() {
   const app = express();
   app.use(cors({ origin: "http://localhost:5173", credentials: true }));
-  app.use(express.json());
+  app.use(${jsonParser});
 
   await bootstrapPlugins({ app, ctx });
 

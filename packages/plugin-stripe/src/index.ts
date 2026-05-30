@@ -1,6 +1,9 @@
-import { Router } from "express";
+import { Router, type Request } from "express";
 import { z } from "zod";
 import type { StormPlugin } from "@stormstack/core/plugin";
+import Stripe from "stripe";
+
+type StripeWebhookRequest = Request & { rawBody?: Buffer };
 
 export const stripePlugin: StormPlugin = {
   id: "@stormstack/stripe",
@@ -35,7 +38,9 @@ export const stripePlugin: StormPlugin = {
 
   routes({ ctx, isAuthenticated }) {
     const router = Router();
-    const stripe = new (require("stripe"))(process.env.STRIPE_SECRET_KEY);
+    const secretKey = ctx.env["STRIPE_SECRET_KEY"] ?? process.env.STRIPE_SECRET_KEY;
+    const webhookSecret = ctx.env["STRIPE_WEBHOOK_SECRET"] ?? process.env.STRIPE_WEBHOOK_SECRET;
+    const stripe = new Stripe(secretKey ?? "", { apiVersion: "2023-10-16" });
 
     // GET /api/stripe/plans
     router.get("/plans", isAuthenticated, async (req, res) => {
@@ -76,13 +81,23 @@ export const stripePlugin: StormPlugin = {
 
     // POST /api/stripe/webhook (no auth — signed by Stripe)
     router.post("/webhook", async (req, res) => {
-      const sig = req.headers["stripe-signature"] as string;
-      let event;
+      if (!webhookSecret) {
+        ctx.logger.error("Stripe webhook secret missing");
+        return res.status(500).json({ error: "Configuration Stripe incomplète" });
+      }
+
+      const sig = req.headers["stripe-signature"];
+      if (typeof sig !== "string") {
+        return res.status(400).json({ error: "Signature Stripe manquante" });
+      }
+
+      let event: Stripe.Event;
       try {
+        const payload = (req as StripeWebhookRequest).rawBody ?? req.body;
         event = stripe.webhooks.constructEvent(
-          req.body,
+          payload,
           sig,
-          process.env.STRIPE_WEBHOOK_SECRET
+          webhookSecret
         );
       } catch (err) {
         ctx.logger.error("Stripe webhook signature invalid", { err });
@@ -90,7 +105,7 @@ export const stripePlugin: StormPlugin = {
       }
 
       ctx.logger.info("Stripe webhook received", { type: event.type });
-      // Plugins can extend this via event emitter — see docs
+      await ctx.events.emit("stripe.webhook.received", { type: event.type, id: event.id }, "@stormstack/stripe");
       res.json({ received: true });
     });
 

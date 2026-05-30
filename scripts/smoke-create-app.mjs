@@ -75,6 +75,9 @@ function assertGeneratedApp(appDir) {
   if (!serverEntry.includes("eventBus")) {
     throw new Error("Generated server must pass eventBus into StormContext");
   }
+  if (!serverEntry.includes("rawBody") || !serverEntry.includes("/api/stripe/webhook")) {
+    throw new Error("Generated server must preserve raw Stripe webhook payloads");
+  }
 
   const drizzleConfig = readFileSync(path.join(appDir, "drizzle.config.ts"), "utf8");
   if (drizzleConfig.includes("/dist/schema.js")) {
@@ -120,7 +123,7 @@ async function main() {
     scaffold(
       {
         projectName: "generated-app",
-        plugins: ["@stormstack/auth", "@stormstack/crm", "@stormstack/ticketing"],
+        plugins: ["@stormstack/auth", "@stormstack/crm", "@stormstack/ticketing", "@stormstack/stripe"],
         packageManager: "npm",
         withClient: true,
       },
