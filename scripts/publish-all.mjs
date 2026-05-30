@@ -1,23 +1,9 @@
 #!/usr/bin/env node
 
 import { spawnSync } from "node:child_process";
-import { readFileSync } from "node:fs";
-import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
+import { join } from "node:path";
 
-const rootDir = dirname(dirname(fileURLToPath(import.meta.url)));
-const publishOrder = [
-  "packages/core",
-  "packages/react",
-  "packages/testing",
-  "packages/plugin-auth",
-  "packages/plugin-auth-social",
-  "packages/plugin-crm",
-  "packages/plugin-ticketing",
-  "packages/plugin-stripe",
-  "packages/cli",
-  "packages/create-storm-app",
-];
+import { releasePackageDirs, readPackageJson, readRootPackageJson, rootDir } from "./release-packages.mjs";
 
 const args = new Set(process.argv.slice(2));
 
@@ -35,10 +21,6 @@ const live = args.has("--live");
 const dryRun = !live;
 const provenance =
   !args.has("--no-provenance") && (args.has("--provenance") || process.env.GITHUB_ACTIONS === "true");
-
-function readPackageJson(packageDir) {
-  return JSON.parse(readFileSync(join(rootDir, packageDir, "package.json"), "utf8"));
-}
 
 function run(command, commandArgs, options = {}) {
   const result = spawnSync(command, commandArgs, {
@@ -58,8 +40,8 @@ function isAlreadyPublished(packageName, version) {
   );
 }
 
-const rootVersion = JSON.parse(readFileSync(join(rootDir, "package.json"), "utf8")).version;
-const packages = publishOrder.map((packageDir) => {
+const rootVersion = readRootPackageJson().version;
+const packages = releasePackageDirs.map((packageDir) => {
   const manifest = readPackageJson(packageDir);
   if (manifest.version !== rootVersion) {
     throw new Error(`${packageDir} is v${manifest.version}, expected v${rootVersion}`);

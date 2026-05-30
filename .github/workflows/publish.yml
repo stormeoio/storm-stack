@@ -72,28 +72,7 @@ jobs:
           fi
 
       - name: Verify package versions
-        run: |
-          VERSION="${{ steps.version.outputs.version }}"
-          PACKAGES=(
-            "packages/core"
-            "packages/react"
-            "packages/testing"
-            "packages/plugin-auth"
-            "packages/plugin-auth-social"
-            "packages/plugin-crm"
-            "packages/plugin-ticketing"
-            "packages/plugin-stripe"
-            "packages/cli"
-            "packages/create-storm-app"
-          )
-
-          for pkg in "${PACKAGES[@]}"; do
-            ACTUAL=$(node -p "require('./$pkg/package.json').version")
-            if [ "$ACTUAL" != "$VERSION" ]; then
-              echo "::error::$pkg is v$ACTUAL, expected v$VERSION"
-              exit 1
-            fi
-          done
+        run: node scripts/check-release-package-versions.mjs "${{ steps.version.outputs.version }}"
 
       - name: Resolve dry-run flag
         id: flags
