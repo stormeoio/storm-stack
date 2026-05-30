@@ -1093,15 +1093,17 @@ export function DocsPage() {
       <aside className="w-48 shrink-0 hidden md:block">
         <nav className="sticky top-20 space-y-1">
           {SECTIONS.map(({ id, label }) => (
-            <Link key={id} href={`/docs/${id}`}>
-              <a className={clsx(
+            <Link
+              key={id}
+              href={`/docs/${id}`}
+              className={clsx(
                 "block px-3 py-1.5 text-sm rounded-md transition-colors",
                 activeSection === id
                   ? "bg-storm-50 text-storm-700 font-medium"
-                  : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
-              )}>
-                {label}
-              </a>
+                  : "text-gray-600 hover:text-gray-900 hover:bg-gray-50",
+              )}
+            >
+              {label}
             </Link>
           ))}
         </nav>

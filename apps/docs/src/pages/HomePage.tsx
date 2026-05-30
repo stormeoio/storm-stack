@@ -29,13 +29,9 @@ const PLUGINS_SOON = [
   { name: "messaging", desc: "IM + email" },
   { name: "drive", desc: "File storage" },
   { name: "monitoring", desc: "Uptime + alerts" },
-  { name: "rgpd", desc: "GDPR compliance" },
-  { name: "search", desc: "Full-text search" },
-  { name: "vault", desc: "Encrypted secrets" },
-  { name: "design", desc: "Theme + UI tokens" },
-  { name: "integrations", desc: "Webhooks + API" },
-  { name: "dock", desc: "macOS-style dock" },
 ];
+
+const PLUGIN_SUMMARY = `${PLUGINS_STABLE.length} stable + ${PLUGINS_SOON.length} coming soon`;
 
 function CopyButton({ text }: { text: string }) {
   const [copied, setCopied] = useState(false);
@@ -85,15 +81,17 @@ export function HomePage() {
             Add features with <code className="font-mono text-storm-600 bg-storm-50 px-1.5 py-0.5 rounded text-sm">storm add</code> — like shadcn, but for your entire backend.
           </p>
           <div className="mt-8 flex items-center justify-center gap-4">
-            <Link href="/docs">
-              <a className="inline-flex items-center gap-2 px-5 py-2.5 bg-storm-600 text-white text-sm font-semibold rounded-lg hover:bg-storm-700 transition-colors shadow-sm">
-                Get Started <ArrowRight size={14} />
-              </a>
+            <Link
+              href="/docs"
+              className="inline-flex items-center gap-2 px-5 py-2.5 bg-storm-600 text-white text-sm font-semibold rounded-lg hover:bg-storm-700 transition-colors shadow-sm"
+            >
+              Get Started <ArrowRight size={14} />
             </Link>
-            <Link href="/plugins">
-              <a className="inline-flex items-center gap-2 px-5 py-2.5 bg-white text-gray-700 text-sm font-semibold rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors">
-                <Store size={14} /> Browse Catalog
-              </a>
+            <Link
+              href="/plugins"
+              className="inline-flex items-center gap-2 px-5 py-2.5 bg-white text-gray-700 text-sm font-semibold rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors"
+            >
+              <Store size={14} /> Browse Catalog
             </Link>
           </div>
 
@@ -210,7 +208,7 @@ export function HomePage() {
       {/* Plugins showcase */}
       <section className="max-w-5xl mx-auto px-6 py-16 border-t border-gray-100">
         <h2 className="text-2xl font-bold text-gray-900 text-center mb-2">Official Plugins</h2>
-        <p className="text-sm text-gray-500 text-center mb-8">5 stable + 11 coming soon</p>
+        <p className="text-sm text-gray-500 text-center mb-8">{PLUGIN_SUMMARY}</p>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mb-6">
           {PLUGINS_STABLE.map(({ name, pkg, desc, icon: Icon, color }) => (
@@ -240,10 +238,8 @@ export function HomePage() {
         </div>
 
         <div className="text-center mt-8">
-          <Link href="/plugins">
-            <a className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-storm-600 hover:text-storm-700 transition-colors">
-              View full catalog <ArrowRight size={14} />
-            </a>
+          <Link href="/plugins" className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-storm-600 hover:text-storm-700 transition-colors">
+            View full catalog <ArrowRight size={14} />
           </Link>
         </div>
       </section>
@@ -269,8 +265,8 @@ export function HomePage() {
         <div className="max-w-5xl mx-auto px-6 py-8 flex items-center justify-between text-xs text-gray-500">
           <span>MIT License — Built by <a href="https://stormeo.io" className="hover:text-gray-900">Stormeo</a></span>
           <div className="flex items-center gap-4">
-            <Link href="/docs"><a className="hover:text-gray-900 transition-colors">Docs</a></Link>
-            <Link href="/plugins"><a className="hover:text-gray-900 transition-colors">Plugins</a></Link>
+            <Link href="/docs" className="hover:text-gray-900 transition-colors">Docs</Link>
+            <Link href="/plugins" className="hover:text-gray-900 transition-colors">Plugins</Link>
             <a href="https://github.com/stormeoio/storm-stack" className="hover:text-gray-900 transition-colors">GitHub</a>
           </div>
         </div>
