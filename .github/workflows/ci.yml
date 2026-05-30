@@ -57,6 +57,9 @@ jobs:
       - name: Check internal versions
         run: npm run version:check
 
+      - name: Check catalog consistency
+        run: npm run catalog:check
+
       - name: Audit production dependencies
         run: npm run audit:prod
 

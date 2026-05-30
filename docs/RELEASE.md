@@ -23,6 +23,7 @@ npm run publish:dry-run
 `release:check` verifies:
 
 - internal workspace versions are synchronized with the root version
+- public plugin catalogs are synchronized with `registry.json`
 - production dependencies pass `npm audit --omit=dev --audit-level=moderate`
 - lint, typecheck, build, and Vitest pass
 - `create-storm-app` can generate and build an app outside the monorepo
@@ -78,4 +79,3 @@ If a release fails:
 2. Re-run `npm run release:check`.
 3. Re-run `npm run publish:dry-run`.
 4. Re-run the publish workflow. Already published package versions will be skipped.
-
