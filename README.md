@@ -100,9 +100,12 @@ The CLI auto-wires everything: imports, registry registration, Drizzle schema, n
 
 ## Development
 
+Requires Node.js `>=20.19.0`. This repository pins `20.20.2` in `.nvmrc`.
+
 ```bash
 git clone https://github.com/stormeoio/storm-stack.git
 cd storm-stack
+nvm use
 npm install
 npm run build
 npm run lint
