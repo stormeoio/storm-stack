@@ -10,12 +10,21 @@ This runbook describes the MVP release flow for Storm Stack packages.
 - An npm automation token available as `NPM_TOKEN` in the GitHub `npm` environment
 - npm provenance enabled in GitHub Actions (`id-token: write`)
 
+Check the external release prerequisites before tagging or publishing:
+
+```bash
+npm run release:doctor
+```
+
+This doctor intentionally stays outside `release:check`: a local build can be release-ready even when the GitHub remote or npm token has not been configured yet.
+
 ## Local release gate
 
 Run this before tagging or publishing:
 
 ```bash
 npm ci
+npm run release:doctor
 npm run release:check
 npm run publish:dry-run
 ```
