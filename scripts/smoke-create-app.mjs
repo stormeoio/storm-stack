@@ -5,23 +5,13 @@ import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync
 import { createRequire } from "node:module";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
 
-const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+import { readPackageJson, readRootPackageJson, releasePackageDirs, rootDir } from "./release-packages.mjs";
+
 const require = createRequire(import.meta.url);
-const rootPackageVersion = JSON.parse(readFileSync(path.join(rootDir, "package.json"), "utf8")).version;
+const rootPackageVersion = readRootPackageJson().version;
 
-const packageWorkspaces = [
-  ["@stormstack/core", "packages/core"],
-  ["@stormstack/react", "packages/react"],
-  ["@stormstack/testing", "packages/testing"],
-  ["@stormstack/cli", "packages/cli"],
-  ["@stormstack/auth", "packages/plugin-auth"],
-  ["@stormstack/auth-social", "packages/plugin-auth-social"],
-  ["@stormstack/crm", "packages/plugin-crm"],
-  ["@stormstack/ticketing", "packages/plugin-ticketing"],
-  ["@stormstack/stripe", "packages/plugin-stripe"],
-];
+const packageWorkspaces = releasePackageDirs.map((workspace) => [readPackageJson(workspace).name, workspace]);
 const generatedStormDependencies = [
   "@stormstack/core",
   "@stormstack/react",
