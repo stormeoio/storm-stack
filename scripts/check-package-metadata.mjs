@@ -4,6 +4,8 @@ import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { dirname, join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
 
+import { releasePackageDirs } from "./release-packages.mjs";
+
 const rootDir = dirname(dirname(fileURLToPath(import.meta.url)));
 const packagesDir = join(rootDir, "packages");
 const npmRegistry = "https://registry.npmjs.org/";
@@ -21,12 +23,13 @@ function listPackageJsonPaths() {
 
 function validatePackageMetadata(path) {
   const manifest = readPackageJson(path);
-  if (manifest.private === true) {
-    return [];
-  }
-
   const label = `${relative(rootDir, path)} (${manifest.name ?? "unnamed package"})`;
   const errors = [];
+
+  if (manifest.private === true) {
+    errors.push(`${label}: release packages must not be private.`);
+    return errors;
+  }
 
   if (manifest.publishConfig?.access !== "public") {
     errors.push(`${label}: publishConfig.access must be "public".`);
@@ -40,7 +43,20 @@ function validatePackageMetadata(path) {
 }
 
 const packageJsonPaths = listPackageJsonPaths();
-const errors = packageJsonPaths.flatMap((path) => validatePackageMetadata(path));
+const releasePackageJsonPaths = releasePackageDirs.map((dir) => join(rootDir, dir, "package.json"));
+const releasePackageJsonPathSet = new Set(releasePackageJsonPaths);
+const publicPackageJsonPaths = packageJsonPaths.filter((path) => readPackageJson(path).private !== true);
+const unlistedPublicPackages = publicPackageJsonPaths.filter((path) => !releasePackageJsonPathSet.has(path));
+const missingReleasePackages = releasePackageJsonPaths.filter((path) => !existsSync(path));
+const errors = releasePackageJsonPaths.flatMap((path) => (existsSync(path) ? validatePackageMetadata(path) : []));
+
+for (const path of unlistedPublicPackages) {
+  errors.push(`${relative(rootDir, path)}: public package is missing from releasePackageDirs.`);
+}
+
+for (const path of missingReleasePackages) {
+  errors.push(`${relative(rootDir, path)}: release package manifest does not exist.`);
+}
 
 if (errors.length > 0) {
   console.error("Package metadata check failed:");
@@ -50,4 +66,4 @@ if (errors.length > 0) {
   process.exit(1);
 }
 
-console.log(`Package metadata is publish-ready (${packageJsonPaths.length} packages).`);
+console.log(`Package metadata is publish-ready (${releasePackageJsonPaths.length} release packages).`);

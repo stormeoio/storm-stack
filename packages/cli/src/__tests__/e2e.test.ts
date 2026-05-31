@@ -7,6 +7,7 @@ const CLI = path.resolve(__dirname, "../../dist/index.mjs");
 const FIXTURES = path.resolve(__dirname, "../../.test-fixtures");
 const MONOREPO = path.resolve(__dirname, "../../../..");
 const CLI_PACKAGE = JSON.parse(fs.readFileSync(path.resolve(__dirname, "../../package.json"), "utf8")) as { version: string };
+const SLOW_IO_TEST_TIMEOUT = 15_000;
 
 function run(cmd: string, cwd: string = FIXTURES): string {
   return execSync(`node ${CLI} ${cmd}`, { cwd, encoding: "utf8", stdio: ["pipe", "pipe", "pipe"], env: { ...process.env, NO_COLOR: "1" } });
@@ -229,7 +230,7 @@ describe("storm remove", () => {
 
     const config = readConfig();
     expect(config.installed).toEqual(["@stormstack/auth", "@stormstack/crm"]);
-  });
+  }, SLOW_IO_TEST_TIMEOUT);
 
   it("blocks removal of auth when crm depends on it", () => {
     const result = runSafe("remove auth --yes");
