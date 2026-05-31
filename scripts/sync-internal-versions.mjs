@@ -1,8 +1,8 @@
 import { access, readdir, readFile, writeFile } from "node:fs/promises";
-import { dirname, join, relative } from "node:path";
-import { fileURLToPath } from "node:url";
+import { join, relative } from "node:path";
 
-const rootDir = dirname(dirname(fileURLToPath(import.meta.url)));
+import { readPackageJson, readRootPackageJson, releasePackageDirs, rootDir } from "./release-packages.mjs";
+
 const dependencySections = [
   "dependencies",
   "devDependencies",
@@ -56,8 +56,7 @@ async function findWorkspacePackageJsons(workspaces) {
   return packageJsons.sort();
 }
 
-const rootPackagePath = join(rootDir, "package.json");
-const rootPackage = await readJson(rootPackagePath);
+const rootPackage = readRootPackageJson();
 const targetVersion = rootPackage.version;
 const expectedRange = `^${targetVersion}`;
 const workspacePackagePaths = await findWorkspacePackageJsons(rootPackage.workspaces ?? []);
@@ -68,12 +67,7 @@ for (const packagePath of workspacePackagePaths) {
   workspacePackages.push({ manifest, packagePath });
 }
 
-const releasePackageNames = new Set(
-  workspacePackages
-    .filter(({ manifest }) => manifest.private !== true)
-    .map(({ manifest }) => manifest.name)
-    .filter(Boolean),
-);
+const releasePackageNames = new Set(releasePackageDirs.map((packageDir) => readPackageJson(packageDir).name).filter(Boolean));
 
 const changes = [];
 
