@@ -22,6 +22,12 @@ const dryRun = !live;
 const provenance =
   !args.has("--no-provenance") && (args.has("--provenance") || process.env.GITHUB_ACTIONS === "true");
 
+if (live && !process.env.NPM_TOKEN && !process.env.NODE_AUTH_TOKEN) {
+  console.error("Live publish requires NPM_TOKEN or NODE_AUTH_TOKEN.");
+  console.error("Set the npm automation token before running publish:all or the GitHub publish workflow.");
+  process.exit(1);
+}
+
 function run(command, commandArgs, options = {}) {
   const result = spawnSync(command, commandArgs, {
     cwd: options.cwd ?? rootDir,
