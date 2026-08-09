@@ -8,6 +8,7 @@ export const consentPreferences = pgTable("storm_consent_preferences", {
   analytics: boolean("analytics").notNull().default(false),
   marketing: boolean("marketing").notNull().default(false),
   policyVersion: text("policy_version").notNull(),
+  withdrawnAt: timestamp("withdrawn_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
 }, (table) => ({

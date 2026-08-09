@@ -1,6 +1,6 @@
 {
   "name": "@stormstack/stripe",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Storm Stack — Stripe billing plugin (subscriptions, invoices, webhooks)",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -14,8 +14,8 @@
     "registry": "https://registry.npmjs.org/"
   },
   "peerDependencies": {
-    "@stormstack/auth": "^0.1.0",
-    "@stormstack/core": "^0.1.0"
+    "@stormstack/auth": "^0.1.1",
+    "@stormstack/core": "^0.1.1"
   },
   "dependencies": {
     "stripe": "^14.0.0",
@@ -28,7 +28,16 @@
     "directory": "packages/plugin-stripe"
   },
   "homepage": "https://stormstack.dev",
-  "keywords": ["storm-stack", "plugin", "stripe", "payments", "billing"],
-  "files": ["dist", "README.md"],
+  "keywords": [
+    "storm-stack",
+    "plugin",
+    "stripe",
+    "payments",
+    "billing"
+  ],
+  "files": [
+    "dist",
+    "README.md"
+  ],
   "author": "Stormeo <dev@stormeo.io>"
 }

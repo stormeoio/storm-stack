@@ -19,6 +19,7 @@ function createPreference(overrides: Partial<ConsentPreference> = {}): ConsentPr
     analytics: false,
     marketing: false,
     policyVersion: "1.0",
+    withdrawnAt: null,
     createdAt: new Date("2026-08-09T00:00:00.000Z"),
     updatedAt: new Date("2026-08-09T00:00:00.000Z"),
     ...overrides,
@@ -64,7 +65,10 @@ function createDbHarness(initial: ConsentPreference | null = null) {
   };
 }
 
-function createContext(db: StormContext["db"]): StormContext {
+function createContext(
+  db: StormContext["db"],
+  emit = vi.fn(async (_event: string, _payload: unknown, _source: string) => {}),
+): StormContext {
   return {
     db,
     env: {
@@ -78,7 +82,7 @@ function createContext(db: StormContext["db"]): StormContext {
       error: vi.fn(),
     },
     events: {
-      emit: vi.fn(async () => {}),
+      emit,
     } as unknown as StormContext["events"],
   };
 }
@@ -103,7 +107,7 @@ function createApp(
 
 async function request(
   app: Express,
-  method: "GET" | "PUT",
+  method: "GET" | "POST" | "PUT",
   path: string,
   body?: unknown,
 ): Promise<TestResponse> {
@@ -163,6 +167,33 @@ describe("routes consentement", () => {
         marketing: false,
         policyVersion: "2026-08",
       },
+    });
+  });
+
+  it("renvoie l’état retiré avec son horodatage", async () => {
+    const existing = createPreference({
+      policyVersion: "2026-08",
+      withdrawnAt: new Date("2026-08-09T01:02:03.000Z"),
+    });
+    const harness = createDbHarness(existing);
+    const app = createApp(
+      createContext(harness.db),
+      authenticatedMiddleware(),
+      () => "2026-08",
+    );
+
+    const response = await request(app, "GET", "/api/consent/state");
+
+    expect(response.status).toBe(200);
+    expect(response.body).toMatchObject({
+      consent: {
+        necessary: true,
+        analytics: false,
+        marketing: false,
+        policyVersion: "2026-08",
+        withdrawnAt: "2026-08-09T01:02:03.000Z",
+      },
+      policyVersion: "2026-08",
     });
   });
 
@@ -229,6 +260,30 @@ describe("routes consentement", () => {
     expect(harness.getPreference()).toMatchObject({ analytics: false, marketing: true });
   });
 
+  it("remet withdrawnAt à null lors de l’enregistrement de nouveaux choix", async () => {
+    const harness = createDbHarness(createPreference({
+      analytics: false,
+      marketing: false,
+      withdrawnAt: new Date("2026-08-09T01:02:03.000Z"),
+    }));
+    const app = createApp(createContext(harness.db), authenticatedMiddleware());
+
+    const response = await request(app, "PUT", "/api/consent/preferences", {
+      necessary: true,
+      analytics: true,
+      marketing: false,
+      policyVersion: "1.0",
+    });
+
+    expect(response.status).toBe(200);
+    expect(response.body).toMatchObject({ consent: { withdrawnAt: null } });
+    expect(harness.values).toHaveBeenLastCalledWith(expect.objectContaining({ withdrawnAt: null }));
+    expect(harness.onConflictDoUpdate).toHaveBeenLastCalledWith(expect.objectContaining({
+      set: expect.objectContaining({ withdrawnAt: null }),
+    }));
+    expect(harness.getPreference()?.withdrawnAt).toBeNull();
+  });
+
   it("impose la version de politique configurée côté serveur", async () => {
     const harness = createDbHarness();
     const app = createApp(
@@ -256,7 +311,92 @@ describe("routes consentement", () => {
     expect(harness.getPreference()).toMatchObject({ policyVersion: "2026-08" });
   });
 
-  it("applique le middleware d’authentification aux deux routes", async () => {
+  it("retire une préférence absente avec la politique autoritaire du serveur", async () => {
+    const harness = createDbHarness();
+    const emit = vi.fn(async (_event: string, _payload: unknown, _source: string) => {});
+    const app = createApp(
+      createContext(harness.db, emit),
+      authenticatedMiddleware(),
+      () => "2026-08",
+    );
+
+    const response = await request(app, "POST", "/api/consent/withdraw", {});
+
+    expect(response.status).toBe(200);
+    expect(response.cacheControl).toBe("private, no-store");
+    expect(response.body).toMatchObject({
+      consent: {
+        userId: "user-1",
+        necessary: true,
+        analytics: false,
+        marketing: false,
+        policyVersion: "2026-08",
+        withdrawnAt: expect.any(String),
+      },
+    });
+    expect(harness.values).toHaveBeenLastCalledWith(expect.objectContaining({
+      userId: "user-1",
+      necessary: true,
+      analytics: false,
+      marketing: false,
+      policyVersion: "2026-08",
+      withdrawnAt: expect.any(Date),
+    }));
+    expect(emit).toHaveBeenCalledWith(
+      "consent.withdrawn",
+      expect.objectContaining({
+        userId: "user-1",
+        policyVersion: "2026-08",
+        withdrawnAt: expect.any(String),
+      }),
+      "@stormstack/consent",
+    );
+  });
+
+  it("rend le retrait restrictif et répétable par upsert", async () => {
+    const harness = createDbHarness(createPreference({
+      analytics: true,
+      marketing: true,
+      policyVersion: "ancienne-politique",
+    }));
+    const app = createApp(
+      createContext(harness.db),
+      authenticatedMiddleware(),
+      () => "politique-active",
+    );
+
+    const first = await request(app, "POST", "/api/consent/withdraw", {});
+    const second = await request(app, "POST", "/api/consent/withdraw", {});
+
+    expect(first.status).toBe(200);
+    expect(second.status).toBe(200);
+    expect(harness.insert).toHaveBeenCalledTimes(2);
+    expect(harness.onConflictDoUpdate).toHaveBeenCalledTimes(2);
+    expect(harness.getPreference()).toMatchObject({
+      necessary: true,
+      analytics: false,
+      marketing: false,
+      policyVersion: "politique-active",
+      withdrawnAt: expect.any(Date),
+    });
+  });
+
+  it("refuse tout champ dans le corps strict du retrait", async () => {
+    const harness = createDbHarness();
+    const emit = vi.fn(async (_event: string, _payload: unknown, _source: string) => {});
+    const app = createApp(createContext(harness.db, emit), authenticatedMiddleware());
+
+    const response = await request(app, "POST", "/api/consent/withdraw", {
+      policyVersion: "version-cliente-interdite",
+    });
+
+    expect(response.status).toBe(400);
+    expect(response.body).toMatchObject({ error: "Demande de retrait invalide" });
+    expect(harness.insert).not.toHaveBeenCalled();
+    expect(emit).not.toHaveBeenCalled();
+  });
+
+  it("applique le middleware d’authentification aux trois routes", async () => {
     const harness = createDbHarness();
     const auth = vi.fn<RequestHandler>((_req, res) => {
       res.status(401).json({ error: "Non authentifié" });
@@ -270,10 +410,12 @@ describe("routes consentement", () => {
       marketing: false,
       policyVersion: "1.0",
     });
+    const withdrawResponse = await request(app, "POST", "/api/consent/withdraw", {});
 
     expect(getResponse.status).toBe(401);
     expect(putResponse.status).toBe(401);
-    expect(auth).toHaveBeenCalledTimes(2);
+    expect(withdrawResponse.status).toBe(401);
+    expect(auth).toHaveBeenCalledTimes(3);
     expect(harness.select).not.toHaveBeenCalled();
     expect(harness.insert).not.toHaveBeenCalled();
   });
