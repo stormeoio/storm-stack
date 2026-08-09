@@ -306,6 +306,8 @@ describe("proof browser evidence", () => {
 
     expect(browser.closed).toBe(true);
     expect(browser.commands).toContainEqual(["fill", 7, "input[type=email]", "proof-beta@example.test"]);
+    const loginClick = browser.commands.findIndex(([command]) => command === "click");
+    expect(browser.commands[loginClick + 1]).toEqual(["wait", 7, "main h1.text-xl"]);
     expect(browser.commands).toContainEqual(["goto", 7, "http://127.0.0.1:47013/documents"]);
     expect(browser.commands).toContainEqual(["goto", 7, "http://127.0.0.1:47013/crm"]);
     expect(browser.commands.some(([command, , script]) => (

@@ -378,7 +378,7 @@ export async function verifyFixtureUi(
     browser.command(tabId, "fill", ["input[type=email]", `proof-${definition.name}@example.test`]);
     browser.command(tabId, "fill", ["input[type=password]", LOGIN_PASSWORD]);
     browser.command(tabId, "click", ["button[type=submit]"]);
-    browser.command(tabId, "wait", [".border-t.border-gray-200"]);
+    browser.command(tabId, "wait", ["main h1.text-xl"]);
     const authentication = inspectJson(
       browser,
       tabId,
