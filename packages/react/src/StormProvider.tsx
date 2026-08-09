@@ -32,7 +32,7 @@ export function StormProvider({
 
   const resolvedAuthEndpoint = authEndpoint ?? `${apiBase}/auth/me`;
 
-  const { data: userData } = useQuery<{ user: StormUser }>({
+  const { data: userData, isPending: authPending } = useQuery<{ user: StormUser }>({
     queryKey: ["storm", "auth", "me"],
     queryFn: async () => {
       const res = await fetch(resolvedAuthEndpoint, { credentials: "include" });
@@ -46,11 +46,11 @@ export function StormProvider({
   const value = useMemo<StormContextValue>(
     () => ({
       manifest: manifest ?? { navItems: [], dockItems: [], routes: [], settingsPanels: [] },
-      isLoading: manifestLoading,
+      isLoading: manifestLoading || authPending,
       components,
       user: userData?.user ?? null,
     }),
-    [manifest, manifestLoading, components, userData],
+    [manifest, manifestLoading, authPending, components, userData],
   );
 
   return <StormContext.Provider value={value}>{children}</StormContext.Provider>;
