@@ -4,7 +4,13 @@ import { organizations, contacts, deals, contactStatusEnum, dealStageEnum } from
 import { createCrmRoutes } from "./routes";
 import { PACKAGE_VERSION } from "./version";
 
-export { organizations, contacts, deals } from "./schema";
+export {
+  organizations,
+  contacts,
+  deals,
+  contactStatusEnum,
+  dealStageEnum,
+} from "./schema";
 export type { Organization, InsertOrganization, Contact, InsertContact, Deal, InsertDeal } from "./schema";
 
 export const crmPlugin: StormPlugin = {

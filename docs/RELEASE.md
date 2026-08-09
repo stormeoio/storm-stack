@@ -59,7 +59,7 @@ Build a complete release train from an immutable Git ref with:
 
 ```bash
 npm run pack:tarballs -- \
-  --ref proof/consent-v0.1.0 \
+  --ref proof/consent-v0.1.0-r3 \
   --destination /tmp/storm-stack-artifacts
 ```
 
