@@ -18,6 +18,12 @@ Le répertoire de travail doit être dédié. Il ne peut pas être la racine du 
 le dossier utilisateur ou un lien symbolique. Un nouveau run exige aussi que son
 cache npm froid n’existe pas encore.
 
+Les références canoniques sont `proof/consent-v0.1.0-r1` et
+`proof/consent-v0.1.1-r1`. Les balises initiales sans suffixe sont conservées pour
+l’audit, mais remplacées pour cette preuve : leurs entrypoints publics ne
+réexportaient pas les enums PostgreSQL de tous les plugins, ce qui empêchait
+Drizzle de générer les types requis pour le projet Beta.
+
 ## Exécution locale canonique
 
 Créer une racine temporaire dédiée, puis lancer volontairement l’interruption après
@@ -30,8 +36,8 @@ case "$(uname -s)" in
 esac
 
 FAIL_AFTER_INSTALL=1 npm run proof:two-client-update -- \
-  --baseline-ref proof/consent-v0.1.0 \
-  --target-ref proof/consent-v0.1.1 \
+  --baseline-ref proof/consent-v0.1.0-r1 \
+  --target-ref proof/consent-v0.1.1-r1 \
   --work-dir "$PROOF_ROOT/work" \
   --output "$PROOF_ROOT/output"
 ```
@@ -50,8 +56,8 @@ Reprendre ensuite le même run tout en injectant l’échec de build post-migrat
 
 ```bash
 FAIL_BUILD_AFTER_MIGRATION=1 npm run proof:two-client-update -- \
-  --baseline-ref proof/consent-v0.1.0 \
-  --target-ref proof/consent-v0.1.1 \
+  --baseline-ref proof/consent-v0.1.0-r1 \
+  --target-ref proof/consent-v0.1.1-r1 \
   --work-dir "$PROOF_ROOT/work" \
   --output "$PROOF_ROOT/output" \
   --resume
