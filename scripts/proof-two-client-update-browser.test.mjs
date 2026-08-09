@@ -305,6 +305,13 @@ describe("proof browser evidence", () => {
     );
 
     expect(browser.closed).toBe(true);
+    expect(browser.commands.slice(0, 5)).toEqual([
+      ["open", "http://127.0.0.1:47013/login"],
+      ["cookie", 7, "storm_token="],
+      ["cookie", 7, "storm_csrf="],
+      ["console", 7, "--clear"],
+      ["network", 7, "--clear"],
+    ]);
     expect(browser.commands).toContainEqual(["fill", 7, "input[type=email]", "proof-beta@example.test"]);
     const loginClick = browser.commands.findIndex(([command]) => command === "click");
     expect(browser.commands[loginClick + 1]).toEqual(["wait", 7, "main h1.text-xl"]);

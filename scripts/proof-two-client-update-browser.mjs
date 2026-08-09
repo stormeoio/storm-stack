@@ -20,6 +20,8 @@ import {
 } from "./proof-two-client-update-helpers.mjs";
 
 const LOGIN_PASSWORD = "Proof-password-2026!";
+const AUTH_COOKIE_NAME = "storm_token";
+const CSRF_COOKIE_NAME = "storm_csrf";
 const SAVED_TEXT = "Vos préférences de cookies sont enregistrées.";
 const WITHDRAWN_TEXT = "Votre consentement a été retiré.";
 
@@ -363,6 +365,10 @@ export async function verifyFixtureUi(
 
   try {
     tabId = browser.open(`${origin}/login`);
+    // Cookies are scoped by hostname, not port. Start each generated app with
+    // an empty session so Alpha and Beta cannot reuse each other's JWT/CSRF.
+    browser.command(tabId, "cookie", [`${AUTH_COOKIE_NAME}=`]);
+    browser.command(tabId, "cookie", [`${CSRF_COOKIE_NAME}=`]);
     browser.command(tabId, "console", ["--clear"]);
     browser.command(tabId, "network", ["--clear"]);
     browser.command(tabId, "wait", ["input[type=email]"]);
