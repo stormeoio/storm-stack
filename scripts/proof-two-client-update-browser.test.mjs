@@ -195,6 +195,17 @@ describe("proof browser evidence", () => {
       .toEqual({ tabId: 4, url: null });
   });
 
+  it("parses pretty-printed JSON after a bounded browse startup notice", () => {
+    const evidence = {
+      pathname: "/login",
+      loginReady: true,
+      pageErrors: [],
+    };
+    expect(parseBrowseJson(
+      `[browse] Starting server...\n${JSON.stringify(evidence, null, 2)}\n`,
+    )).toEqual(evidence);
+  });
+
   it("installs page-error capture before the generated React module", () => {
     const html = [
       "<body>",

@@ -118,13 +118,22 @@ export class BrowseCli {
 }
 
 export function parseBrowseJson(output, label = "browse") {
-  const lines = output.trim().split("\n").map((line) => line.trim()).filter(Boolean);
-  for (let index = lines.length - 1; index >= 0; index -= 1) {
+  const trimmed = output.trim();
+  const lines = trimmed.split("\n");
+  const candidates = [
+    trimmed,
+    ...lines.slice(1).map((_, index) => lines.slice(index + 1).join("\n").trim()),
+    ...lines.map((line) => line.trim()).filter(Boolean).reverse(),
+  ];
+  const seen = new Set();
+  for (const candidate of candidates) {
+    if (!candidate || seen.has(candidate)) continue;
+    seen.add(candidate);
     try {
-      const parsed = JSON.parse(lines[index]);
+      const parsed = JSON.parse(candidate);
       if (parsed && typeof parsed === "object") return parsed;
     } catch {
-      // gstack can print startup notices before the JSON result.
+      // gstack can print startup notices before a pretty-printed JSON result.
     }
   }
   throw new Error(`${label} did not return JSON: ${boundedOutput(output)}`);
