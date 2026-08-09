@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 
-import { oauthProviderEnum } from "./plugin-auth-social/src/index";
-import { contactStatusEnum, dealStageEnum } from "./plugin-crm/src/index";
-import { ticketPriorityEnum, ticketStatusEnum } from "./plugin-ticketing/src/index";
+import { oauthProviderEnum } from "../packages/plugin-auth-social/src/index.ts";
+import { contactStatusEnum, dealStageEnum } from "../packages/plugin-crm/src/index.ts";
+import { ticketPriorityEnum, ticketStatusEnum } from "../packages/plugin-ticketing/src/index.ts";
 
 describe("published plugin schema exports", () => {
   it.each([
@@ -11,7 +11,7 @@ describe("published plugin schema exports", () => {
     [dealStageEnum, "crm_deal_stage", ["new", "qualified", "proposal", "negotiation", "won", "lost"]],
     [ticketStatusEnum, "ticket_status", ["open", "in_progress", "waiting", "resolved", "closed"]],
     [ticketPriorityEnum, "ticket_priority", ["low", "medium", "high", "urgent"]],
-  ] as const)("exports %s for Drizzle migration discovery", (schemaEnum, enumName, enumValues) => {
+  ])("exports %s for Drizzle migration discovery", (schemaEnum, enumName, enumValues) => {
     expect(schemaEnum.enumName).toBe(enumName);
     expect(schemaEnum.enumValues).toEqual(enumValues);
   });
