@@ -1,6 +1,6 @@
 {
   "name": "@stormstack/react",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Storm Stack React bindings — dynamic nav, routes, and manifest from plugins",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",

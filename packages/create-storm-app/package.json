@@ -1,6 +1,6 @@
 {
   "name": "create-storm-app",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Scaffold a new Storm Stack application",
   "bin": {
     "create-storm-app": "dist/index.js"

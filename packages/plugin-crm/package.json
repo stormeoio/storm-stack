@@ -1,6 +1,6 @@
 {
   "name": "@stormstack/crm",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Storm Stack — CRM plugin (contacts, organisations, pipeline deals)",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -26,8 +26,8 @@
     "registry": "https://registry.npmjs.org/"
   },
   "peerDependencies": {
-    "@stormstack/auth": "^0.1.0",
-    "@stormstack/core": "^0.1.0"
+    "@stormstack/auth": "^0.1.1",
+    "@stormstack/core": "^0.1.1"
   },
   "dependencies": {
     "drizzle-orm": "^0.45.2",
