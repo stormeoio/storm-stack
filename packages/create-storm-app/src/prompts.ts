@@ -1,6 +1,7 @@
 import * as p from "@clack/prompts";
 import pc from "picocolors";
 import { VERSION } from "./version";
+import { validateProjectName } from "./cli-options";
 
 export interface ScaffoldOptions {
   projectName: string;
@@ -15,6 +16,7 @@ const AVAILABLE_PLUGINS = [
   { value: "@stormstack/crm", label: "crm", hint: "Contacts, organisations, pipeline" },
   { value: "@stormstack/ticketing", label: "ticketing", hint: "Support tickets + feedback" },
   { value: "@stormstack/stripe", label: "stripe", hint: "Stripe payments + webhooks" },
+  { value: "@stormstack/consent", label: "consent", hint: "Consentement RGPD + bannière cookies" },
 ];
 
 export async function runPrompts(nameArg?: string): Promise<ScaffoldOptions> {
@@ -28,7 +30,11 @@ export async function runPrompts(nameArg?: string): Promise<ScaffoldOptions> {
           placeholder: "my-storm-app",
           defaultValue: nameArg ?? "my-storm-app",
           validate: (v) => {
-            if (!/^[a-z0-9-_]+$/.test(v)) return "Utilisez uniquement des lettres minuscules, chiffres, - ou _";
+            try {
+              validateProjectName(v);
+            } catch {
+              return "Utilisez uniquement des lettres minuscules, chiffres, - ou _";
+            }
           },
         }),
 

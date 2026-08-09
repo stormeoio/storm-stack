@@ -10,4 +10,5 @@ dist/
 coverage/
 .nyc_output/
 *.tgz
+proof-readiness-report.json
 .gstack/

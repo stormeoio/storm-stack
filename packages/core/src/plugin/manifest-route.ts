@@ -23,6 +23,7 @@ interface CatalogEntry {
 const CATALOG_REGISTRY: Omit<CatalogEntry, "status">[] = [
   { id: "@stormstack/auth", shortName: "auth", name: "Auth", description: "Email/password authentication with JWT cookies, RBAC, and multi-tenant support", tags: ["auth", "security", "rbac", "multi-tenant"], pricing: "free", requires: [], envVars: { SESSION_SECRET: { description: "JWT signing secret (min 32 chars)", required: true, example: "change-me-32-chars-min" } }, version: PACKAGE_VERSION, category: "security" },
   { id: "@stormstack/auth-social", shortName: "auth-social", name: "Auth Social", description: "OAuth2 authentication with Google, GitHub, and GitLab", tags: ["auth", "oauth", "google", "github"], pricing: "free", requires: ["@stormstack/auth"], envVars: { GOOGLE_CLIENT_ID: { description: "Google OAuth client ID", required: false }, GITHUB_CLIENT_ID: { description: "GitHub OAuth client ID", required: false } }, version: PACKAGE_VERSION, category: "security" },
+  { id: "@stormstack/consent", shortName: "consent", name: "Consentement", description: "Préférences de consentement et cookies par utilisateur", tags: ["consent", "cookies", "privacy", "rgpd", "gdpr"], pricing: "free", requires: ["@stormstack/auth"], envVars: {}, version: PACKAGE_VERSION, category: "compliance" },
   { id: "@stormstack/crm", shortName: "crm", name: "CRM", description: "Contacts, organisations et pipeline commercial pour agences et SaaS", tags: ["crm", "contacts", "pipeline", "sales"], pricing: "free", requires: ["@stormstack/auth"], envVars: {}, version: PACKAGE_VERSION, category: "business" },
   { id: "@stormstack/ticketing", shortName: "ticketing", name: "Ticketing", description: "Support tickets, commentaires, labels et workflow de traitement", tags: ["ticketing", "support", "helpdesk"], pricing: "free", requires: ["@stormstack/auth"], envVars: {}, version: PACKAGE_VERSION, category: "business" },
   { id: "@stormstack/stripe", shortName: "stripe", name: "Stripe", description: "Paiements Stripe, webhooks, abonnements et gestion des clients", tags: ["stripe", "payments", "billing", "webhooks"], pricing: "free", requires: ["@stormstack/auth"], envVars: { STRIPE_SECRET_KEY: { description: "Stripe secret key", required: true, example: "sk_test_..." }, STRIPE_WEBHOOK_SECRET: { description: "Stripe webhook secret", required: true, example: "whsec_..." } }, version: PACKAGE_VERSION, category: "payments" },
@@ -33,7 +34,7 @@ const CATALOG_REGISTRY: Omit<CatalogEntry, "status">[] = [
   { id: "@stormstack/monitoring", shortName: "monitoring", name: "Monitoring", description: "Uptime monitoring, health checks et alertes", tags: ["monitoring", "uptime", "health", "alerts"], pricing: "free", requires: ["@stormstack/auth"], envVars: {}, version: PACKAGE_VERSION, category: "devops" },
 ];
 
-const AVAILABLE_IDS = new Set(["@stormstack/auth", "@stormstack/auth-social", "@stormstack/crm", "@stormstack/ticketing", "@stormstack/stripe"]);
+const AVAILABLE_IDS = new Set(["@stormstack/auth", "@stormstack/auth-social", "@stormstack/consent", "@stormstack/crm", "@stormstack/ticketing", "@stormstack/stripe"]);
 
 /**
  * Mounts GET /api/storm/manifest  → client-side plugin manifests

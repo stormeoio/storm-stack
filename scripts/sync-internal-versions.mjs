@@ -70,6 +70,9 @@ for (const packagePath of workspacePackagePaths) {
 const releasePackageNames = new Set(releasePackageDirs.map((packageDir) => readPackageJson(packageDir).name).filter(Boolean));
 
 const changes = [];
+const registryPath = join(rootDir, "registry.json");
+const registry = await readJson(registryPath);
+let registryChanged = false;
 
 for (const workspacePackage of workspacePackages) {
   const { manifest, packagePath } = workspacePackage;
@@ -112,6 +115,31 @@ for (const workspacePackage of workspacePackages) {
   if (write && changed) {
     await writeFile(packagePath, `${JSON.stringify(manifest, null, 2)}\n`);
   }
+}
+
+if (!Array.isArray(registry.plugins)) {
+  throw new Error("registry.json must contain a plugins array.");
+}
+
+for (const plugin of registry.plugins) {
+  if (
+    plugin?.status !== "available"
+    || typeof plugin.id !== "string"
+    || !releasePackageNames.has(plugin.id)
+    || plugin.version === targetVersion
+  ) {
+    continue;
+  }
+
+  changes.push(`registry.json: ${plugin.id} version ${plugin.version} -> ${targetVersion}`);
+  if (write) {
+    plugin.version = targetVersion;
+    registryChanged = true;
+  }
+}
+
+if (write && registryChanged) {
+  await writeFile(registryPath, `${JSON.stringify(registry, null, 2)}\n`);
 }
 
 if (changes.length === 0) {

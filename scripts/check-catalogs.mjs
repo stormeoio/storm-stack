@@ -4,13 +4,15 @@ import { readFileSync } from "node:fs";
 import { dirname, join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
 
+import { readPackageJson, releasePackageDirs } from "./release-packages.mjs";
+
 const rootDir = dirname(dirname(fileURLToPath(import.meta.url)));
 
 function readText(path) {
   return readFileSync(join(rootDir, path), "utf8");
 }
 
-function readRegistryIds() {
+function readRegistry() {
   const registry = JSON.parse(readText("registry.json"));
   if (!Array.isArray(registry.plugins)) {
     throw new Error("registry.json must contain a plugins array.");
@@ -19,7 +21,10 @@ function readRegistryIds() {
     if (typeof plugin?.id !== "string") {
       throw new Error("Every registry plugin must have a string id.");
     }
-    return plugin.id;
+    if (plugin.status !== "available" && plugin.status !== "coming-soon") {
+      throw new Error(`Plugin ${plugin.id} has an invalid status.`);
+    }
+    return { id: plugin.id, status: plugin.status };
   });
 }
 
@@ -44,6 +49,12 @@ function extractPluginIds(path, marker) {
   return [...block.matchAll(/\bid:\s*"([^"]+)"/g)].map((match) => match[1]);
 }
 
+function extractStormPackageNames(path, marker) {
+  const source = readText(path);
+  const block = extractArrayBlock(source, marker, path);
+  return [...block.matchAll(/"(@stormstack\/[^"]+)"/g)].map((match) => match[1]);
+}
+
 function compareIds(label, actual, expected) {
   const missing = expected.filter((id) => !actual.includes(id));
   const extra = actual.filter((id) => !expected.includes(id));
@@ -66,19 +77,50 @@ function compareIds(label, actual, expected) {
   return errors;
 }
 
-const expectedIds = readRegistryIds();
+const registry = readRegistry();
+const expectedIds = registry.map(({ id }) => id);
+const expectedAvailableIds = registry
+  .filter(({ status }) => status === "available")
+  .map(({ id }) => id);
+const infrastructurePackages = new Set([
+  "@stormstack/core",
+  "@stormstack/react",
+  "@stormstack/testing",
+  "@stormstack/cli",
+  "create-storm-app",
+]);
+const releasedPluginIds = releasePackageDirs
+  .map((directory) => readPackageJson(directory).name)
+  .filter((name) => name.startsWith("@stormstack/") && !infrastructurePackages.has(name));
 const targets = [
   {
     label: relative(rootDir, join(rootDir, "packages/cli/src/registry.ts")),
     ids: extractPluginIds("packages/cli/src/registry.ts", "export const PLUGINS"),
+    expected: expectedIds,
   },
   {
     label: relative(rootDir, join(rootDir, "packages/core/src/plugin/manifest-route.ts")),
     ids: extractPluginIds("packages/core/src/plugin/manifest-route.ts", "const CATALOG_REGISTRY"),
+    expected: expectedIds,
+  },
+  {
+    label: "packages/create-storm-app/src/cli-options.ts",
+    ids: extractStormPackageNames("packages/create-storm-app/src/cli-options.ts", "export const PLUGIN_IDS"),
+    expected: expectedAvailableIds,
+  },
+  {
+    label: "packages/create-storm-app/src/generated-plugin-definitions.ts",
+    ids: extractPluginIds("packages/create-storm-app/src/generated-plugin-definitions.ts", "export const generatedPluginDefinitions"),
+    expected: expectedAvailableIds,
+  },
+  {
+    label: "scripts/release-packages.mjs",
+    ids: releasedPluginIds,
+    expected: expectedAvailableIds,
   },
 ];
 
-const errors = targets.flatMap((target) => compareIds(target.label, target.ids, expectedIds));
+const errors = targets.flatMap((target) => compareIds(target.label, target.ids, target.expected));
 
 if (errors.length > 0) {
   console.error("Catalog check failed:");

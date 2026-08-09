@@ -16,6 +16,16 @@ pnpm create storm-app my-app
 yarn create storm-app my-app
 ```
 
+For deterministic CI or automation, use the non-interactive mode:
+
+```bash
+create-storm-app alpha --yes --plugins auth,consent --with-client --package-manager npm
+```
+
+Plugin IDs can be short (`auth`) or complete (`@stormstack/auth`). Add `--force`
+to replace an existing target directory. Run `create-storm-app --help` for all
+options.
+
 ## What it generates
 
 ```
@@ -40,7 +50,7 @@ my-app/
 
 ## Features
 
-- Interactive plugin selection (auth, auth-social, crm, ticketing, stripe)
+- Interactive or deterministic plugin selection (auth, auth-social, crm, ticketing, stripe, consent)
 - Optional React frontend with TanStack Query + Tailwind
 - Docker Compose for PostgreSQL
 - Drizzle ORM with all plugin schemas aggregated
@@ -56,6 +66,7 @@ my-app/
 | `@stormstack/crm` | Contacts, orgs, pipeline |
 | `@stormstack/ticketing` | Support tickets + feedback |
 | `@stormstack/stripe` | Stripe payments + webhooks |
+| `@stormstack/consent` | RGPD consent preferences + cookie banner |
 
 ## License
 

@@ -3,6 +3,8 @@ import path from "path";
 import type { PluginMeta } from "./registry";
 import { drizzleSchemaReference } from "./schema-paths";
 
+export { injectRootComponent, removeRootComponent } from "./root-component-injector";
+
 const DEFAULT_JSON_PARSER = "app.use(express.json());";
 
 const STRIPE_RAW_BODY_JSON_PARSER = `app.use(express.json({

@@ -2,13 +2,17 @@ import fs from "fs";
 import path from "path";
 import type { ScaffoldOptions } from "./prompts";
 import { STORM_PACKAGE_RANGE } from "./version";
+import { selectGeneratedPluginDefinitions } from "./generated-plugin-definitions";
 
-const hasPlugin = (plugins: string[], id: string) => plugins.includes(id);
+const selectedPluginDefinitions = (plugins: string[]) =>
+  selectGeneratedPluginDefinitions(plugins);
+const hasPlugin = (plugins: string[], id: string) =>
+  selectedPluginDefinitions(plugins).some((definition) => definition.id === id);
 const hasAuth = (plugins: string[]) => hasPlugin(plugins, "@stormstack/auth");
 const hasCrm = (plugins: string[]) => hasPlugin(plugins, "@stormstack/crm");
 const hasTicketing = (plugins: string[]) => hasPlugin(plugins, "@stormstack/ticketing");
-const hasAuthSocial = (plugins: string[]) => hasPlugin(plugins, "@stormstack/auth-social");
 const hasStripe = (plugins: string[]) => hasPlugin(plugins, "@stormstack/stripe");
+const hasConsent = (plugins: string[]) => hasPlugin(plugins, "@stormstack/consent");
 
 function write(targetDir: string, file: string, content: string) {
   const filePath = path.join(targetDir, file);
@@ -28,6 +32,7 @@ function renderRootPackageJson(opts: ScaffoldOptions): string {
     start: "node dist/server/index.js",
     "db:push": "drizzle-kit push",
     "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate",
     typecheck: opts.withClient
       ? "tsc --noEmit -p server/tsconfig.json && tsc --noEmit -p client/tsconfig.json"
       : "tsc --noEmit -p server/tsconfig.json",
@@ -51,8 +56,8 @@ function renderRootPackageJson(opts: ScaffoldOptions): string {
     zod: "^3.22.0",
   };
 
-  for (const p of opts.plugins) {
-    deps[p] = STORM_PACKAGE_RANGE;
+  for (const plugin of selectedPluginDefinitions(opts.plugins)) {
+    deps[plugin.id] = STORM_PACKAGE_RANGE;
   }
 
   const devDeps: Record<string, string> = {
@@ -124,26 +129,18 @@ function renderServerTsConfig(): string {
 
 function renderEnvExample(opts: ScaffoldOptions): string {
   const lines = [
+    `COMPOSE_PROJECT_NAME=${opts.projectName}`,
+    "POSTGRES_DB=stormapp",
+    "POSTGRES_PORT=5432",
     "DATABASE_URL=postgresql://postgres:postgres@localhost:5432/stormapp",
     "NODE_ENV=development",
     "PORT=3000",
+    "CLIENT_PORT=5173",
+    "APP_ORIGIN=http://localhost:5173",
+    "SESSION_SECRET=change-me-to-a-random-32-char-secret-minimum",
   ];
-  if (hasAuth(opts.plugins)) {
-    lines.push("SESSION_SECRET=change-me-to-a-random-32-char-secret-minimum");
-  }
-  if (hasAuthSocial(opts.plugins)) {
-    lines.push("");
-    lines.push("# OAuth (optionnel)");
-    lines.push("# GOOGLE_CLIENT_ID=");
-    lines.push("# GOOGLE_CLIENT_SECRET=");
-    lines.push("# GITHUB_CLIENT_ID=");
-    lines.push("# GITHUB_CLIENT_SECRET=");
-  }
-  if (hasStripe(opts.plugins)) {
-    lines.push("");
-    lines.push("# Stripe");
-    lines.push("STRIPE_SECRET_KEY=sk_test_...");
-    lines.push("STRIPE_WEBHOOK_SECRET=whsec_...");
+  for (const plugin of selectedPluginDefinitions(opts.plugins)) {
+    lines.push(...(plugin.envLines ?? []));
   }
   return lines.join("\n") + "\n";
 }
@@ -157,46 +154,11 @@ function renderServerIndex(opts: ScaffoldOptions): string {
     `import { Pool } from "pg";`,
     `import { registry, bootstrapPlugins, eventBus } from "@stormstack/core";`,
     `import type { StormContext, StormEnv } from "@stormstack/core";`,
+    `import { createCsrfProtection } from "@stormstack/core/csrf";`,
   ];
-
-  const registers: string[] = [];
-
-  if (hasAuth(opts.plugins)) {
-    imports.push(`import { authPlugin } from "@stormstack/auth";`);
-    registers.push(`registry.register(authPlugin);`);
-  }
-  if (hasCrm(opts.plugins)) {
-    imports.push(`import { crmPlugin } from "@stormstack/crm";`);
-    registers.push(`registry.register(crmPlugin);`);
-  }
-  if (hasTicketing(opts.plugins)) {
-    imports.push(`import { ticketingPlugin } from "@stormstack/ticketing";`);
-    registers.push(`registry.register(ticketingPlugin);`);
-  }
-  if (hasAuthSocial(opts.plugins)) {
-    imports.push(`import { createSocialAuthPlugin } from "@stormstack/auth-social";`);
-  }
-  if (hasStripe(opts.plugins)) {
-    imports.push(`import type { Request } from "express";`);
-    imports.push(`import { stripePlugin } from "@stormstack/stripe";`);
-    registers.push(`registry.register(stripePlugin);`);
-  }
-
-  const socialBlock = hasAuthSocial(opts.plugins)
-    ? `
-if (env["GOOGLE_CLIENT_ID"] || env["GITHUB_CLIENT_ID"]) {
-  const socialPlugin = createSocialAuthPlugin({
-    google: env["GOOGLE_CLIENT_ID"]
-      ? { clientId: env["GOOGLE_CLIENT_ID"]!, clientSecret: env["GOOGLE_CLIENT_SECRET"]!, callbackUrl: \`http://localhost:\${PORT}/api/auth-social/google/callback\` }
-      : undefined,
-    github: env["GITHUB_CLIENT_ID"]
-      ? { clientId: env["GITHUB_CLIENT_ID"]!, clientSecret: env["GITHUB_CLIENT_SECRET"]!, callbackUrl: \`http://localhost:\${PORT}/api/auth-social/github/callback\` }
-      : undefined,
-  });
-  registry.register(socialPlugin);
-}
-`
-    : "";
+  const selectedPlugins = selectedPluginDefinitions(opts.plugins);
+  imports.push(...selectedPlugins.flatMap((plugin) => plugin.serverImports));
+  const registrations = selectedPlugins.map((plugin) => plugin.registration);
 
   const jsonParser = hasStripe(opts.plugins)
     ? `express.json({
@@ -212,15 +174,23 @@ if (env["GOOGLE_CLIENT_ID"] || env["GITHUB_CLIENT_ID"]) {
   return `${imports.join("\n")}
 
 const PORT = parseInt(process.env["PORT"] ?? "3000", 10);
+const APP_ORIGIN = process.env["APP_ORIGIN"] ?? "";
+const SESSION_SECRET_PLACEHOLDER = "change-me-to-a-random-32-char-secret-minimum";
 
 const env: StormEnv = {
   DATABASE_URL: process.env["DATABASE_URL"] ?? "",
   SESSION_SECRET: process.env["SESSION_SECRET"] ?? "",
+  APP_ORIGIN,
   NODE_ENV: (process.env["NODE_ENV"] as StormEnv["NODE_ENV"]) ?? "development",
 };
 
-if (!env.DATABASE_URL) {
-  console.error("DATABASE_URL is required");
+if (
+  !env.DATABASE_URL
+  || !APP_ORIGIN
+  || env.SESSION_SECRET.length < 32
+  || env.SESSION_SECRET === SESSION_SECRET_PLACEHOLDER
+) {
+  console.error("DATABASE_URL, APP_ORIGIN and a non-placeholder SESSION_SECRET (min 32 chars) are required");
   process.exit(1);
 }
 
@@ -234,12 +204,22 @@ const logger = {
 
 const ctx: StormContext = { db, env, logger, events: eventBus };
 
-${registers.join("\n")}
-${socialBlock}
+${registrations.join("\n")}
 async function main() {
   const app = express();
-  app.use(cors({ origin: "http://localhost:5173", credentials: true }));
+  app.use(cors({ origin: APP_ORIGIN, credentials: true }));
   app.use(${jsonParser});
+
+  const csrf = createCsrfProtection({
+    secret: env.SESSION_SECRET,
+    allowedOrigins: [APP_ORIGIN],
+    secure: env.NODE_ENV === "production",
+  });
+  app.get("/api/storm/csrf", csrf.issueToken);
+  app.use((req, res, next) => {
+    if (${hasStripe(opts.plugins) ? `req.method === "POST" && req.path === "/api/stripe/webhook"` : "false"}) return next();
+    return csrf.protect(req, res, next);
+  });
 
   await bootstrapPlugins({ app, ctx });
 
@@ -260,11 +240,8 @@ main().catch((err) => {
 }
 
 function renderDrizzleConfig(opts: ScaffoldOptions): string {
-  const schemas: string[] = [];
-  if (hasAuth(opts.plugins)) schemas.push(`"node_modules/@stormstack/auth/dist/index.js"`);
-  if (hasCrm(opts.plugins)) schemas.push(`"node_modules/@stormstack/crm/dist/index.js"`);
-  if (hasTicketing(opts.plugins)) schemas.push(`"node_modules/@stormstack/ticketing/dist/index.js"`);
-  if (hasAuthSocial(opts.plugins)) schemas.push(`"node_modules/@stormstack/auth-social/dist/index.js"`);
+  const schemas = selectedPluginDefinitions(opts.plugins)
+    .flatMap((plugin) => (plugin.schemaPath ? [JSON.stringify(plugin.schemaPath)] : []));
 
   return `import { defineConfig } from "drizzle-kit";
 
@@ -279,16 +256,18 @@ export default defineConfig({
 `;
 }
 
-function renderDockerCompose(): string {
-  return `services:
+function renderDockerCompose(opts: ScaffoldOptions): string {
+  return `name: \${COMPOSE_PROJECT_NAME:-${opts.projectName}}
+
+services:
   postgres:
     image: postgres:16-alpine
     environment:
-      POSTGRES_DB: stormapp
+      POSTGRES_DB: \${POSTGRES_DB:-stormapp}
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
     ports:
-      - "5432:5432"
+      - "\${POSTGRES_PORT:-5432}:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
 
@@ -300,26 +279,34 @@ volumes:
 // ─── Client files ────────────────────────────────────────────────────────────
 
 function renderViteConfig(): string {
-  return `import { defineConfig } from "vite";
+  return `import { defineConfig, loadEnv } from "vite";
 import react from "@vitejs/plugin-react";
 import path from "path";
 
-export default defineConfig({
-  plugins: [react()],
-  root: "client",
-  resolve: {
-    alias: { "@": path.resolve(__dirname, "client/src") },
-  },
-  server: {
-    port: 5173,
-    proxy: {
-      "/api": { target: "http://localhost:3000", changeOrigin: true },
+export default defineConfig(({ mode }) => {
+  const env = loadEnv(mode, process.cwd(), "");
+  const clientPort = Number.parseInt(env["CLIENT_PORT"] ?? "5173", 10);
+  const serverPort = Number.parseInt(env["PORT"] ?? "3000", 10);
+
+  return {
+    plugins: [react()],
+    root: "client",
+    envDir: ".",
+    resolve: {
+      alias: { "@": path.resolve(__dirname, "client/src") },
     },
-  },
-  build: {
-    outDir: "../dist/client",
-    emptyOutDir: true,
-  },
+    server: {
+      port: clientPort,
+      strictPort: true,
+      proxy: {
+        "/api": { target: \`http://localhost:\${serverPort}\`, changeOrigin: true },
+      },
+    },
+    build: {
+      outDir: "../dist/client",
+      emptyOutDir: true,
+    },
+  };
 });
 `;
 }
@@ -415,13 +402,18 @@ body {
 }
 
 function renderApiLib(): string {
-  return `const BASE = "/api";
+  return `import { csrfFetch } from "@stormstack/core/csrf-client";
+
+const BASE = "/api";
+const MUTATION_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(\`\${BASE}\${path}\`, {
+  const method = init?.method?.toUpperCase() ?? "GET";
+  const transport = MUTATION_METHODS.has(method) ? csrfFetch : fetch;
+  const res = await transport(\`\${BASE}\${path}\`, {
     credentials: "include",
-    headers: { "Content-Type": "application/json", ...init?.headers },
     ...init,
+    headers: { "Content-Type": "application/json", ...init?.headers },
   });
   if (!res.ok) {
     const body = await res.json().catch(() => ({})) as { error?: string };
@@ -433,6 +425,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 export const api = {
   get: <T>(path: string) => request<T>(path),
   post: <T>(path: string, body: unknown) => request<T>(path, { method: "POST", body: JSON.stringify(body) }),
+  put: <T>(path: string, body: unknown) => request<T>(path, { method: "PUT", body: JSON.stringify(body) }),
   patch: <T>(path: string, body: unknown) => request<T>(path, { method: "PATCH", body: JSON.stringify(body) }),
   delete: <T>(path: string) => request<T>(path, { method: "DELETE" }),
 };
@@ -441,14 +434,23 @@ export const api = {
 
 function renderAppTsx(opts: ScaffoldOptions): string {
   const hasAuthPlugin = hasAuth(opts.plugins);
+  const hasConsentPlugin = hasConsent(opts.plugins);
 
   return `import { Route } from "wouter";
 import { StormLayout, StormRouter } from "@stormstack/react";
-import { useQueryClient } from "@tanstack/react-query";
+${hasConsentPlugin ? `import { useStorm } from "@stormstack/react"; // storm:root-auth-import @stormstack/consent\n` : ""}import { useQueryClient } from "@tanstack/react-query";
 import { api } from "./lib/api";
 import { DashboardPage } from "./pages/DashboardPage";
 ${hasAuthPlugin ? `import { LoginPage } from "./pages/LoginPage";\n` : ""}
-export default function App() {
+${hasConsentPlugin ? `import { ConsentBanner } from "@stormstack/consent/client"; // storm:root-component-import @stormstack/consent\n` : ""}
+${hasConsentPlugin ? `/* storm:root-auth @stormstack/consent:start */
+function StormRootConsentBanner() {
+  const { user } = useStorm();
+  return user ? <ConsentBanner /> : null;
+}
+/* storm:root-auth @stormstack/consent:end */
+
+` : ""}export default function App() {
   const qc = useQueryClient();
 
   const handleLogout = async () => {
@@ -458,18 +460,21 @@ export default function App() {
   };
 
   return (
-    <StormLayout
-      appName="${opts.projectName}"
-      version="0.1.0"
-      onLogout={handleLogout}
-      navProps={{
-        prepend: [{ id: "dashboard", label: "Dashboard", icon: "LayoutDashboard", path: "/" }],
-      }}
-    >
-      <StormRouter loginPath="/login">
-        <Route path="/" component={DashboardPage} />
-${hasAuthPlugin ? `        <Route path="/login" component={LoginPage} />\n` : ""}      </StormRouter>
-    </StormLayout>
+    <>
+      <StormLayout
+        appName="${opts.projectName}"
+        version="0.1.0"
+        onLogout={handleLogout}
+        navProps={{
+          prepend: [{ id: "dashboard", label: "Dashboard", icon: "LayoutDashboard", path: "/" }],
+        }}
+      >
+        <StormRouter loginPath="/login">
+          <Route path="/" component={DashboardPage} />
+${hasAuthPlugin ? `          <Route path="/login" component={LoginPage} />\n` : ""}        </StormRouter>
+      </StormLayout>
+      {/* storm:root-components */}
+${hasConsentPlugin ? `      {/* storm:root-component @stormstack/consent:start */}\n      <StormRootConsentBanner />\n      {/* storm:root-component @stormstack/consent:end */}\n` : ""}    </>
   );
 }
 `;
@@ -499,7 +504,7 @@ export function DashboardPage() {
         </div>
         <div className="bg-white border border-gray-200 rounded-lg p-4">
           <p className="text-xs text-gray-500 uppercase tracking-wide">Plugins</p>
-          <p className="text-lg font-semibold text-gray-900 mt-1">${opts.plugins.length}</p>
+          <p className="text-lg font-semibold text-gray-900 mt-1">${selectedPluginDefinitions(opts.plugins).length}</p>
         </div>
       </div>
     </div>
@@ -796,14 +801,15 @@ cp .env.example .env
 
 # Install & run
 ${pm} install
-${run} db:push
+${run} db:generate
+${run} db:migrate
 ${run} dev
 \`\`\`
 
 ${opts.withClient ? "Server: http://localhost:3000 | Client: http://localhost:5173\n" : "Server: http://localhost:3000\n"}
 ## Plugins
 
-${opts.plugins.map((p) => `- \`${p}\``).join("\n")}
+${selectedPluginDefinitions(opts.plugins).map((plugin) => `- \`${plugin.id}\``).join("\n")}
 
 ## Scripts
 
@@ -811,7 +817,9 @@ ${opts.plugins.map((p) => `- \`${p}\``).join("\n")}
 |---------|-------------|
 | \`${run} dev\` | Start dev server${opts.withClient ? " + client" : ""} |
 | \`${run} build\` | Production build |
-| \`${run} db:push\` | Apply schema to database |
+| \`${run} db:generate\` | Generate versioned Drizzle migrations |
+| \`${run} db:migrate\` | Apply pending Drizzle migrations |
+| \`${run} db:push\` | Push schema directly (local prototyping only) |
 | \`${run} typecheck\` | TypeScript check |
 `;
 }
@@ -820,7 +828,6 @@ function renderGitignore(): string {
   return `node_modules/
 dist/
 .env
-drizzle/meta/
 *.local
 `;
 }
@@ -834,12 +841,14 @@ function renderStormJson(opts: ScaffoldOptions): string {
     serverEntry: "server/index.ts",
     drizzleConfig: "drizzle.config.ts",
     registry: "https://raw.githubusercontent.com/stormeoio/storm-stack/main/registry.json",
-    installed: opts.plugins,
+    installed: selectedPluginDefinitions(opts.plugins).map((plugin) => plugin.id),
   }, null, 2);
 }
 
 function renderClaudeMd(opts: ScaffoldOptions): string {
-  const pluginList = opts.plugins.map((p) => `- \`${p}\``).join("\n");
+  const pluginList = selectedPluginDefinitions(opts.plugins)
+    .map((plugin) => `- \`${plugin.id}\``)
+    .join("\n");
   return `# ${opts.projectName} — Claude Code Instructions
 
 ## Stack
@@ -851,7 +860,8 @@ function renderClaudeMd(opts: ScaffoldOptions): string {
 \`\`\`bash
 ${opts.packageManager === "npm" ? "npm run" : opts.packageManager} dev          # Start dev (server + client)
 ${opts.packageManager === "npm" ? "npm run" : opts.packageManager} build        # Production build
-${opts.packageManager === "npm" ? "npm run" : opts.packageManager} db:push      # Apply Drizzle schema to PostgreSQL
+${opts.packageManager === "npm" ? "npm run" : opts.packageManager} db:generate  # Generate versioned Drizzle migrations
+${opts.packageManager === "npm" ? "npm run" : opts.packageManager} db:migrate   # Apply pending Drizzle migrations
 storm add <plugin>   # Install a Storm Stack plugin
 storm remove <name>  # Uninstall a plugin
 storm list           # Show available plugins
@@ -879,21 +889,9 @@ This file is auto-updated when you run \`storm add\` or \`storm remove\`.
 }
 
 function renderStormComponents(opts: ScaffoldOptions): string {
-  const imports: string[] = [];
-  const entries: string[] = [];
-
-  if (hasCrm(opts.plugins)) {
-    imports.push(`import { ContactsPage } from "./pages/ContactsPage";`);
-    imports.push(`import { ContactDetailPage } from "./pages/ContactDetailPage";`);
-    imports.push(`import { DealsPage } from "./pages/DealsPage";`);
-    entries.push(`  CrmPage: ContactsPage,`);
-    entries.push(`  ContactDetailPage,`);
-    entries.push(`  DealsPage,`);
-  }
-  if (hasTicketing(opts.plugins)) {
-    imports.push(`import { TicketsPage } from "./pages/TicketsPage";`);
-    entries.push(`  TicketsPage,`);
-  }
+  const selectedPlugins = selectedPluginDefinitions(opts.plugins);
+  const imports = selectedPlugins.flatMap((plugin) => plugin.componentImports ?? []);
+  const entries = selectedPlugins.flatMap((plugin) => plugin.componentEntries ?? []);
 
   return `${imports.length > 0 ? imports.join("\n") + "\n" : ""}import type { ComponentMap } from "@stormstack/react";
 
@@ -914,7 +912,7 @@ export function scaffold(opts: ScaffoldOptions, targetDir: string): void {
   write(targetDir, "server/index.ts", renderServerIndex(opts));
   write(targetDir, "drizzle.config.ts", renderDrizzleConfig(opts));
   write(targetDir, ".env.example", renderEnvExample(opts));
-  write(targetDir, "docker-compose.yml", renderDockerCompose());
+  write(targetDir, "docker-compose.yml", renderDockerCompose(opts));
   write(targetDir, ".gitignore", renderGitignore());
   write(targetDir, "README.md", renderReadme(opts));
   write(targetDir, "storm.json", renderStormJson(opts));

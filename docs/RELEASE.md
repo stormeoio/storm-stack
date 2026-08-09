@@ -50,7 +50,23 @@ For a local version bump:
 npm run version:all
 ```
 
-This bumps the root and workspace package versions, then syncs internal `@stormstack/*` dependency ranges.
+This bumps the root and workspace package versions, then syncs internal `@stormstack/*`
+dependency ranges and the versions of every `available` plugin in `registry.json`.
+
+## Immutable proof tarballs
+
+Build a complete release train from an immutable Git ref with:
+
+```bash
+npm run pack:tarballs -- \
+  --ref proof/consent-v0.1.0 \
+  --destination /tmp/storm-stack-artifacts
+```
+
+The command requires a clean repository, checks out the requested commit in a
+detached temporary worktree, builds every release package, rejects local dependency
+specifiers, and writes a manifest containing the commit and SHA-256 of each tarball.
+The destination must be outside the temporary worktree.
 
 For the normal release path, use the GitHub `Release` workflow with `bump` set to `patch`, `minor`, `major`, or `none`. The workflow applies the version change first, runs `release:check` on the exact tree that will be tagged, commits version changes when needed, tags `vX.Y.Z`, and creates the GitHub release.
 

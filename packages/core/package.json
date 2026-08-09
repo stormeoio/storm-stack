@@ -14,6 +14,16 @@
       "types": "./dist/plugin/index.d.ts",
       "import": "./dist/plugin/index.mjs",
       "require": "./dist/plugin/index.js"
+    },
+    "./csrf": {
+      "types": "./dist/csrf.d.ts",
+      "import": "./dist/csrf.mjs",
+      "require": "./dist/csrf.js"
+    },
+    "./csrf-client": {
+      "types": "./dist/csrf-client.d.ts",
+      "import": "./dist/csrf-client.mjs",
+      "require": "./dist/csrf-client.js"
     }
   },
   "scripts": {

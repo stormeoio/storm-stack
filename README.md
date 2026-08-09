@@ -10,7 +10,8 @@ cd my-app
 docker compose up -d
 cp .env.example .env
 npm install
-npm run db:push
+npm run db:generate
+npm run db:migrate
 npm run dev
 ```
 
@@ -21,6 +22,7 @@ npm run dev
 | [`@stormstack/core`](./packages/core) | Plugin registry & bootstrap engine |
 | [`@stormstack/auth`](./packages/plugin-auth) | Email/password + JWT + RBAC |
 | [`@stormstack/auth-social`](./packages/plugin-auth-social) | OAuth2 Google/GitHub/GitLab |
+| [`@stormstack/consent`](./packages/plugin-consent) | Préférences de consentement et bannière cookies |
 | [`@stormstack/crm`](./packages/plugin-crm) | Contacts, organisations, pipeline |
 | [`@stormstack/ticketing`](./packages/plugin-ticketing) | Support tickets & helpdesk |
 | [`@stormstack/stripe`](./packages/plugin-stripe) | Stripe payments & webhooks |
@@ -111,10 +113,12 @@ npm run build
 npm run lint
 npm run typecheck
 npm test
-npm run pack:all
+npm run release:check
 ```
 
 Release preparation and npm publishing are documented in [`docs/RELEASE.md`](./docs/RELEASE.md).
+The two-client update, rollback, and browser acceptance proof is documented in
+[`docs/PHASE_C_PROOF.md`](./docs/PHASE_C_PROOF.md).
 
 ## MVP Status
 
@@ -131,6 +135,7 @@ Storm Stack v0.1.0 is release-ready locally: the monorepo lints, typechecks, bui
 - [x] Auto-generated plugin settings UI from Zod schemas
 - [x] `@stormstack/auth` — JWT + RBAC + multi-tenant
 - [x] `@stormstack/auth-social` — OAuth2 (Google, GitHub, GitLab)
+- [x] `@stormstack/consent` — préférences RGPD et bannière cookies
 - [x] `@stormstack/crm` — contacts, organisations, pipeline
 - [x] `@stormstack/ticketing` — tickets, comments, labels
 - [x] `@stormstack/stripe` — payments and webhooks

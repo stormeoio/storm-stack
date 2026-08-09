@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-05-21T00:00:00.000Z",
+  "updatedAt": "2026-08-09T00:00:00.000Z",
   "plugins": [
     {
       "id": "@stormstack/auth",
@@ -25,6 +25,18 @@
       "requires": ["@stormstack/auth"],
       "status": "available",
       "npmPackage": "@stormstack/auth-social"
+    },
+    {
+      "id": "@stormstack/consent",
+      "name": "Consentement",
+      "shortName": "consent",
+      "description": "Préférences de consentement et cookies par utilisateur",
+      "version": "0.1.0",
+      "author": "stormeo",
+      "tags": ["consent", "cookies", "privacy", "rgpd", "gdpr"],
+      "requires": ["@stormstack/auth"],
+      "status": "available",
+      "npmPackage": "@stormstack/consent"
     },
     {
       "id": "@stormstack/crm",

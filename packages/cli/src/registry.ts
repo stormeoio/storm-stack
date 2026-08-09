@@ -5,6 +5,13 @@ export interface ClientComponentMapping {
   exportName: string;
 }
 
+export interface RootComponentMapping {
+  /** React export mounted once in client/src/App.tsx. */
+  exportName: string;
+  /** Only render the component once StormProvider exposes an authenticated user. */
+  authenticated?: boolean;
+}
+
 export interface PluginMeta {
   id: string;
   shortName: string;
@@ -20,6 +27,8 @@ export interface PluginMeta {
   clientFiles?: string[];
   /** Maps manifest component names to export names for storm-components.ts */
   clientComponents?: ClientComponentMapping[];
+  /** Optional application-level component mounted outside plugin routes. */
+  rootComponent?: RootComponentMapping;
   envVars?: Record<string, { description: string; required: boolean; example?: string }>;
   status: "available" | "coming-soon";
 }
@@ -65,6 +74,32 @@ export const PLUGINS: PluginMeta[] = [
       GITHUB_CLIENT_ID: { description: "GitHub OAuth client ID", required: false },
       GITHUB_CLIENT_SECRET: { description: "GitHub OAuth client secret", required: false },
     },
+    status: "available",
+  },
+  {
+    id: "@stormstack/consent",
+    shortName: "consent",
+    name: "Consentement",
+    description: "Préférences de consentement et cookies par utilisateur",
+    exportName: "consentPlugin",
+    exportIsFactory: false,
+    requires: ["@stormstack/auth"],
+    dependencies: {},
+    devDependencies: {},
+    files: [
+      "index.ts",
+      "schema.ts",
+      "routes.ts",
+      "version.ts",
+      "client/index.ts",
+      "client/ConsentBanner.tsx",
+      "client/endpoints.ts",
+    ],
+    clientFiles: ["client/index.ts", "client/ConsentBanner.tsx", "client/endpoints.ts"],
+    clientComponents: [
+      { manifestName: "ConsentBanner", exportName: "ConsentBanner" },
+    ],
+    rootComponent: { exportName: "ConsentBanner", authenticated: true },
     status: "available",
   },
   {

@@ -8,6 +8,7 @@ import {
   injectPluginRegistration,
   injectDrizzleSchema,
   injectClientComponents,
+  injectRootComponent,
   injectStripeWebhookRawBody,
   updateProjectClaudeMd,
 } from "../injector";
@@ -148,6 +149,15 @@ async function addSinglePlugin(
       }
     }
 
+    if (plugin.rootComponent) {
+      const rootResult = injectRootComponent(root, plugin, mode, config!.pluginsDir);
+      if (rootResult.modified) {
+        spinner.message(`${pc.cyan(plugin.shortName)} — montage du composant racine…`);
+      } else if (rootResult.reason && !rootResult.reason.includes("déjà injecté")) {
+        p.log.warn(rootResult.reason);
+      }
+    }
+
     // Install plugin-specific npm dependencies
     const deps = Object.entries(plugin.dependencies);
     const devDeps = Object.entries(plugin.devDependencies);
@@ -199,7 +209,7 @@ async function addSinglePlugin(
   }
 }
 
-async function copyPluginSource(
+export async function copyPluginSource(
   root: string,
   pluginsDir: string,
   plugin: PluginMeta,

@@ -5,6 +5,7 @@ import path from "path";
 import { findProjectRoot, readConfig } from "../config";
 import { resolvePlugin, pluginSourceUrl, type PluginMeta } from "../registry";
 import { detectPackageManager, runInstall, fetchFile, writeFile } from "../utils";
+import { VERSION } from "../version";
 
 interface UpdateOptions {
   yes?: boolean;
@@ -210,10 +211,10 @@ function detectCurrentVersion(
   return "0.0.0";
 }
 
-function resolveLatestVersion(_plugin: PluginMeta): string {
+export function resolveLatestVersion(_plugin: PluginMeta): string {
   // In monorepo context, latest is what the registry knows
   // In a real marketplace this would be an HTTP call
-  return "0.1.0";
+  return VERSION;
 }
 
 async function detectCopyChanges(

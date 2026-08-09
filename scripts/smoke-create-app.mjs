@@ -16,6 +16,7 @@ const generatedStormDependencies = [
   "@stormstack/core",
   "@stormstack/react",
   "@stormstack/auth",
+  "@stormstack/consent",
   "@stormstack/crm",
   "@stormstack/ticketing",
   "@stormstack/stripe",
@@ -93,6 +94,13 @@ function assertGeneratedApp(appDir) {
   }
 
   const componentMap = readFileSync(path.join(appDir, "client/src/storm-components.ts"), "utf8");
+  if (!componentMap.includes("ConsentBanner")) {
+    throw new Error("Generated component map must include ConsentBanner");
+  }
+  const app = readFileSync(path.join(appDir, "client/src/App.tsx"), "utf8");
+  if (!app.includes("return user ? <ConsentBanner /> : null") || !app.includes("<StormRootConsentBanner />")) {
+    throw new Error("Generated app must only mount ConsentBanner for an authenticated user");
+  }
   if (!componentMap.includes("ContactDetailPage") || !componentMap.includes("DealsPage")) {
     throw new Error("Generated CRM component map must include detail and deal pages");
   }
@@ -131,7 +139,7 @@ async function main() {
     scaffold(
       {
         projectName: "generated-app",
-        plugins: ["@stormstack/auth", "@stormstack/crm", "@stormstack/ticketing", "@stormstack/stripe"],
+        plugins: ["@stormstack/auth", "@stormstack/consent", "@stormstack/crm", "@stormstack/ticketing", "@stormstack/stripe"],
         packageManager: "npm",
         withClient: true,
       },
