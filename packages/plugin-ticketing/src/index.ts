@@ -4,7 +4,13 @@ import { tickets, ticketComments, ticketLabels, ticketStatusEnum, ticketPriority
 import { createTicketingRoutes } from "./routes";
 import { PACKAGE_VERSION } from "./version";
 
-export { tickets, ticketComments, ticketLabels } from "./schema";
+export {
+  tickets,
+  ticketComments,
+  ticketLabels,
+  ticketStatusEnum,
+  ticketPriorityEnum,
+} from "./schema";
 export type { Ticket, InsertTicket, TicketComment, TicketLabel } from "./schema";
 
 export const ticketingPlugin: StormPlugin = {
