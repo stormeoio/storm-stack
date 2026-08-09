@@ -6,10 +6,12 @@ on:
       baseline_ref:
         description: Annotated immutable 0.1.0 baseline tag
         required: true
+        default: proof/consent-v0.1.0-r3
         type: string
       target_ref:
         description: Immutable 0.1.1 target ref
         required: true
+        default: proof/consent-v0.1.1-r3
         type: string
   workflow_call:
     inputs:
