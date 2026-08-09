@@ -18,6 +18,13 @@ Le répertoire de travail doit être dédié. Il ne peut pas être la racine du 
 le dossier utilisateur ou un lien symbolique. Un nouveau run exige aussi que son
 cache npm froid n’existe pas encore.
 
+Les références canoniques sont `proof/consent-v0.1.0-r2` et
+`proof/consent-v0.1.1-r2`. Les balises antérieures restent conservées pour l’audit.
+La série initiale ne publiait pas tous les enums PostgreSQL ; la série `r1`
+redirigeait encore les routes dynamiques protégées avant la résolution de
+l’authentification. La série `r2` corrige ces deux défauts sans déplacer les preuves
+historiques.
+
 ## Exécution locale canonique
 
 Créer une racine temporaire dédiée, puis lancer volontairement l’interruption après
@@ -30,8 +37,8 @@ case "$(uname -s)" in
 esac
 
 FAIL_AFTER_INSTALL=1 npm run proof:two-client-update -- \
-  --baseline-ref proof/consent-v0.1.0 \
-  --target-ref proof/consent-v0.1.1 \
+  --baseline-ref proof/consent-v0.1.0-r2 \
+  --target-ref proof/consent-v0.1.1-r2 \
   --work-dir "$PROOF_ROOT/work" \
   --output "$PROOF_ROOT/output"
 ```
@@ -50,8 +57,8 @@ Reprendre ensuite le même run tout en injectant l’échec de build post-migrat
 
 ```bash
 FAIL_BUILD_AFTER_MIGRATION=1 npm run proof:two-client-update -- \
-  --baseline-ref proof/consent-v0.1.0 \
-  --target-ref proof/consent-v0.1.1 \
+  --baseline-ref proof/consent-v0.1.0-r2 \
+  --target-ref proof/consent-v0.1.1-r2 \
   --work-dir "$PROOF_ROOT/work" \
   --output "$PROOF_ROOT/output" \
   --resume
