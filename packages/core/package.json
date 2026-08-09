@@ -1,6 +1,6 @@
 {
   "name": "@stormstack/core",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Storm Stack core — plugin registry, auth, multi-tenant, middleware",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",

@@ -3,7 +3,12 @@ import { consentConfigSchema, createConsentRoutes } from "./routes";
 import { consentPreferences } from "./schema";
 import { PACKAGE_VERSION } from "./version";
 
-export { consentConfigSchema, createConsentRoutes, consentPreferencesSchema } from "./routes";
+export {
+  consentConfigSchema,
+  consentPreferencesSchema,
+  consentWithdrawalSchema,
+  createConsentRoutes,
+} from "./routes";
 export { consentPreferences } from "./schema";
 export type { ConsentPreference, InsertConsentPreference } from "./schema";
 
@@ -17,7 +22,7 @@ export const consentPlugin: StormPlugin = {
   requires: ["@stormstack/auth"],
 
   events: {
-    emits: ["consent.preferences_updated"],
+    emits: ["consent.preferences_updated", "consent.withdrawn"],
   },
 
   configSchema: consentConfigSchema,

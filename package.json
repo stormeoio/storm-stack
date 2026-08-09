@@ -1,6 +1,6 @@
 {
   "name": "storm-stack",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "private": true,
   "description": "Storm Stack — React/Node plugin framework for SaaS applications",
   "workspaces": [
