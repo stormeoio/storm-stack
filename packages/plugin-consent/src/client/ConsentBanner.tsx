@@ -13,6 +13,7 @@ interface ConsentState {
   analytics: boolean;
   marketing: boolean;
   policyVersion: string;
+  withdrawnAt: string | null;
 }
 
 interface ConsentStateResponse {
@@ -118,6 +119,31 @@ export function ConsentBanner({
     }
   };
 
+  const withdrawConsent = async () => {
+    setSaving(true);
+    setError("");
+    try {
+      const response = await csrfFetch(`${endpoints.apiBaseUrl}/withdraw`, {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({}),
+      }, {
+        endpoint: endpoints.csrfEndpoint,
+        allowedOrigins: endpoints.allowedOrigins,
+      });
+      const body = await readJson<{ consent: ConsentState }>(response);
+      setConsent(body.consent);
+      setAnalytics(false);
+      setMarketing(false);
+      setEditing(false);
+    } catch (withdrawError) {
+      setError(errorMessage(withdrawError));
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const containerClassName = [
     "fixed inset-x-4 bottom-4 z-50 mx-auto max-w-3xl rounded-xl border border-gray-200 bg-white p-5 text-gray-900 shadow-lg",
     className,
@@ -132,18 +158,41 @@ export function ConsentBanner({
   }
 
   if (consent && !editing) {
+    const withdrawn = typeof consent.withdrawnAt === "string";
     return (
-      <aside className={containerClassName} aria-live="polite" data-proof-consent-state="saved">
+      <aside
+        className={containerClassName}
+        aria-live="polite"
+        data-proof-consent-state={withdrawn ? "withdrawn" : "saved"}
+      >
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <p className="text-sm text-gray-700">Vos préférences de cookies sont enregistrées.</p>
-          <button
-            type="button"
-            className="rounded-md border border-gray-300 px-3 py-2 text-sm font-medium hover:bg-gray-50"
-            onClick={() => setEditing(true)}
-          >
-            Gérer mes choix
-          </button>
+          <p className="text-sm text-gray-700">
+            {withdrawn
+              ? "Votre consentement a été retiré."
+              : "Vos préférences de cookies sont enregistrées."}
+          </p>
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              disabled={saving}
+              className="rounded-md border border-gray-300 px-3 py-2 text-sm font-medium hover:bg-gray-50 disabled:opacity-50"
+              onClick={() => setEditing(true)}
+            >
+              Gérer mes choix
+            </button>
+            {!withdrawn && (
+              <button
+                type="button"
+                disabled={saving}
+                className="rounded-md border border-red-300 px-3 py-2 text-sm font-medium text-red-700 hover:bg-red-50 disabled:opacity-50"
+                onClick={() => void withdrawConsent()}
+              >
+                {saving ? "Retrait…" : "Retirer mon consentement"}
+              </button>
+            )}
+          </div>
         </div>
+        {error && <p className="mt-3 text-sm text-red-700" role="alert">{error}</p>}
       </aside>
     );
   }

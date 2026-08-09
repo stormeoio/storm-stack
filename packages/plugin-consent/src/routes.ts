@@ -17,6 +17,8 @@ export const consentPreferencesSchema = z.object({
   policyVersion: z.string().trim().min(1).max(100).optional(),
 }).strict();
 
+export const consentWithdrawalSchema = z.object({}).strict();
+
 export function createConsentRoutes(
   ctx: StormContext,
   isAuthenticated: RequestHandler,
@@ -62,6 +64,7 @@ export function createConsentRoutes(
       analytics: parsed.data.analytics,
       marketing: parsed.data.marketing,
       policyVersion,
+      withdrawnAt: null,
       updatedAt: now,
     };
 
@@ -75,6 +78,7 @@ export function createConsentRoutes(
           analytics: parsed.data.analytics,
           marketing: parsed.data.marketing,
           policyVersion,
+          withdrawnAt: null,
           updatedAt: now,
         },
       })
@@ -90,6 +94,58 @@ export function createConsentRoutes(
     events.emit("consent.preferences_updated", {
       userId: req.user!.id,
       policyVersion: consent.policyVersion,
+    }, "@stormstack/consent").catch(() => {});
+  });
+
+  router.post("/withdraw", isAuthenticated, async (req, res) => {
+    const parsed = consentWithdrawalSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({
+        error: "Demande de retrait invalide",
+        details: parsed.error.flatten().fieldErrors,
+      });
+      return;
+    }
+
+    const policyVersion = getPolicyVersion();
+    const now = new Date();
+    const values = {
+      userId: req.user!.id,
+      necessary: true as const,
+      analytics: false,
+      marketing: false,
+      policyVersion,
+      withdrawnAt: now,
+      updatedAt: now,
+    };
+
+    const [consent] = await db
+      .insert(consentPreferences)
+      .values(values)
+      .onConflictDoUpdate({
+        target: consentPreferences.userId,
+        set: {
+          necessary: true,
+          analytics: false,
+          marketing: false,
+          policyVersion,
+          withdrawnAt: now,
+          updatedAt: now,
+        },
+      })
+      .returning();
+
+    if (!consent) {
+      res.status(500).json({ error: "Impossible de retirer votre consentement" });
+      return;
+    }
+
+    res.set("Cache-Control", "private, no-store");
+    res.json({ consent });
+    events.emit("consent.withdrawn", {
+      userId: req.user!.id,
+      policyVersion: consent.policyVersion,
+      withdrawnAt: consent.withdrawnAt?.toISOString() ?? now.toISOString(),
     }, "@stormstack/consent").catch(() => {});
   });
 
