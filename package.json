@@ -24,13 +24,17 @@
     "metadata:check": "node scripts/check-package-metadata.mjs",
     "source:size": "node scripts/check-source-size.mjs",
     "release:doctor": "node scripts/release-doctor.mjs",
-    "version:check": "node scripts/sync-internal-versions.mjs --check",
+    "version:check": "node scripts/sync-internal-versions.mjs --check && node scripts/check-release-package-versions.mjs",
+    "version:exports:check": "node scripts/check-built-package-versions.mjs",
     "version:sync": "node scripts/sync-internal-versions.mjs --write && npm install --package-lock-only --ignore-scripts",
     "audit:prod": "npm audit --omit=dev --audit-level=moderate",
-    "release:check": "npm run version:check && npm run catalog:check && npm run metadata:check && npm run source:size && npm run audit:prod && npm run lint && npm run typecheck && npm run build && npm test && npm run smoke:create-app && npm run pack:all",
+    "release:check": "npm run version:check && npm run catalog:check && npm run metadata:check && npm run source:size && npm run audit:prod && npm run lint && npm run typecheck && npm run build && npm run version:exports:check && npm test && npm run smoke:create-app && npm run pack:all",
     "publish:dry-run": "npm run release:check && node scripts/publish-all.mjs --dry-run",
-    "publish:all": "npm run release:check && node scripts/publish-all.mjs --live",
+    "publish:all": "npm run release:check && node scripts/publish-all.mjs --live --provenance",
     "version:all": "npm version patch --workspaces --no-git-tag-version && npm version patch --no-git-tag-version && npm run version:sync"
+  },
+  "dependencies": {
+    "sigstore": "4.1.1"
   },
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": "^7.0.0",

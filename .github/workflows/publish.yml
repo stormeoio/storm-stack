@@ -7,9 +7,9 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: "Version to publish (e.g. 0.1.0)"
-        required: true
-        default: "0.1.0"
+        description: "Optional expected version (must match package.json)"
+        required: false
+        type: string
       dry_run:
         description: "Dry run (no actual publish)"
         required: false
@@ -21,12 +21,103 @@ on:
 
 permissions:
   contents: read
-  id-token: write
 
 jobs:
+  validate:
+    name: Validate release request
+    runs-on: ubuntu-latest
+    outputs:
+      mode: ${{ steps.release.outputs.mode }}
+      version: ${{ steps.release.outputs.version }}
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Tag ancestry validation requires the complete history and tags.
+          fetch-depth: 0
+
+      - name: Resolve and authorize release
+        id: release
+        env:
+          EXPECTED_VERSION: ${{ inputs.version }}
+          RELEASE_EVENT: ${{ github.event_name }}
+          RELEASE_REF: ${{ github.ref }}
+          REQUESTED_DRY_RUN: ${{ inputs.dry_run }}
+        run: |
+          set -euo pipefail
+
+          PACKAGE_VERSION="$(node -p 'require("./package.json").version')"
+          node scripts/check-release-package-versions.mjs "$PACKAGE_VERSION"
+          EXPECTED_TAG_REF="refs/tags/v${PACKAGE_VERSION}"
+
+          authorize_tagged_head() {
+            TAG_REF="$1"
+            if ! TAG_COMMIT="$(git rev-parse --verify "${TAG_REF}^{commit}")"; then
+              printf '::error::The exact release tag does not resolve to a commit.\n'
+              exit 1
+            fi
+
+            HEAD_COMMIT="$(git rev-parse --verify HEAD)"
+            if [ "$TAG_COMMIT" != "$HEAD_COMMIT" ]; then
+              printf '::error::The checked-out commit does not match the exact release tag.\n'
+              exit 1
+            fi
+
+            git fetch --no-tags --force origin \
+              'refs/heads/main:refs/remotes/origin/main'
+            if ! git merge-base --is-ancestor "$TAG_COMMIT" refs/remotes/origin/main; then
+              printf '::error::The tagged commit is not an ancestor of origin/main.\n'
+              exit 1
+            fi
+          }
+
+          case "$RELEASE_EVENT" in
+            push)
+              if [ "$RELEASE_REF" != "$EXPECTED_TAG_REF" ]; then
+                printf '::error::The release tag must exactly match the package.json version.\n'
+                exit 1
+              fi
+
+              authorize_tagged_head "$RELEASE_REF"
+              MODE="live"
+              ;;
+            workflow_dispatch)
+              if [ -n "$EXPECTED_VERSION" ] && [ "$EXPECTED_VERSION" != "$PACKAGE_VERSION" ]; then
+                printf '::error::The requested version does not match package.json.\n'
+                exit 1
+              fi
+
+              case "$REQUESTED_DRY_RUN" in
+                true)
+                  MODE="dry-run"
+                  ;;
+                false)
+                  if [ "$RELEASE_REF" != "$EXPECTED_TAG_REF" ]; then
+                    printf '::error::Manual live publication requires the exact release tag.\n'
+                    exit 1
+                  fi
+                  authorize_tagged_head "$EXPECTED_TAG_REF"
+                  MODE="live"
+                  ;;
+                *)
+                  printf '::error::The dry_run input must be true or false.\n'
+                  exit 1
+                  ;;
+              esac
+              ;;
+            *)
+              printf '::error::Unsupported release event.\n'
+              exit 1
+              ;;
+          esac
+
+          printf 'mode=%s\n' "$MODE" >> "$GITHUB_OUTPUT"
+          printf 'version=%s\n' "$PACKAGE_VERSION" >> "$GITHUB_OUTPUT"
+
   test:
     name: Pre-publish tests
     runs-on: ubuntu-latest
+    needs: validate
 
     steps:
       - uses: actions/checkout@v4
@@ -41,11 +132,16 @@ jobs:
       - name: Release check
         run: npm run release:check
 
-  publish:
-    name: Publish packages
+  dry-run:
+    name: Dry-run packages
+    if: >-
+      github.event_name == 'workflow_dispatch' &&
+      inputs.dry_run == 'true' &&
+      needs.validate.outputs.mode == 'dry-run'
     runs-on: ubuntu-latest
-    needs: test
-    environment: npm
+    needs:
+      - validate
+      - test
 
     steps:
       - uses: actions/checkout@v4
@@ -61,44 +157,69 @@ jobs:
       - name: Build all packages
         run: npx turbo build
 
-      - name: Resolve version
-        id: version
-        run: |
-          if [ -n "${{ inputs.version }}" ]; then
-            echo "version=${{ inputs.version }}" >> "$GITHUB_OUTPUT"
-          else
-            TAG="${GITHUB_REF#refs/tags/v}"
-            echo "version=$TAG" >> "$GITHUB_OUTPUT"
-          fi
-
-      - name: Verify package versions
-        run: node scripts/check-release-package-versions.mjs "${{ steps.version.outputs.version }}"
-
-      - name: Resolve dry-run flag
-        id: flags
-        run: |
-          DRY_RUN="${{ inputs.dry_run }}"
-          if [ "$GITHUB_EVENT_NAME" = "push" ]; then
-            DRY_RUN="false"
-          fi
-          if [ "$DRY_RUN" = "true" ]; then
-            echo "args=--dry-run" >> "$GITHUB_OUTPUT"
-            echo "label=DRY RUN" >> "$GITHUB_OUTPUT"
-          else
-            echo "args=--live" >> "$GITHUB_OUTPUT"
-            echo "label=LIVE" >> "$GITHUB_OUTPUT"
-          fi
-
-      - name: Publish (${{ steps.flags.outputs.label }})
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-        run: node scripts/publish-all.mjs ${{ steps.flags.outputs.args }} --provenance
+      - name: Publish (DRY RUN)
+        run: node scripts/publish-all.mjs --dry-run --provenance
 
       - name: Summary
         if: always()
+        env:
+          RELEASE_VERSION: ${{ needs.validate.outputs.version }}
         run: |
-          echo "## Publish Summary" >> "$GITHUB_STEP_SUMMARY"
-          echo "" >> "$GITHUB_STEP_SUMMARY"
-          echo "- **Version**: v${{ steps.version.outputs.version }}" >> "$GITHUB_STEP_SUMMARY"
-          echo "- **Mode**: ${{ steps.flags.outputs.label }}" >> "$GITHUB_STEP_SUMMARY"
-          echo "- **Trigger**: ${{ github.event_name }}" >> "$GITHUB_STEP_SUMMARY"
+          {
+            printf '## Publish Summary\n\n'
+            printf -- '- **Version**: v%s\n' "$RELEASE_VERSION"
+            printf -- '- **Mode**: DRY RUN\n'
+            printf -- '- **Trigger**: workflow_dispatch\n'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  publish:
+    name: Publish packages
+    if: >-
+      needs.validate.outputs.mode == 'live' &&
+      ((github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')) ||
+      (github.event_name == 'workflow_dispatch' &&
+      github.ref == format('refs/tags/v{0}', needs.validate.outputs.version) &&
+      inputs.dry_run == 'false'))
+    runs-on: ubuntu-latest
+    needs:
+      - validate
+      - test
+    environment: npm
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Live guards verify the exact tag and its ancestry in origin/main.
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+          registry-url: https://registry.npmjs.org
+
+      - run: npm ci
+
+      - name: Build all packages
+        run: npx turbo build
+
+      - name: Publish (LIVE)
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: node scripts/publish-all.mjs --live --provenance
+
+      - name: Summary
+        if: always()
+        env:
+          RELEASE_TRIGGER: ${{ github.event_name }}
+          RELEASE_VERSION: ${{ needs.validate.outputs.version }}
+        run: |
+          {
+            printf '## Publish Summary\n\n'
+            printf -- '- **Version**: v%s\n' "$RELEASE_VERSION"
+            printf -- '- **Mode**: LIVE\n'
+            printf -- '- **Trigger**: %s\n' "$RELEASE_TRIGGER"
+          } >> "$GITHUB_STEP_SUMMARY"

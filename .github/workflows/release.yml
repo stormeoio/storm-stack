@@ -14,13 +14,16 @@ on:
           - minor
           - major
 
-permissions:
-  contents: write
+permissions: {}
 
 jobs:
   release:
     name: Create release
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
+    permissions:
+      actions: write
+      contents: write
 
     steps:
       - uses: actions/checkout@v4
@@ -33,12 +36,27 @@ jobs:
           node-version-file: .nvmrc
           cache: npm
 
+      - name: Authorize release ref
+        env:
+          RELEASE_REF: ${{ github.ref }}
+        run: |
+          set -euo pipefail
+
+          if [ "$RELEASE_REF" != "refs/heads/main" ]; then
+            printf '::error::Releases are only allowed from refs/heads/main.\n'
+            exit 1
+          fi
+
       - run: npm ci
 
       - name: Resolve version
         id: bump
+        env:
+          REQUESTED_BUMP: ${{ inputs.bump }}
         run: |
-          BUMP="${{ inputs.bump }}"
+          set -euo pipefail
+
+          BUMP="$REQUESTED_BUMP"
           if [ "$BUMP" != "none" ]; then
             npm version "$BUMP" --workspaces --no-git-tag-version
             npm version "$BUMP" --no-git-tag-version
@@ -53,8 +71,12 @@ jobs:
         run: npm run release:check
 
       - name: Commit and tag
+        env:
+          RELEASE_VERSION: ${{ steps.bump.outputs.version }}
         run: |
-          VERSION="${{ steps.bump.outputs.version }}"
+          set -euo pipefail
+
+          VERSION="$RELEASE_VERSION"
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
@@ -70,14 +92,24 @@ jobs:
             git commit -m "release: v$VERSION"
           fi
           git tag "v$VERSION"
-          git push origin HEAD:main --tags
+          git push --atomic origin \
+            "HEAD:refs/heads/main" \
+            "refs/tags/v$VERSION:refs/tags/v$VERSION"
 
       - name: Create GitHub release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_VERSION: ${{ steps.bump.outputs.version }}
         run: |
-          VERSION="${{ steps.bump.outputs.version }}"
-          PREV_TAG=$(git tag --sort=-v:refname | grep -v "^v$VERSION$" | head -1)
+          set -euo pipefail
+
+          VERSION="$RELEASE_VERSION"
+          PREV_TAG="$(
+            git tag --list 'v[0-9]*' --sort=-v:refname \
+              | grep -Fvx "v$VERSION" \
+              | head -1 \
+              || true
+          )"
           CHANGELOG=""
           if [ -n "$PREV_TAG" ]; then
             CHANGELOG=$(git log "$PREV_TAG..HEAD" --pretty=format:"- %s" --no-merges)
@@ -92,3 +124,18 @@ jobs:
 
           ---
           Packages are published automatically via the [Publish workflow](../../actions/workflows/publish.yml)."
+
+      - name: Dispatch npm publication
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_REPOSITORY: ${{ github.repository }}
+          RELEASE_VERSION: ${{ steps.bump.outputs.version }}
+        run: |
+          set -euo pipefail
+
+          VERSION="$RELEASE_VERSION"
+          gh workflow run publish.yml \
+            --repo "$RELEASE_REPOSITORY" \
+            --ref "v$VERSION" \
+            --field dry_run=false \
+            --field version="$VERSION"

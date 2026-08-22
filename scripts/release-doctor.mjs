@@ -70,7 +70,22 @@ if (branch.ok && branch.output !== "main") {
 }
 
 const npmTokenPresent = Boolean(process.env.NPM_TOKEN || process.env.NODE_AUTH_TOKEN);
-addCheck("npm publish token", npmTokenPresent, "NPM_TOKEN or NODE_AUTH_TOKEN is not set in this shell.", "Add NPM_TOKEN to the GitHub npm environment before live publish.");
+const npmIdentity = run("npm", ["whoami", "--registry=https://registry.npmjs.org/"]);
+const npmAuthenticationOk = npmIdentity.ok && npmIdentity.output.length > 0;
+let npmAuthenticationDetail;
+if (npmAuthenticationOk) {
+  npmAuthenticationDetail = `Authenticated to npm as ${npmIdentity.output}.`;
+} else if (npmTokenPresent) {
+  npmAuthenticationDetail = "npm whoami rejected the configured credential.";
+} else {
+  npmAuthenticationDetail = "npm whoami could not authenticate this shell.";
+}
+addCheck(
+  "npm authentication",
+  npmAuthenticationOk,
+  npmAuthenticationDetail,
+  "Authenticate with npm login or configure a valid npm automation token, then verify it with npm whoami.",
+);
 
 const rootVersion = readRootPackageJson().version;
 const versionMismatches = releasePackageDirs.flatMap((packageDir) => {
