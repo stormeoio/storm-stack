@@ -41,7 +41,13 @@ export default defineConfig({
 
     const result = injectDrizzleSchema(path.join(root, "drizzle.config.ts"), authPlugin, "npm", "plugins");
 
-    expect(result.modified).toBe(true);
+    expect(result).toMatchObject({ modified: true, configured: true });
+    expect(injectDrizzleSchema(
+      path.join(root, "drizzle.config.ts"),
+      authPlugin,
+      "npm",
+      "plugins",
+    )).toMatchObject({ modified: false, configured: true });
     const drizzle = readFile("drizzle.config.ts");
     expect(drizzle).toContain('"node_modules/@stormstack/auth/dist/index.js"');
     expect(drizzle).not.toContain("/dist/schema.js");

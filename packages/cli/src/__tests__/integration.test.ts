@@ -6,14 +6,19 @@
  * client component mapping, and CLAUDE.md generation through a
  * realistic multi-plugin setup flow.
  */
-import { describe, it, expect, beforeAll, afterAll } from "vitest";
+import { describe, it, expect, beforeAll, afterAll, vi } from "vitest";
 import fs from "fs";
+import os from "node:os";
 import path from "path";
 import { execSync } from "child_process";
 
 const CLI = path.resolve(__dirname, "../../dist/index.mjs");
-const FIXTURES = path.resolve(__dirname, "../../.test-integration");
+const FIXTURES = path.join(os.tmpdir(), `storm-cli-integration-${process.pid}`);
 const MONOREPO = path.resolve(__dirname, "../../../..");
+const REAL_PROCESS_TEST_TIMEOUT = 30_000;
+
+// This suite executes the built CLI repeatedly against a real fixture project.
+vi.setConfig({ testTimeout: REAL_PROCESS_TEST_TIMEOUT, hookTimeout: REAL_PROCESS_TEST_TIMEOUT });
 
 function run(cmd: string, cwd: string = FIXTURES): string {
   return execSync(`node ${CLI} ${cmd}`, {
@@ -127,8 +132,13 @@ describe("Full pipeline: init → add → verify → remove → verify", () => {
 
   it("step 1: server entry wired for auth", () => {
     const server = read("server/index.ts");
-    expect(server).toContain('import { authPlugin } from "../plugins/auth"');
+    expect(server).toContain(
+      'import { authPlugin, createDatabaseRoleGuard } from "../plugins/auth"',
+    );
     expect(server).toContain("registry.register(authPlugin)");
+    expect(server).toContain(
+      'requireAdmin: createDatabaseRoleGuard({} as any, "admin")',
+    );
   });
 
   it("step 1: drizzle config includes auth schema", () => {

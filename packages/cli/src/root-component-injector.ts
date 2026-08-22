@@ -1,6 +1,12 @@
 import fs from "node:fs";
 import path from "node:path";
 import type { PluginMeta } from "./registry";
+import {
+  findLastStaticImportEnd,
+  findNamedImportBinding,
+  hasUniqueRuntimeNamedImport,
+} from "./static-import-scanner";
+import type { RequiredWiringResult } from "./wiring-result";
 
 const ROOT_COMPONENTS_MARKER = "      {/* storm:root-components */}";
 
@@ -25,49 +31,11 @@ function wrapperName(plugin: PluginMeta): string {
   return `StormRoot${exportName.replace(/[^A-Za-z0-9_$]/g, "")}`;
 }
 
-function findLastImportIndex(content: string): number {
-  const lines = content.split("\n");
-  let lastImportLineIndex = -1;
-  for (let index = 0; index < lines.length; index += 1) {
-    if (/^\s*import[\s{]/.test(lines[index]!)) lastImportLineIndex = index;
-  }
-  if (lastImportLineIndex === -1) return -1;
-  return lines
-    .slice(0, lastImportLineIndex + 1)
-    .reduce((offset, line) => offset + line.length + 1, 0);
-}
-
 function insertImport(content: string, importLine: string): string {
-  const index = findLastImportIndex(content);
+  const index = findLastStaticImportEnd(content);
   return index === -1
     ? `${importLine}\n${content}`
     : `${content.slice(0, index)}${importLine}\n${content.slice(index)}`;
-}
-
-function hasNamedImport(content: string, source: string, name: string): boolean {
-  const sourcePattern = escapeRegex(source);
-  const imports = content.matchAll(
-    new RegExp(`^import\\s*\\{([^}]*)\\}\\s*from\\s*["']${sourcePattern}["'];?.*$`, "gm"),
-  );
-  for (const match of imports) {
-    const hasExactBinding = match[1]!.split(",").some((part) => {
-      const [importedName, localName = importedName] = part.trim().split(/\s+as\s+/);
-      return importedName === name && localName === name;
-    });
-    if (hasExactBinding) return true;
-  }
-  return false;
-}
-
-function hasImportedBinding(content: string, name: string): boolean {
-  for (const match of content.matchAll(/^import\s*\{([^}]*)\}\s*from\s*["'][^"']+["'];?.*$/gm)) {
-    const localNames = match[1]!.split(",").map((part) => {
-      const names = part.trim().split(/\s+as\s+/);
-      return names[1] ?? names[0];
-    });
-    if (localNames.includes(name)) return true;
-  }
-  return false;
 }
 
 function removeMarkedLine(content: string, marker: string): string {
@@ -88,22 +56,38 @@ export function injectRootComponent(
   plugin: PluginMeta,
   mode: "npm" | "copy",
   pluginsDir: string,
-): { modified: boolean; reason?: string } {
-  if (!plugin.rootComponent) return { modified: false, reason: "Plugin sans composant racine" };
+): RequiredWiringResult {
+  if (!plugin.rootComponent) {
+    return { modified: false, configured: true, reason: "Plugin sans composant racine" };
+  }
 
   const appPath = path.join(projectRoot, "client/src/App.tsx");
   if (!fs.existsSync(appPath)) {
-    return { modified: false, reason: "client/src/App.tsx introuvable" };
+    if (!fs.existsSync(path.join(projectRoot, "client"))) {
+      return {
+        modified: false,
+        configured: true,
+        reason: "Projet sans client; montage du composant racine ignoré",
+      };
+    }
+    return { modified: false, configured: false, reason: "client/src/App.tsx introuvable" };
   }
 
   let content = fs.readFileSync(appPath, "utf8");
   const startMarker = renderMarker(plugin, "start");
   if (content.includes(startMarker)) {
-    return { modified: false, reason: "Composant racine déjà injecté" };
+    return rootComponentIsConfigured(content, plugin, mode, pluginsDir)
+      ? { modified: false, configured: true, reason: "Composant racine déjà injecté" }
+      : {
+          modified: false,
+          configured: false,
+          reason: "Câblage du composant racine incomplet dans App.tsx",
+        };
   }
   if (!content.includes(ROOT_COMPONENTS_MARKER)) {
     return {
       modified: false,
+      configured: false,
       reason: "Marqueur storm:root-components absent; montez le composant manuellement dans App.tsx",
     };
   }
@@ -112,10 +96,15 @@ export function injectRootComponent(
   const componentSource = mode === "npm"
     ? `${plugin.id}/client`
     : `../../${pluginsDir}/${plugin.shortName}/client`;
-  const componentAlreadyImported = hasNamedImport(content, componentSource, componentName);
-  if (!componentAlreadyImported && hasImportedBinding(content, componentName)) {
+  const componentAlreadyImported = hasUniqueRuntimeNamedImport(
+    content,
+    componentSource,
+    componentName,
+  );
+  if (!componentAlreadyImported && findNamedImportBinding(content, componentName)) {
     return {
       modified: false,
+      configured: false,
       reason: `Le nom ${componentName} est déjà importé depuis une autre source`,
     };
   }
@@ -130,12 +119,21 @@ export function injectRootComponent(
   if (plugin.rootComponent.authenticated) {
     const helperName = wrapperName(plugin);
     if (new RegExp(`\\b${escapeRegex(helperName)}\\b`).test(content)) {
-      return { modified: false, reason: `Le nom ${helperName} existe déjà dans App.tsx` };
-    }
-    const useStormAlreadyImported = hasNamedImport(content, "@stormstack/react", "useStorm");
-    if (!useStormAlreadyImported && hasImportedBinding(content, "useStorm")) {
       return {
         modified: false,
+        configured: false,
+        reason: `Le nom ${helperName} existe déjà dans App.tsx`,
+      };
+    }
+    const useStormAlreadyImported = hasUniqueRuntimeNamedImport(
+      content,
+      "@stormstack/react",
+      "useStorm",
+    );
+    if (!useStormAlreadyImported && findNamedImportBinding(content, "useStorm")) {
+      return {
+        modified: false,
+        configured: false,
         reason: "Le nom useStorm est déjà importé depuis une autre source",
       };
     }
@@ -150,6 +148,7 @@ export function injectRootComponent(
     if (appIndex === -1) {
       return {
         modified: false,
+        configured: false,
         reason: "Fonction export default App introuvable; montez le composant manuellement",
       };
     }
@@ -169,8 +168,48 @@ ${authMarker(plugin, "end")}
     ROOT_COMPONENTS_MARKER,
     `${ROOT_COMPONENTS_MARKER}\n${startMarker}\n      ${renderExpression}\n${renderMarker(plugin, "end")}`,
   );
+  if (!rootComponentIsConfigured(content, plugin, mode, pluginsDir)) {
+    return {
+      modified: false,
+      configured: false,
+      reason: "Impossible de vérifier le câblage du composant racine dans App.tsx",
+    };
+  }
   fs.writeFileSync(appPath, content, "utf8");
-  return { modified: true };
+  return { modified: true, configured: true };
+}
+
+function rootComponentIsConfigured(
+  content: string,
+  plugin: PluginMeta,
+  mode: "npm" | "copy",
+  pluginsDir: string,
+): boolean {
+  if (!plugin.rootComponent) return true;
+
+  const componentName = plugin.rootComponent.exportName;
+  const componentSource = mode === "npm"
+    ? `${plugin.id}/client`
+    : `../../${pluginsDir}/${plugin.shortName}/client`;
+  if (
+    !content.includes(renderMarker(plugin, "start"))
+    || !content.includes(renderMarker(plugin, "end"))
+    || !hasUniqueRuntimeNamedImport(content, componentSource, componentName)
+  ) {
+    return false;
+  }
+
+  if (!plugin.rootComponent.authenticated) {
+    return content.includes(`<${componentName} />`);
+  }
+
+  const helperName = wrapperName(plugin);
+  return content.includes(authMarker(plugin, "start"))
+    && content.includes(authMarker(plugin, "end"))
+    && hasUniqueRuntimeNamedImport(content, "@stormstack/react", "useStorm")
+    && content.includes(`function ${helperName}`)
+    && content.includes(`return user ? <${componentName} /> : null`)
+    && content.includes(`<${helperName} />`);
 }
 
 /** Removes only code delimited or tagged as owned by injectRootComponent(). */

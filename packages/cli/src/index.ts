@@ -111,7 +111,8 @@ async function main() {
       const dryRun = args.includes("--dry-run");
       const all = args.includes("--all");
       const { updateCommand } = await import("./commands/update");
-      await updateCommand(pluginArg, { yes, dryRun, all });
+      const result = await updateCommand(pluginArg, { yes, dryRun, all });
+      if (result.status === "failed") process.exitCode = 1;
       break;
     }
 

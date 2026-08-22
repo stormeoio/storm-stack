@@ -1,21 +1,34 @@
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import fs from "fs";
+import os from "node:os";
 import path from "path";
 import { execSync } from "child_process";
 
 const CLI = path.resolve(__dirname, "../../dist/index.mjs");
-const FIXTURES = path.resolve(__dirname, "../../.test-fixtures");
+const FIXTURES = path.join(os.tmpdir(), `storm-cli-e2e-${process.pid}`);
 const MONOREPO = path.resolve(__dirname, "../../../..");
 const CLI_PACKAGE = JSON.parse(fs.readFileSync(path.resolve(__dirname, "../../package.json"), "utf8")) as { version: string };
-const SLOW_IO_TEST_TIMEOUT = 15_000;
+const REAL_PROCESS_TEST_TIMEOUT = 30_000;
+
+// These E2E cases spawn the built CLI and perform real filesystem/package-manager I/O.
+vi.setConfig({ testTimeout: REAL_PROCESS_TEST_TIMEOUT, hookTimeout: REAL_PROCESS_TEST_TIMEOUT });
 
 function run(cmd: string, cwd: string = FIXTURES): string {
   return execSync(`node ${CLI} ${cmd}`, { cwd, encoding: "utf8", stdio: ["pipe", "pipe", "pipe"], env: { ...process.env, NO_COLOR: "1" } });
 }
 
-function runSafe(cmd: string, cwd: string = FIXTURES): { stdout: string; stderr: string; code: number } {
+function runSafe(
+  cmd: string,
+  cwd: string = FIXTURES,
+  env: NodeJS.ProcessEnv = {},
+): { stdout: string; stderr: string; code: number } {
   try {
-    const stdout = execSync(`node ${CLI} ${cmd}`, { cwd, encoding: "utf8", stdio: ["pipe", "pipe", "pipe"], env: { ...process.env, NO_COLOR: "1" } });
+    const stdout = execSync(`node ${CLI} ${cmd}`, {
+      cwd,
+      encoding: "utf8",
+      stdio: ["pipe", "pipe", "pipe"],
+      env: { ...process.env, ...env, NO_COLOR: "1" },
+    });
     return { stdout, stderr: "", code: 0 };
   } catch (err: unknown) {
     const e = err as { stdout?: string; stderr?: string; status?: number };
@@ -83,6 +96,32 @@ function writeFixture(file: string, content: string): void {
   fs.writeFileSync(target, content, "utf8");
 }
 
+function wireLegacyAuthServer(): string {
+  const legacy = readFixture("server/index.ts")
+    .replace(
+      'import { registry, bootstrapPlugins } from "@stormstack/core";',
+      'import { registry, bootstrapPlugins } from "@stormstack/core";\nimport { authPlugin } from "@stormstack/auth";',
+    )
+    .replace("async function main() {", "registry.register(authPlugin);\n\nasync function main() {");
+  writeFixture("server/index.ts", legacy);
+  return legacy;
+}
+
+function wireCurrentAuthServer(): string {
+  const current = readFixture("server/index.ts")
+    .replace(
+      'import { registry, bootstrapPlugins } from "@stormstack/core";',
+      'import { registry, bootstrapPlugins } from "@stormstack/core";\nimport { authPlugin, createDatabaseRoleGuard } from "@stormstack/auth";',
+    )
+    .replace("async function main() {", "registry.register(authPlugin);\n\nasync function main() {")
+    .replace(
+      "await bootstrapPlugins({ app, ctx: { db: {} as any, env, logger: console } });",
+      'await bootstrapPlugins({ app, ctx: { db: {} as any, env, logger: console }, requireAdmin: createDatabaseRoleGuard({} as any, "admin") });',
+    );
+  writeFixture("server/index.ts", current);
+  return current;
+}
+
 // ── Tests ─────────────────────────────────────────────────────────────────
 
 describe("storm list", () => {
@@ -114,8 +153,13 @@ describe("storm add --copy --local", () => {
 
     // Server entry wired
     const server = readFixture("server/index.ts");
-    expect(server).toContain('import { authPlugin } from "../plugins/auth"');
+    expect(server).toContain(
+      'import { authPlugin, createDatabaseRoleGuard } from "../plugins/auth"',
+    );
     expect(server).toContain("registry.register(authPlugin)");
+    expect(server).toContain(
+      'requireAdmin: createDatabaseRoleGuard({} as any, "admin")',
+    );
 
     // Drizzle config updated
     const drizzle = readFixture("drizzle.config.ts");
@@ -230,7 +274,7 @@ describe("storm remove", () => {
 
     const config = readConfig();
     expect(config.installed).toEqual(["@stormstack/auth", "@stormstack/crm"]);
-  }, SLOW_IO_TEST_TIMEOUT);
+  }, REAL_PROCESS_TEST_TIMEOUT);
 
   it("blocks removal of auth when crm depends on it", () => {
     const result = runSafe("remove auth --yes");
@@ -580,25 +624,74 @@ describe("storm update", () => {
   });
 
   it("reports all up to date for freshly installed plugins", () => {
-    run(`add auth --copy --local ${MONOREPO} --yes`);
+    writeFixture("storm.json", JSON.stringify({
+      version: 1,
+      pluginsDir: "plugins",
+      serverEntry: "server/index.ts",
+      drizzleConfig: "drizzle.config.ts",
+      registry: "",
+      installed: ["@stormstack/auth"],
+    }));
+    writeFixture("node_modules/@stormstack/auth/package.json", JSON.stringify({
+      name: "@stormstack/auth",
+      version: CLI_PACKAGE.version,
+    }));
+    wireCurrentAuthServer();
+
     const output = run("update --yes");
     expect(output).toContain("à jour");
   });
 
   it("dry-run does not modify files", () => {
-    run(`add auth --copy --local ${MONOREPO} --yes`);
-    const indexBefore = fs.readFileSync(path.join(FIXTURES, "plugins/auth/index.ts"), "utf8");
-    run("update --dry-run --yes");
-    const indexAfter = fs.readFileSync(path.join(FIXTURES, "plugins/auth/index.ts"), "utf8");
-    expect(indexAfter).toBe(indexBefore);
+    writeFixture("storm.json", JSON.stringify({
+      version: 1,
+      pluginsDir: "plugins",
+      serverEntry: "server/index.ts",
+      drizzleConfig: "drizzle.config.ts",
+      registry: "",
+      installed: ["@stormstack/auth"],
+    }));
+    writeFixture("node_modules/@stormstack/auth/package.json", JSON.stringify({
+      name: "@stormstack/auth",
+      version: CLI_PACKAGE.version,
+    }));
+    const serverBefore = wireLegacyAuthServer();
+
+    const output = run("update auth --dry-run --yes");
+
+    expect(output).toContain("dry-run");
+    expect(output).toContain("migration requireAdmin");
+    expect(readFixture("server/index.ts")).toBe(serverBefore);
   });
 
   it("handles update of specific plugin without crash", () => {
-    run(`add auth --copy --local ${MONOREPO} --yes`);
-    run(`add crm --copy --local ${MONOREPO} --yes`);
-    // Updating a single plugin by name should work
+    writeFixture("storm.json", JSON.stringify({
+      version: 1,
+      pluginsDir: "plugins",
+      serverEntry: "server/index.ts",
+      drizzleConfig: "drizzle.config.ts",
+      registry: "",
+      installed: ["@stormstack/auth", "@stormstack/crm"],
+    }));
+    for (const id of ["auth", "crm"]) {
+      writeFixture(`node_modules/@stormstack/${id}/package.json`, JSON.stringify({
+        name: `@stormstack/${id}`,
+        version: CLI_PACKAGE.version,
+      }));
+    }
+    const serverBefore = wireLegacyAuthServer()
+      .replace(
+        'import { authPlugin } from "@stormstack/auth";',
+        'import { authPlugin } from "@stormstack/auth";\nimport { crmPlugin } from "@stormstack/crm";',
+      )
+      .replace("registry.register(authPlugin);", "registry.register(authPlugin);\nregistry.register(crmPlugin);");
+    writeFixture("server/index.ts", serverBefore);
+
     const output = run("update crm --yes");
-    expect(output).toContain("jour");
+
+    expect(output).toContain("à jour");
+    expect(readFixture("server/index.ts")).toBe(serverBefore);
+    expect(readFixture("server/index.ts")).not.toContain("createDatabaseRoleGuard");
   });
 
   it("ignores non-installed plugin argument", () => {
@@ -607,6 +700,103 @@ describe("storm update", () => {
     // billing is coming-soon, not installed — should report nothing to update
     expect(output).toContain("jour");
   });
+
+  it("migrates requireAdmin even when the auth package is already current", () => {
+    writeFixture("storm.json", JSON.stringify({
+      version: 1,
+      pluginsDir: "plugins",
+      serverEntry: "server/index.ts",
+      drizzleConfig: "drizzle.config.ts",
+      registry: "",
+      installed: ["@stormstack/auth"],
+    }));
+    writeFixture("node_modules/@stormstack/auth/package.json", JSON.stringify({
+      name: "@stormstack/auth",
+      version: CLI_PACKAGE.version,
+    }));
+    wireLegacyAuthServer();
+
+    const output = run("update auth --yes");
+    const server = readFixture("server/index.ts");
+
+    expect(output).toContain("migration requireAdmin");
+    expect(output).toContain("1 plugin(s) mis à jour");
+    expect(server).toContain(
+      'import { authPlugin, createDatabaseRoleGuard } from "@stormstack/auth";',
+    );
+    expect(server).toContain(
+      'requireAdmin: createDatabaseRoleGuard({} as any, "admin")',
+    );
+  });
+
+  it("returns a non-zero exit code without touching a stale copy recovery backup", () => {
+    writeFixture("storm.json", JSON.stringify({
+      version: 1,
+      pluginsDir: "plugins",
+      serverEntry: "server/index.ts",
+      drizzleConfig: "drizzle.config.ts",
+      registry: "",
+      installed: ["@stormstack/auth"],
+    }));
+    writeFixture("plugins/auth/version.ts", 'export const PACKAGE_VERSION = "0.1.0";\n');
+    const pluginBefore = readFixture("plugins/auth/version.ts");
+    const serverBefore = wireLegacyAuthServer();
+    const backupDir = path.join(FIXTURES, "plugins/.auth.backup");
+    const sentinel = Buffer.from([0x00, 0xff, 0x53, 0x54, 0x4f, 0x52, 0x4d, 0x0a]);
+    fs.mkdirSync(path.join(backupDir, "recovery"), { recursive: true });
+    fs.writeFileSync(path.join(backupDir, "recovery/sentinel.bin"), sentinel);
+
+    const result = runSafe("update auth --yes");
+    const output = `${result.stdout}\n${result.stderr}`;
+
+    expect(result.code).not.toBe(0);
+    expect(output).toContain("Backup de récupération existant");
+    expect(output).toContain("aucune mise à jour appliquée");
+    expect(output).not.toContain("1 plugin(s) mis à jour");
+    expect(output).not.toContain("Action requise");
+    expect(readFixture("plugins/auth/version.ts")).toBe(pluginBefore);
+    expect(readFixture("server/index.ts")).toBe(serverBefore);
+    expect(readFixture("server/index.ts")).not.toContain("createDatabaseRoleGuard");
+    expect(fs.readFileSync(path.join(backupDir, "recovery/sentinel.bin"))).toEqual(sentinel);
+    expect(fs.readdirSync(backupDir, { recursive: true }).sort()).toEqual([
+      "recovery",
+      "recovery/sentinel.bin",
+    ]);
+  });
+
+  it("returns a non-zero exit code when an npm update fails", () => {
+    writeFixture("storm.json", JSON.stringify({
+      version: 1,
+      pluginsDir: "plugins",
+      serverEntry: "server/index.ts",
+      drizzleConfig: "drizzle.config.ts",
+      registry: "",
+      installed: ["@stormstack/auth"],
+    }));
+    writeFixture("node_modules/@stormstack/auth/package.json", JSON.stringify({
+      name: "@stormstack/auth",
+      version: "0.1.0",
+    }));
+    const serverBefore = wireLegacyAuthServer();
+
+    const result = runSafe("update auth --yes", FIXTURES, {
+      npm_config_audit: "false",
+      npm_config_cache: path.join(FIXTURES, ".empty-npm-cache"),
+      npm_config_fetch_retries: "0",
+      npm_config_offline: "true",
+    });
+    const output = `${result.stdout}\n${result.stderr}`;
+
+    expect(result.code).not.toBe(0);
+    expect(output).toContain("1 plugin(s) non mis à jour");
+    expect(output).not.toContain("1 plugin(s) mis à jour");
+    expect(output).not.toContain("Action requise");
+    expect(JSON.parse(readFixture("node_modules/@stormstack/auth/package.json"))).toMatchObject({
+      version: "0.1.0",
+    });
+    expect(readFixture("server/index.ts")).toBe(serverBefore);
+    expect(readFixture("server/index.ts")).not.toContain("createDatabaseRoleGuard");
+  }, REAL_PROCESS_TEST_TIMEOUT);
 });
 
 describe("storm --help", () => {

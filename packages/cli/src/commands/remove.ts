@@ -10,8 +10,8 @@ import {
   removeClientComponents,
   removeRootComponent,
   removeStripeWebhookRawBody,
-  updateProjectClaudeMd,
 } from "../injector";
+import { updateProjectClaudeMd } from "../project-claude";
 import { detectPackageManager, runUninstall, removeDir } from "../utils";
 
 export async function removeCommand(pluginArg: string | undefined): Promise<void> {

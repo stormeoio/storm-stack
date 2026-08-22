@@ -1,3 +1,5 @@
+import { VERSION } from "./version";
+
 export interface ClientComponentMapping {
   /** Name used in the server manifest (e.g. "CrmPage") */
   manifestName: string;
@@ -33,7 +35,7 @@ export interface PluginMeta {
   status: "available" | "coming-soon";
 }
 
-export const GITHUB_RAW_BASE = "https://raw.githubusercontent.com/stormeoio/storm-stack/main";
+export const GITHUB_RAW_BASE = `https://raw.githubusercontent.com/stormeoio/storm-stack/v${VERSION}`;
 
 export const PLUGINS: PluginMeta[] = [
   {

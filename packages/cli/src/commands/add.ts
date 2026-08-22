@@ -3,17 +3,23 @@ import pc from "picocolors";
 import fs from "fs";
 import path from "path";
 import { findProjectRoot, readConfig, writeConfig } from "../config";
-import { resolvePlugin, pluginSourceUrl, PLUGINS, type PluginMeta } from "../registry";
+import { resolvePlugin, PLUGINS, type PluginMeta } from "../registry";
 import {
   injectPluginRegistration,
   injectDrizzleSchema,
   injectClientComponents,
   injectRootComponent,
   injectStripeWebhookRawBody,
-  updateProjectClaudeMd,
 } from "../injector";
-import { detectPackageManager, runInstall, fetchFile, writeFile } from "../utils";
+import { updateProjectClaudeMd } from "../project-claude";
+import { detectPackageManager, runInstall, writeFile } from "../utils";
 import { STORM_PACKAGE_RANGE } from "../version";
+import {
+  loadLocalPluginCopySources,
+  loadRemotePluginCopySources,
+  rewriteCopiedPluginImports,
+} from "../copy-source-files";
+import { ProjectFileTransaction } from "../project-file-transaction";
 
 interface AddOptions {
   copy?: boolean;
@@ -81,6 +87,7 @@ export async function addCommand(pluginArg: string | undefined, opts: AddOptions
 
   // Check dependencies
   const missingDeps = plugin.requires.filter((dep) => !config!.installed.includes(dep));
+  const pluginsToInstall: PluginMeta[] = [];
   if (missingDeps.length > 0) {
     p.log.info(`${pc.cyan(plugin.shortName)} requiert : ${missingDeps.map((d) => pc.yellow(d.replace("@stormstack/", ""))).join(", ")}`);
     if (!opts.yes) {
@@ -92,14 +99,34 @@ export async function addCommand(pluginArg: string | undefined, opts: AddOptions
     }
     for (const dep of missingDeps) {
       const depPlugin = resolvePlugin(dep);
-      if (depPlugin) {
-        await addSinglePlugin(root, config, depPlugin, opts);
-      }
+      if (depPlugin) pluginsToInstall.push(depPlugin);
     }
-    config = readConfig(root)!;
   }
+  pluginsToInstall.push(plugin);
 
-  await addSinglePlugin(root, config, plugin, opts);
+  let transaction: ProjectFileTransaction | null = null;
+  try {
+    const copiedPluginDirectories = opts.copy
+      ? pluginsToInstall.map((candidate) => path.join(root, config!.pluginsDir, candidate.shortName))
+      : [];
+    transaction = new ProjectFileTransaction(
+      addMutationTargets(root, config!, copiedPluginDirectories),
+    );
+
+    for (const candidate of pluginsToInstall) {
+      await addSinglePlugin(root, config, candidate, opts);
+    }
+  } catch (error) {
+    let rollbackMessage = "";
+    try {
+      transaction?.rollback();
+    } catch (rollbackError) {
+      rollbackMessage = ` Rollback incomplet: ${rollbackError instanceof Error ? rollbackError.message : String(rollbackError)}`;
+    }
+    const message = error instanceof Error ? error.message : String(error);
+    p.log.error(`${message}${rollbackMessage}`);
+    process.exit(1);
+  }
 }
 
 async function addSinglePlugin(
@@ -114,22 +141,30 @@ async function addSinglePlugin(
   const spinner = p.spinner();
   spinner.start(`Installation de ${pc.cyan(plugin.shortName)}…`);
 
+  const serverEntryPath = path.join(root, config!.serverEntry);
+
   try {
+    // Refuse the install before touching packages, copied sources, or storm.json
+    // when the server entry cannot be wired safely.
+    const injResult = injectPluginRegistration(serverEntryPath, plugin, mode, path.join(root, config!.pluginsDir));
+    if (!injResult.modified) {
+      throw new Error(injResult.reason ?? `Impossible d'injecter ${plugin.exportName} dans ${config!.serverEntry}`);
+    }
+    spinner.message(`${pc.cyan(plugin.shortName)} — wiring server entry…`);
+
     if (mode === "copy") {
       await copyPluginSource(root, config!.pluginsDir, plugin, opts.local);
     } else {
       await installNpmPlugin(root, pm, plugin);
     }
 
-    // Wire up server entry
-    const serverEntryPath = path.join(root, config!.serverEntry);
-    const injResult = injectPluginRegistration(serverEntryPath, plugin, mode, path.join(root, config!.pluginsDir));
-    if (injResult.modified) {
-      spinner.message(`${pc.cyan(plugin.shortName)} — wiring server entry…`);
-    }
-
     if (plugin.id === "@stormstack/stripe") {
       const rawBodyResult = injectStripeWebhookRawBody(serverEntryPath);
+      if (!rawBodyResult.configured) {
+        throw new Error(
+          rawBodyResult.reason ?? "Impossible de préserver le body brut du webhook Stripe",
+        );
+      }
       if (rawBodyResult.modified) {
         spinner.message(`${pc.cyan(plugin.shortName)} — preserving webhook raw body…`);
       }
@@ -138,12 +173,22 @@ async function addSinglePlugin(
     // Wire up drizzle config
     if (plugin.files.includes("schema.ts")) {
       const drizzlePath = path.join(root, config!.drizzleConfig);
-      injectDrizzleSchema(drizzlePath, plugin, mode, config!.pluginsDir);
+      const schemaResult = injectDrizzleSchema(drizzlePath, plugin, mode, config!.pluginsDir);
+      if (!schemaResult.configured) {
+        throw new Error(
+          schemaResult.reason ?? `Impossible d'ajouter le schéma ${plugin.shortName} à Drizzle`,
+        );
+      }
     }
 
     // Wire up client components (storm-components.ts)
     if (plugin.clientComponents && plugin.clientComponents.length > 0) {
       const clientResult = injectClientComponents(root, plugin, mode, config!.pluginsDir);
+      if (!clientResult.configured) {
+        throw new Error(
+          clientResult.reason ?? `Impossible de câbler les composants client de ${plugin.shortName}`,
+        );
+      }
       if (clientResult.modified) {
         spinner.message(`${pc.cyan(plugin.shortName)} — wiring client components…`);
       }
@@ -151,10 +196,13 @@ async function addSinglePlugin(
 
     if (plugin.rootComponent) {
       const rootResult = injectRootComponent(root, plugin, mode, config!.pluginsDir);
+      if (!rootResult.configured) {
+        throw new Error(
+          rootResult.reason ?? `Impossible de monter le composant racine de ${plugin.shortName}`,
+        );
+      }
       if (rootResult.modified) {
         spinner.message(`${pc.cyan(plugin.shortName)} — montage du composant racine…`);
-      } else if (rootResult.reason && !rootResult.reason.includes("déjà injecté")) {
-        p.log.warn(rootResult.reason);
       }
     }
 
@@ -204,8 +252,7 @@ async function addSinglePlugin(
     }
   } catch (err) {
     spinner.stop(`${pc.red("✗")} Erreur lors de l'installation de ${plugin.shortName}`);
-    p.log.error(err instanceof Error ? err.message : String(err));
-    process.exit(1);
+    throw err;
   }
 }
 
@@ -216,24 +263,39 @@ export async function copyPluginSource(
   localPath?: string,
 ): Promise<void> {
   const targetDir = path.join(root, pluginsDir, plugin.shortName);
+  const sources = localPath
+    ? await loadLocalPluginCopySources(localPath, plugin)
+    : await loadRemotePluginCopySources(plugin);
+
   fs.mkdirSync(targetDir, { recursive: true });
-
-  for (const file of plugin.files) {
-    let content: string;
-
-    if (localPath) {
-      const filePath = path.join(localPath, "packages", `plugin-${plugin.shortName}`, "src", file);
-      content = fs.readFileSync(filePath, "utf8");
-    } else {
-      const url = pluginSourceUrl(plugin, file);
-      content = await fetchFile(url);
-    }
-
-    // Rewrite @stormstack/<plugin> imports to relative local paths
-    content = rewritePluginImports(content, plugin, pluginsDir);
-
-    writeFile(path.join(targetDir, file), content);
+  for (const source of sources) {
+    const content = rewriteCopiedPluginImports(source.content, plugin, source.file);
+    writeFile(path.join(targetDir, ...source.file.split("/")), content);
   }
+}
+
+function addMutationTargets(
+  root: string,
+  config: ReturnType<typeof readConfig> & {},
+  copiedPluginDirectories: string[],
+): string[] {
+  const targets = [
+    "package.json",
+    "package-lock.json",
+    "npm-shrinkwrap.json",
+    "pnpm-lock.yaml",
+    "yarn.lock",
+    "bun.lock",
+    "bun.lockb",
+    config.serverEntry,
+    config.drizzleConfig,
+    "client/src/storm-components.ts",
+    "client/src/App.tsx",
+    "storm.json",
+    "CLAUDE.md",
+  ].map((file) => path.join(root, file));
+  targets.push(...copiedPluginDirectories);
+  return targets;
 }
 
 async function installNpmPlugin(
@@ -242,12 +304,4 @@ async function installNpmPlugin(
   plugin: PluginMeta,
 ): Promise<void> {
   runInstall(root, pm, [`${plugin.id}@${STORM_PACKAGE_RANGE}`]);
-}
-
-function rewritePluginImports(content: string, _plugin: PluginMeta, _pluginsDir: string): string {
-  // Rewrite `@stormstack/<name>` imports to relative paths (except @stormstack/core)
-  return content.replace(
-    /from\s+["']@stormstack\/(?!core)([^"']+)["']/g,
-    (_match, name) => `from "../${name}"`,
-  );
 }
