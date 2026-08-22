@@ -13,7 +13,9 @@ interface GeneratedPluginDefinition {
 export const generatedPluginDefinitions: GeneratedPluginDefinition[] = [
   {
     id: "@stormstack/auth",
-    serverImports: [`import { authPlugin } from "@stormstack/auth";`],
+    serverImports: [
+      `import { authPlugin, createDatabaseRoleGuard } from "@stormstack/auth";`,
+    ],
     registration: "registry.register(authPlugin);",
     schemaPath: "node_modules/@stormstack/auth/dist/index.js",
   },

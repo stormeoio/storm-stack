@@ -1,14 +1,21 @@
 import { afterEach, describe, expect, it } from "vitest";
+import { execFileSync } from "node:child_process";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
+import ts from "typescript";
 import {
   CliUsageError,
   normalizePluginIds,
   parseCliOptions,
 } from "../cli-options";
 import { runCreateStormApp } from "../index";
-import { scaffold } from "../scaffold";
+import {
+  scaffold,
+  SESSION_SECRET_PLACEHOLDER,
+  SESSION_SECRET_SETUP_COMMAND,
+  SESSION_SECRET_SETUP_SCRIPT,
+} from "../scaffold";
 import type { ScaffoldOptions } from "../prompts";
 
 const temporaryDirectories: string[] = [];
@@ -41,6 +48,23 @@ function snapshotFiles(directory: string, relative = ""): Record<string, string>
     }
   }
   return result;
+}
+
+async function loadGeneratedAppOriginNormalizer(
+  directory: string,
+): Promise<(value: string | undefined) => string> {
+  const source = read(directory, "server/app-origin.ts");
+  const { outputText } = ts.transpileModule(source, {
+    compilerOptions: {
+      module: ts.ModuleKind.ESNext,
+      target: ts.ScriptTarget.ES2022,
+    },
+  });
+  const moduleUrl = `data:text/javascript;base64,${Buffer.from(outputText).toString("base64")}`;
+  const generatedModule = await import(/* @vite-ignore */ moduleUrl) as {
+    normalizeAppOrigin: (value: string | undefined) => string;
+  };
+  return generatedModule.normalizeAppOrigin;
 }
 
 const proofOptions: ScaffoldOptions = {
@@ -148,12 +172,18 @@ describe("scaffold output", () => {
     expect(read(target, ".gitignore")).not.toContain("drizzle/meta/");
 
     const server = read(target, "server/index.ts");
+    expect(server).toContain(
+      'import { authPlugin, createDatabaseRoleGuard } from "@stormstack/auth"',
+    );
+    expect(server).toContain('requireAdmin: createDatabaseRoleGuard(db, "admin")');
     expect(server).toContain('import { consentPlugin } from "@stormstack/consent"');
     expect(server).toContain("registry.register(consentPlugin)");
     expect(server).toContain('import { createCsrfProtection } from "@stormstack/core/csrf"');
-    expect(server).toContain('const APP_ORIGIN = process.env["APP_ORIGIN"] ?? ""');
+    expect(server).toContain('import { normalizeAppOrigin } from "./app-origin.js"');
+    expect(server).toContain('const APP_ORIGIN = normalizeAppOrigin(process.env["APP_ORIGIN"])');
     expect(server).toContain("env.SESSION_SECRET === SESSION_SECRET_PLACEHOLDER");
     expect(server).toContain("cors({ origin: APP_ORIGIN, credentials: true })");
+    expect(server).toContain("allowedOrigins: [APP_ORIGIN]");
     expect(server).toContain('app.get("/api/storm/csrf", csrf.issueToken)');
     expect(server.indexOf("csrf.protect")).toBeLessThan(server.indexOf("await bootstrapPlugins"));
 
@@ -178,6 +208,46 @@ describe("scaffold output", () => {
     expect(read(target, "CLAUDE.md")).toContain("db:migrate");
   });
 
+  it("documents a portable command that replaces the rejected session-secret placeholder", () => {
+    const target = path.join(makeTemporaryDirectory(), "alpha");
+    scaffold(proofOptions, target);
+
+    const generatedReadme = read(target, "README.md");
+    expect(generatedReadme).toContain(`cp .env.example .env\n${SESSION_SECRET_SETUP_COMMAND}`);
+    expect(SESSION_SECRET_SETUP_COMMAND).toContain("crypto.randomBytes(32).toString('hex')");
+
+    fs.copyFileSync(path.join(target, ".env.example"), path.join(target, ".env"));
+    execFileSync(process.execPath, ["-e", SESSION_SECRET_SETUP_SCRIPT], { cwd: target });
+
+    const generatedEnv = read(target, ".env");
+    expect(generatedEnv).not.toContain(`SESSION_SECRET=${SESSION_SECRET_PLACEHOLDER}`);
+    expect(generatedEnv).toMatch(/^SESSION_SECRET=[0-9a-f]{64}$/m);
+  });
+
+  it("normalizes an APP_ORIGIN with a trailing slash", async () => {
+    const target = path.join(makeTemporaryDirectory(), "alpha");
+    scaffold(proofOptions, target);
+    const normalizeAppOrigin = await loadGeneratedAppOriginNormalizer(target);
+
+    expect(normalizeAppOrigin("https://app.example.test/")).toBe("https://app.example.test");
+  });
+
+  it.each([
+    "not a URL",
+    "ftp://app.example.test",
+    "https://user:secret@app.example.test",
+    "https://app.example.test/dashboard",
+    "https://app.example.test?preview=1",
+    "https://app.example.test#preview",
+    " https://app.example.test",
+  ])("rejects an unsafe APP_ORIGIN: %s", async (value) => {
+    const target = path.join(makeTemporaryDirectory(), "alpha");
+    scaffold(proofOptions, target);
+    const normalizeAppOrigin = await loadGeneratedAppOriginNormalizer(target);
+
+    expect(normalizeAppOrigin(value)).toBe("");
+  });
+
   it("resolves dependencies for direct scaffold callers", () => {
     const target = path.join(makeTemporaryDirectory(), "consent-only");
     scaffold({ ...proofOptions, plugins: ["@stormstack/consent"] }, target);
@@ -187,8 +257,19 @@ describe("scaffold output", () => {
     };
     expect(packageJson.dependencies).toHaveProperty("@stormstack/auth");
     expect(packageJson.dependencies).toHaveProperty("@stormstack/consent");
-    expect(read(target, "server/index.ts")).toContain("registry.register(authPlugin)");
-    expect(read(target, "server/index.ts")).toContain("registry.register(consentPlugin)");
+    const server = read(target, "server/index.ts");
+    expect(server).toContain("registry.register(authPlugin)");
+    expect(server).toContain("registry.register(consentPlugin)");
+    expect(server).toContain('requireAdmin: createDatabaseRoleGuard(db, "admin")');
+  });
+
+  it("keeps the generated server independent from auth when no auth plugin is selected", () => {
+    const target = path.join(makeTemporaryDirectory(), "core-only");
+    scaffold({ ...proofOptions, plugins: [] }, target);
+
+    const server = read(target, "server/index.ts");
+    expect(server).not.toContain("createDatabaseRoleGuard");
+    expect(server).not.toContain("requireAdmin:");
   });
 
   it("makes Docker, server and Vite ports independently configurable", () => {

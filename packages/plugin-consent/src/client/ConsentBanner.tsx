@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { csrfFetch } from "@stormstack/core/csrf-client";
 import { resolveConsentEndpoints } from "./endpoints";
 
@@ -21,6 +21,10 @@ interface ConsentStateResponse {
   policyVersion: string;
 }
 
+interface ConsentMutationResponse {
+  consent: ConsentState;
+}
+
 const DEFAULT_API_BASE_URL = "/api/consent";
 const DEFAULT_POLICY_VERSION = "1.0";
 
@@ -28,12 +32,56 @@ function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : "Une erreur est survenue";
 }
 
-async function readJson<T>(response: Response): Promise<T> {
-  const body = await response.json().catch(() => null) as (T & { error?: string }) | null;
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function isConsentState(value: unknown): value is ConsentState {
+  return isRecord(value)
+    && value.necessary === true
+    && typeof value.analytics === "boolean"
+    && typeof value.marketing === "boolean"
+    && typeof value.policyVersion === "string"
+    && value.policyVersion.trim().length > 0
+    && (value.withdrawnAt === null
+      || (typeof value.withdrawnAt === "string" && value.withdrawnAt.length > 0));
+}
+
+function isConsentStateResponse(value: unknown): value is ConsentStateResponse {
+  return isRecord(value)
+    && typeof value.policyVersion === "string"
+    && value.policyVersion.trim().length > 0
+    && (value.consent === null || isConsentState(value.consent));
+}
+
+function isConsentSaveResponse(value: unknown): value is ConsentMutationResponse {
+  return isRecord(value)
+    && isConsentState(value.consent)
+    && value.consent.withdrawnAt === null;
+}
+
+function isConsentWithdrawalResponse(value: unknown): value is ConsentMutationResponse {
+  return isRecord(value)
+    && isConsentState(value.consent)
+    && value.consent.analytics === false
+    && value.consent.marketing === false
+    && typeof value.consent.withdrawnAt === "string";
+}
+
+async function readJson<T>(
+  response: Response,
+  isExpectedResponse: (value: unknown) => value is T,
+): Promise<T> {
+  const body: unknown = await response.json().catch(() => null);
   if (!response.ok) {
-    throw new Error(body?.error ?? "Le serveur ne répond pas");
+    const serverError = isRecord(body)
+      && typeof body.error === "string"
+      && body.error.trim().length > 0
+      ? body.error
+      : "Le serveur ne répond pas";
+    throw new Error(serverError);
   }
-  if (!body) {
+  if (!isExpectedResponse(body)) {
     throw new Error("Réponse du serveur invalide");
   }
   return body;
@@ -59,37 +107,54 @@ export function ConsentBanner({
   const [editing, setEditing] = useState(false);
   const [error, setError] = useState("");
   const [activePolicyVersion, setActivePolicyVersion] = useState(policyVersion);
+  const endpointControllerRef = useRef<AbortController | null>(null);
 
-  const loadConsent = useCallback(async (signal?: AbortSignal) => {
+  const loadConsent = useCallback(async (signal: AbortSignal) => {
     setLoading(true);
+    setSaving(false);
     setError("");
+    setConsent(null);
+    setAnalytics(false);
+    setMarketing(false);
+    setEditing(true);
+    setActivePolicyVersion(policyVersion);
     try {
       const response = await fetch(`${endpoints.apiBaseUrl}/state`, {
         credentials: "include",
         signal,
       });
-      const body = await readJson<ConsentStateResponse>(response);
-      const serverPolicyVersion = body.policyVersion || policyVersion;
+      const body = await readJson(response, isConsentStateResponse);
+      if (signal.aborted) return;
+      const serverPolicyVersion = body.policyVersion;
       setConsent(body.consent);
       setActivePolicyVersion(serverPolicyVersion);
       setAnalytics(body.consent?.analytics ?? false);
       setMarketing(body.consent?.marketing ?? false);
       setEditing(body.consent === null || body.consent.policyVersion !== serverPolicyVersion);
     } catch (loadError) {
-      if (loadError instanceof DOMException && loadError.name === "AbortError") return;
+      if (signal.aborted) return;
       setError(errorMessage(loadError));
     } finally {
-      if (!signal?.aborted) setLoading(false);
+      if (!signal.aborted) setLoading(false);
     }
   }, [endpoints.apiBaseUrl, policyVersion]);
 
   useEffect(() => {
     const controller = new AbortController();
+    endpointControllerRef.current = controller;
     void loadConsent(controller.signal);
-    return () => controller.abort();
+    return () => {
+      controller.abort();
+      if (endpointControllerRef.current === controller) {
+        endpointControllerRef.current = null;
+      }
+    };
   }, [loadConsent]);
 
   const savePreferences = async (nextAnalytics: boolean, nextMarketing: boolean) => {
+    const controller = endpointControllerRef.current;
+    if (!controller || controller.signal.aborted) return;
+    const { signal } = controller;
     setSaving(true);
     setError("");
     try {
@@ -97,6 +162,7 @@ export function ConsentBanner({
         method: "PUT",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
+        signal,
         body: JSON.stringify({
           necessary: true,
           analytics: nextAnalytics,
@@ -107,19 +173,24 @@ export function ConsentBanner({
         endpoint: endpoints.csrfEndpoint,
         allowedOrigins: endpoints.allowedOrigins,
       });
-      const body = await readJson<{ consent: ConsentState }>(response);
+      const body = await readJson(response, isConsentSaveResponse);
+      if (signal.aborted) return;
       setConsent(body.consent);
       setAnalytics(body.consent.analytics);
       setMarketing(body.consent.marketing);
       setEditing(false);
     } catch (saveError) {
+      if (signal.aborted) return;
       setError(errorMessage(saveError));
     } finally {
-      setSaving(false);
+      if (!signal.aborted) setSaving(false);
     }
   };
 
   const withdrawConsent = async () => {
+    const controller = endpointControllerRef.current;
+    if (!controller || controller.signal.aborted) return;
+    const { signal } = controller;
     setSaving(true);
     setError("");
     try {
@@ -127,20 +198,23 @@ export function ConsentBanner({
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
+        signal,
         body: JSON.stringify({}),
       }, {
         endpoint: endpoints.csrfEndpoint,
         allowedOrigins: endpoints.allowedOrigins,
       });
-      const body = await readJson<{ consent: ConsentState }>(response);
+      const body = await readJson(response, isConsentWithdrawalResponse);
+      if (signal.aborted) return;
       setConsent(body.consent);
       setAnalytics(false);
       setMarketing(false);
       setEditing(false);
     } catch (withdrawError) {
+      if (signal.aborted) return;
       setError(errorMessage(withdrawError));
     } finally {
-      setSaving(false);
+      if (!signal.aborted) setSaving(false);
     }
   };
 
@@ -152,7 +226,7 @@ export function ConsentBanner({
   if (loading) {
     return (
       <aside className={containerClassName} aria-live="polite" aria-busy="true">
-        <p className="text-sm text-gray-600">Chargement de vos préférences…</p>
+        <p className="text-base text-gray-600">Chargement de vos préférences…</p>
       </aside>
     );
   }
@@ -166,7 +240,7 @@ export function ConsentBanner({
         data-proof-consent-state={withdrawn ? "withdrawn" : "saved"}
       >
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <p className="text-sm text-gray-700">
+          <p className="text-base text-gray-700">
             {withdrawn
               ? "Votre consentement a été retiré."
               : "Vos préférences de cookies sont enregistrées."}
@@ -192,7 +266,7 @@ export function ConsentBanner({
             )}
           </div>
         </div>
-        {error && <p className="mt-3 text-sm text-red-700" role="alert">{error}</p>}
+        {error && <p className="mt-3 text-base text-red-700" role="alert">{error}</p>}
       </aside>
     );
   }
@@ -200,16 +274,16 @@ export function ConsentBanner({
   return (
     <aside className={containerClassName} aria-label="Préférences de cookies">
       <h2 className="text-base font-semibold">Vos choix de confidentialité</h2>
-      <p className="mt-1 text-sm text-gray-600">
+      <p className="mt-1 text-base text-gray-600">
         Les cookies nécessaires restent actifs. Vous choisissez les autres usages.
       </p>
 
       <div className="mt-4 grid gap-3 sm:grid-cols-3">
-        <label className="flex items-center gap-2 text-sm text-gray-700">
+        <label className="flex items-center gap-2 text-base text-gray-700">
           <input type="checkbox" checked disabled />
           Nécessaires
         </label>
-        <label className="flex items-center gap-2 text-sm text-gray-700">
+        <label className="flex items-center gap-2 text-base text-gray-700">
           <input
             type="checkbox"
             checked={analytics}
@@ -217,7 +291,7 @@ export function ConsentBanner({
           />
           Mesure d’audience
         </label>
-        <label className="flex items-center gap-2 text-sm text-gray-700">
+        <label className="flex items-center gap-2 text-base text-gray-700">
           <input
             type="checkbox"
             checked={marketing}
@@ -227,7 +301,7 @@ export function ConsentBanner({
         </label>
       </div>
 
-      {error && <p className="mt-3 text-sm text-red-700" role="alert">{error}</p>}
+      {error && <p className="mt-3 text-base text-red-700" role="alert">{error}</p>}
 
       <div className="mt-4 flex flex-wrap gap-2">
         <button

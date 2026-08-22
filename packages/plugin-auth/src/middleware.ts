@@ -1,6 +1,9 @@
 import type { RequestHandler, Response } from "express";
+import type { NodePgDatabase } from "drizzle-orm/node-postgres";
+import { eq } from "drizzle-orm";
 import jwt from "jsonwebtoken";
 import cookieParser from "cookie-parser";
+import { users } from "./schema";
 
 const COOKIE_NAME = "storm_token";
 const TOKEN_TTL = "7d";
@@ -77,5 +80,49 @@ export function requireRole(...roles: string[]): RequestHandler {
       return;
     }
     next();
+  };
+}
+
+/**
+ * Role guard backed by the current database row instead of the JWT role claim.
+ * Use it for sensitive authorization where a role change must take effect
+ * immediately, even while the user's existing JWT remains valid.
+ */
+export function createDatabaseRoleGuard(
+  db: NodePgDatabase,
+  ...roles: string[]
+): RequestHandler {
+  if (roles.length === 0) {
+    throw new Error("createDatabaseRoleGuard requires at least one role");
+  }
+
+  return async (req, res, next) => {
+    if (!req.user?.id) {
+      res.status(401).json({ error: "Non authentifié" });
+      return;
+    }
+
+    try {
+      const [currentUser] = await db
+        .select({ role: users.role })
+        .from(users)
+        .where(eq(users.id, req.user.id))
+        .limit(1);
+
+      if (!currentUser) {
+        res.status(401).json({ error: "Non authentifié" });
+        return;
+      }
+
+      req.user.role = currentUser.role;
+      if (!roles.includes(currentUser.role)) {
+        res.status(403).json({ error: "Accès refusé" });
+        return;
+      }
+
+      next();
+    } catch (error) {
+      next(error);
+    }
   };
 }

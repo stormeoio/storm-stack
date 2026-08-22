@@ -3,7 +3,7 @@ import pc from "picocolors";
 import path from "path";
 import fs from "fs";
 import { runPrompts } from "./prompts";
-import { scaffold } from "./scaffold";
+import { scaffold, SESSION_SECRET_SETUP_COMMAND } from "./scaffold";
 import { CliUsageError, parseCliOptions, renderCliHelp } from "./cli-options";
 
 export async function runCreateStormApp(
@@ -57,6 +57,7 @@ export async function runCreateStormApp(
     `cd ${opts.projectName}`,
     `docker compose up -d  ${pc.dim("# PostgreSQL local")}`,
     `cp .env.example .env  ${pc.dim("# configure secrets")}`,
+    SESSION_SECRET_SETUP_COMMAND,
     `${pm} install`,
     `${run} db:generate  ${pc.dim("# generate migrations")}`,
     `${run} db:migrate  ${pc.dim("# apply migrations")}`,

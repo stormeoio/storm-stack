@@ -291,6 +291,31 @@ describe("csrfFetch", () => {
       .toBe("fresh.token");
   });
 
+  it("refuses to retry a CSRF rejection with a non-replayable stream body", async () => {
+    vi.stubGlobal("document", { cookie: "storm_csrf=stale.token" });
+    const fetchMock = vi.fn<typeof fetch>().mockResolvedValue(
+      new Response(JSON.stringify({ error: "CSRF validation failed" }), {
+        status: 403,
+        headers: { "Content-Type": "application/json" },
+      }),
+    );
+    const body = new ReadableStream<Uint8Array>({
+      start(controller) {
+        controller.enqueue(new TextEncoder().encode("streamed payload"));
+        controller.close();
+      },
+    });
+
+    await expect(csrfFetch("/api/upload", {
+      method: "POST",
+      body,
+    }, { fetch: fetchMock })).rejects.toThrow(
+      "Unable to retry CSRF request with a non-replayable body",
+    );
+
+    expect(fetchMock).toHaveBeenCalledOnce();
+  });
+
   it("does not retry an unrelated 403 or retry a CSRF rejection more than once", async () => {
     vi.stubGlobal("document", { cookie: "storm_csrf=stale.token" });
     const forbidden = vi.fn<typeof fetch>().mockResolvedValue(

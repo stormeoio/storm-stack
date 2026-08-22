@@ -1,8 +1,9 @@
-import { Router } from "express";
+import { Router, type RequestHandler } from "express";
 import { registry } from "./registry";
 import { getPluginConfig, setPluginConfig, getAllConfigs, zodSchemaToDescriptor, type FieldDescriptor } from "./config-store";
 import { eventBus } from "./event-bus";
 import { PACKAGE_VERSION } from "../version";
+import { rejectUnconfiguredStormAdmin, requireStormUser } from "./admin-guards";
 
 // ─── Full catalog of known plugins (installed + available + coming-soon) ─────
 
@@ -37,13 +38,26 @@ const CATALOG_REGISTRY: Omit<CatalogEntry, "status">[] = [
 const AVAILABLE_IDS = new Set(["@stormstack/auth", "@stormstack/auth-social", "@stormstack/consent", "@stormstack/crm", "@stormstack/ticketing", "@stormstack/stripe"]);
 
 /**
- * Mounts GET /api/storm/manifest  → client-side plugin manifests
- * Mounts GET /api/storm/plugins   → installed plugin metadata
- * Mounts GET /api/storm/catalog   → full catalog (installed + available + coming-soon)
+ * Mounts public discovery endpoints and protected administration endpoints.
  * Call this once inside bootstrapPlugins.
  */
-export function mountManifestRoute(_apiPrefix: string): Router {
+export interface ManifestRouteGuards {
+  /** Authentication guard for reads that expose stored application settings. */
+  isAuthenticated?: RequestHandler;
+  /**
+   * Authorization guard for project-wide administration operations.
+   * Omission fails closed with 503 instead of trusting req.user.role.
+   */
+  requireAdmin?: RequestHandler;
+}
+
+export function mountManifestRoute(
+  _apiPrefix: string,
+  guards: ManifestRouteGuards = {},
+): Router {
   const router = Router();
+  const isAuthenticated = guards.isAuthenticated ?? requireStormUser;
+  const requireAdmin = guards.requireAdmin ?? rejectUnconfiguredStormAdmin;
 
   router.get("/plugins", (req, res) => {
     const plugins = registry.getAll().map((p) => ({
@@ -93,14 +107,14 @@ export function mountManifestRoute(_apiPrefix: string): Router {
 
   // ─── Plugin config API ──────────────────────────────────────────────────
 
-  /** GET /api/storm/config — all plugin configs */
-  router.get("/config", (req, res) => {
+  /** GET /api/storm/config — all plugin configs (admin only; may contain secrets) */
+  router.get("/config", isAuthenticated, requireAdmin, (_req, res) => {
     res.json({ configs: getAllConfigs() });
   });
 
-  /** GET /api/storm/config/:pluginId — single plugin config */
-  router.get("/config/:pluginId", (req, res) => {
-    const pluginId = decodeURIComponent(req.params["pluginId"]!);
+  /** GET /api/storm/config/:pluginId — single plugin config (admin only) */
+  router.get("/config/:pluginId", isAuthenticated, requireAdmin, (req, res) => {
+    const pluginId = decodeURIComponent(req.params["pluginId"] as string);
     const plugin = registry.get(pluginId);
     if (!plugin) {
       res.status(404).json({ error: `Plugin "${pluginId}" not found` });
@@ -113,8 +127,8 @@ export function mountManifestRoute(_apiPrefix: string): Router {
     res.json({ pluginId, config: getPluginConfig(pluginId) });
   });
 
-  /** GET /api/storm/events — event bus introspection (registered events + history) */
-  router.get("/events", (req, res) => {
+  /** GET /api/storm/events — event bus introspection and history (admin only) */
+  router.get("/events", isAuthenticated, requireAdmin, (req, res) => {
     const plugins = registry.getAll();
     const emitters: Record<string, string[]> = {};
     const listeners: Record<string, string[]> = {};
@@ -135,8 +149,8 @@ export function mountManifestRoute(_apiPrefix: string): Router {
   });
 
   /** PATCH /api/storm/config/:pluginId — update plugin config */
-  router.patch("/config/:pluginId", (req, res) => {
-    const pluginId = decodeURIComponent(req.params["pluginId"]!);
+  router.patch("/config/:pluginId", isAuthenticated, requireAdmin, (req, res) => {
+    const pluginId = decodeURIComponent(req.params["pluginId"] as string);
     const plugin = registry.get(pluginId);
     if (!plugin) {
       res.status(404).json({ error: `Plugin "${pluginId}" not found` });

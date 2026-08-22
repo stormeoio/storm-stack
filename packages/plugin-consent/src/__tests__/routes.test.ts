@@ -26,7 +26,10 @@ function createPreference(overrides: Partial<ConsentPreference> = {}): ConsentPr
   };
 }
 
-function createDbHarness(initial: ConsentPreference | null = null) {
+function createDbHarness(
+  initial: ConsentPreference | null = null,
+  options: { returningEmpty?: boolean } = {},
+) {
   let preference = initial;
   let pendingValues: Record<string, unknown> = {};
   let pendingUpdate: Record<string, unknown> = {};
@@ -37,6 +40,7 @@ function createDbHarness(initial: ConsentPreference | null = null) {
   const select = vi.fn(() => ({ from }));
 
   const returning = vi.fn(async () => {
+    if (options.returningEmpty) return [];
     if (preference) {
       preference = { ...preference, ...pendingUpdate };
     } else {
@@ -284,6 +288,23 @@ describe("routes consentement", () => {
     expect(harness.getPreference()?.withdrawnAt).toBeNull();
   });
 
+  it("renvoie 500 sans émettre si l’upsert des préférences ne retourne aucune ligne", async () => {
+    const harness = createDbHarness(null, { returningEmpty: true });
+    const emit = vi.fn(async (_event: string, _payload: unknown, _source: string) => {});
+    const app = createApp(createContext(harness.db, emit), authenticatedMiddleware());
+
+    const response = await request(app, "PUT", "/api/consent/preferences", {
+      necessary: true,
+      analytics: true,
+      marketing: false,
+      policyVersion: "1.0",
+    });
+
+    expect(response.status).toBe(500);
+    expect(response.body).toEqual({ error: "Impossible d’enregistrer vos préférences" });
+    expect(emit).not.toHaveBeenCalled();
+  });
+
   it("impose la version de politique configurée côté serveur", async () => {
     const harness = createDbHarness();
     const app = createApp(
@@ -379,6 +400,18 @@ describe("routes consentement", () => {
       policyVersion: "politique-active",
       withdrawnAt: expect.any(Date),
     });
+  });
+
+  it("renvoie 500 sans émettre si l’upsert du retrait ne retourne aucune ligne", async () => {
+    const harness = createDbHarness(null, { returningEmpty: true });
+    const emit = vi.fn(async (_event: string, _payload: unknown, _source: string) => {});
+    const app = createApp(createContext(harness.db, emit), authenticatedMiddleware());
+
+    const response = await request(app, "POST", "/api/consent/withdraw", {});
+
+    expect(response.status).toBe(500);
+    expect(response.body).toEqual({ error: "Impossible de retirer votre consentement" });
+    expect(emit).not.toHaveBeenCalled();
   });
 
   it("refuse tout champ dans le corps strict du retrait", async () => {

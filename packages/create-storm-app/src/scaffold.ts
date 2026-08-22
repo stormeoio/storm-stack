@@ -14,6 +14,14 @@ const hasTicketing = (plugins: string[]) => hasPlugin(plugins, "@stormstack/tick
 const hasStripe = (plugins: string[]) => hasPlugin(plugins, "@stormstack/stripe");
 const hasConsent = (plugins: string[]) => hasPlugin(plugins, "@stormstack/consent");
 
+export const SESSION_SECRET_PLACEHOLDER = "change-me-to-a-random-32-char-secret-minimum";
+export const SESSION_SECRET_SETUP_SCRIPT =
+  `const fs=require('node:fs'),crypto=require('node:crypto'),file='.env',` +
+  `placeholder='SESSION_SECRET=${SESSION_SECRET_PLACEHOLDER}',env=fs.readFileSync(file,'utf8');` +
+  "if(env.indexOf(placeholder)<0)throw new Error('SESSION_SECRET placeholder not found');" +
+  "fs.writeFileSync(file,env.replace(placeholder,'SESSION_SECRET='+crypto.randomBytes(32).toString('hex')))";
+export const SESSION_SECRET_SETUP_COMMAND = `node -e "${SESSION_SECRET_SETUP_SCRIPT}"`;
+
 function write(targetDir: string, file: string, content: string) {
   const filePath = path.join(targetDir, file);
   fs.mkdirSync(path.dirname(filePath), { recursive: true });
@@ -137,12 +145,35 @@ function renderEnvExample(opts: ScaffoldOptions): string {
     "PORT=3000",
     "CLIENT_PORT=5173",
     "APP_ORIGIN=http://localhost:5173",
-    "SESSION_SECRET=change-me-to-a-random-32-char-secret-minimum",
+    `SESSION_SECRET=${SESSION_SECRET_PLACEHOLDER}`,
   ];
   for (const plugin of selectedPluginDefinitions(opts.plugins)) {
     lines.push(...(plugin.envLines ?? []));
   }
   return lines.join("\n") + "\n";
+}
+
+function renderAppOriginModule(): string {
+  return `export function normalizeAppOrigin(value: string | undefined): string {
+  if (!value || value !== value.trim()) {
+    return "";
+  }
+
+  try {
+    const url = new URL(value);
+    const isHttp = url.protocol === "http:" || url.protocol === "https:";
+    const isBareOrigin = url.href === \`\${url.origin}/\`;
+
+    if (!isHttp || url.username || url.password || !isBareOrigin) {
+      return "";
+    }
+
+    return url.origin;
+  } catch {
+    return "";
+  }
+}
+`;
 }
 
 function renderServerIndex(opts: ScaffoldOptions): string {
@@ -155,6 +186,7 @@ function renderServerIndex(opts: ScaffoldOptions): string {
     `import { registry, bootstrapPlugins, eventBus } from "@stormstack/core";`,
     `import type { StormContext, StormEnv } from "@stormstack/core";`,
     `import { createCsrfProtection } from "@stormstack/core/csrf";`,
+    `import { normalizeAppOrigin } from "./app-origin.js";`,
   ];
   const selectedPlugins = selectedPluginDefinitions(opts.plugins);
   imports.push(...selectedPlugins.flatMap((plugin) => plugin.serverImports));
@@ -174,8 +206,8 @@ function renderServerIndex(opts: ScaffoldOptions): string {
   return `${imports.join("\n")}
 
 const PORT = parseInt(process.env["PORT"] ?? "3000", 10);
-const APP_ORIGIN = process.env["APP_ORIGIN"] ?? "";
-const SESSION_SECRET_PLACEHOLDER = "change-me-to-a-random-32-char-secret-minimum";
+const APP_ORIGIN = normalizeAppOrigin(process.env["APP_ORIGIN"]);
+const SESSION_SECRET_PLACEHOLDER = "${SESSION_SECRET_PLACEHOLDER}";
 
 const env: StormEnv = {
   DATABASE_URL: process.env["DATABASE_URL"] ?? "",
@@ -221,7 +253,10 @@ async function main() {
     return csrf.protect(req, res, next);
   });
 
-  await bootstrapPlugins({ app, ctx });
+  await bootstrapPlugins({
+    app,
+    ctx,${hasAuth(opts.plugins) ? '\n    requireAdmin: createDatabaseRoleGuard(db, "admin"),' : ""}
+  });
 
   app.get("/api/health", (_req, res) => {
     res.json({ ok: true, uptime: process.uptime() });
@@ -798,6 +833,7 @@ docker compose up -d
 
 # Configure
 cp .env.example .env
+${SESSION_SECRET_SETUP_COMMAND}
 
 # Install & run
 ${pm} install
@@ -909,6 +945,7 @@ export function scaffold(opts: ScaffoldOptions, targetDir: string): void {
   // Server
   write(targetDir, "package.json", renderRootPackageJson(opts));
   write(targetDir, "server/tsconfig.json", renderServerTsConfig());
+  write(targetDir, "server/app-origin.ts", renderAppOriginModule());
   write(targetDir, "server/index.ts", renderServerIndex(opts));
   write(targetDir, "drizzle.config.ts", renderDrizzleConfig(opts));
   write(targetDir, ".env.example", renderEnvExample(opts));

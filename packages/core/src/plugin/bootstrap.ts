@@ -6,6 +6,7 @@ import { initConfigStore } from "./config-store";
 import { eventBus } from "./event-bus";
 import { createTenantMiddleware, type TenantResolverOptions } from "./tenant";
 import { initLifecycleState, isPluginInstalled, markPluginInstalled } from "./lifecycle-state";
+import { rejectUnconfiguredStormAdmin, requireStormUser } from "./admin-guards";
 
 export interface BootstrapOptions {
   app: Express;
@@ -17,9 +18,16 @@ export interface BootstrapOptions {
   /**
    * isAuthenticated middleware used by all plugins.
    * If not provided, falls back to a basic req.user check.
-   * Typically obtained from @stormstack/auth's createAuthMiddleware().
+   * Typically use @stormstack/auth's isAuthenticated export.
    */
   isAuthenticated?: RequestHandler;
+  /**
+   * Authorization middleware for project-wide Storm administration routes.
+   * It runs after isAuthenticated. If omitted, every authenticated administration
+   * request fails closed with 503; Core never trusts a JWT role claim by default.
+   * With @stormstack/auth, inject createDatabaseRoleGuard(db, "admin").
+   */
+  requireAdmin?: RequestHandler;
   /**
    * Multi-tenant configuration. If provided, tenant resolution middleware
    * is mounted globally after auth middleware.
@@ -28,20 +36,19 @@ export interface BootstrapOptions {
   tenant?: Omit<TenantResolverOptions, "getDb">;
 }
 
-const defaultIsAuthenticated: RequestHandler = (req, res, next) => {
-  if (!req.user?.id) {
-    res.status(401).json({ error: "Non authentifié" });
-    return;
-  }
-  next();
-};
-
 /**
  * Mounts all registered plugins onto the Express app.
  * Call this after registering all plugins and before app.listen().
  */
 export async function bootstrapPlugins(opts: BootstrapOptions): Promise<void> {
-  const { app, ctx, apiPrefix = "/api", projectRoot = process.cwd(), isAuthenticated = defaultIsAuthenticated } = opts;
+  const {
+    app,
+    ctx,
+    apiPrefix = "/api",
+    projectRoot = process.cwd(),
+    isAuthenticated = requireStormUser,
+    requireAdmin = rejectUnconfiguredStormAdmin,
+  } = opts;
 
   // 0. Initialize config store, lifecycle state + event bus
   initConfigStore(projectRoot);
@@ -131,7 +138,7 @@ export async function bootstrapPlugins(opts: BootstrapOptions): Promise<void> {
   }
 
   // Mount /api/storm/plugins + /api/storm/manifest + /api/storm/events
-  app.use(`${apiPrefix}/storm`, mountManifestRoute(apiPrefix));
+  app.use(`${apiPrefix}/storm`, mountManifestRoute(apiPrefix, { isAuthenticated, requireAdmin }));
 
   console.log(`[storm-stack] ✓ ${orderedPlugins.length} plugin(s) bootstrapped`);
 }
