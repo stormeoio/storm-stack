@@ -1,0 +1,40 @@
+# Changelog
+
+All notable changes to Storm Stack are documented in this file.
+
+## [0.1.1] - 2026-08-22
+
+### Added
+
+- Added the public `@stormstack/consent` block with authenticated consent preferences, policy-version checks, withdrawal, database constraints, and a React cookie banner.
+- Added signed double-submit CSRF protection for generated servers and a browser client that bootstraps, scopes, and safely retries protected requests.
+- Added deterministic non-interactive project generation, dependency-aware plugin selection, and root-component wiring for functional blocks.
+- Added a reproducible two-client Phase C proof covering immutable package refs, interrupted runs, additive migration, rollback, artifact integrity, and browser acceptance.
+
+### Changed
+
+- Synchronized the complete 11-package release train, plugin catalogs, generated dependency ranges, runtime manifests, and package metadata at `0.1.1`.
+- Extended the release gates with tarball reconstruction, source-size checks, production dependency auditing, generated-app smoke tests, and publish dry runs.
+- Made live publication GitHub-Actions-only with mandatory npm provenance, authenticated registry preflight, a clean exact-tagged release commit in `origin/main`, plain stable SemVer enforcement, and an atomic exact-tag release push followed by an explicit publish-workflow dispatch.
+- Declared every external server and client runtime dependency in the published package manifests, with an AST-based metadata gate to prevent future omissions.
+- **Breaking:** Restricted plugin configuration and event-history APIs to authenticated administrators, while keeping discovery manifests and catalogs public. Applications must now inject `requireAdmin` into `bootstrapPlugins`; authenticated administration requests fail closed with `503 STORM_ADMIN_GUARD_REQUIRED` when the policy is omitted.
+- Revalidated administrator roles against the current users table for every sensitive Storm administration request in generated apps and the bundled server through `createDatabaseRoleGuard(db, "admin")`. Existing/custom apps must add the same guard (or an equivalent current-source-of-truth policy) during migration.
+- Canonicalized `APP_ORIGIN` at generated-server startup and now rejects unsafe paths, credentials, queries, fragments, and unsupported protocols before CORS or CSRF middleware starts.
+
+### Fixed
+
+- Prevented protected routes from redirecting before authentication state has resolved.
+- Isolated proof cookies between clients and made browser-result parsing accept multiline JSON output.
+- Exported plugin enums and generated entry points consistently across published packages.
+- Made `storm update` report migrations and successes only for plugins that were actually updated after rollback.
+- Made `storm update` return a non-zero process status whenever any plugin update fails, so automation cannot continue after a partial release-train update.
+- Sent Storm administration configuration mutations through the shared CSRF bootstrap and retry client.
+- Made `StormAdmin` preserve protected-endpoint HTTP failures, render explicit session-expired/access-denied states, and wait for successful configuration/event data before mounting forms or empty states.
+- Validated consent API response shapes before updating cookie-banner state and cleared stale state when switching API endpoints.
+- Made published CommonJS and ESM plugin exports report the exact package version and added a release gate that verifies both module formats.
+- Removed shell interpolation of workflow inputs from the npm publication job and now validates the requested release against strict SemVer and the root manifest.
+- Restricted live npm publication to `main` or an exact version tag whose commit is contained in `origin/main`, and limited OIDC permissions to the live publish job.
+- Made partial npm release retries fail closed unless every existing version matches the release commit and manifest repository metadata, with all packages checked before the first publish.
+- Required every skipped npm version to carry a cryptographically valid Sigstore/SLSA attestation for the exact package digest, repository, publish workflow, Git ref, and release commit.
+- Made the release doctor verify real npm authentication with `npm whoami`, including credentials provided by `npm login`, without printing token material.
+- Made `storm add auth` fail atomically when the server entry cannot be wired to a database-backed administrator guard.

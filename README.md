@@ -9,6 +9,7 @@ npx create-storm-app my-app
 cd my-app
 docker compose up -d
 cp .env.example .env
+node -e "const fs=require('node:fs'),crypto=require('node:crypto'),file='.env',placeholder='SESSION_SECRET=change-me-to-a-random-32-char-secret-minimum',env=fs.readFileSync(file,'utf8');if(env.indexOf(placeholder)<0)throw new Error('SESSION_SECRET placeholder not found');fs.writeFileSync(file,env.replace(placeholder,'SESSION_SECRET='+crypto.randomBytes(32).toString('hex')))"
 npm install
 npm run db:generate
 npm run db:migrate
@@ -122,7 +123,7 @@ The two-client update, rollback, and browser acceptance proof is documented in
 
 ## MVP Status
 
-Storm Stack v0.1.0 is release-ready locally: the monorepo lints, typechecks, builds, passes the full Vitest suite, smoke-tests an app generated outside the monorepo, and packs all public packages through `npm run release:check`. Publishing still requires a GitHub remote plus npm credentials.
+Storm Stack v0.1.1 is release-ready: the monorepo lints, typechecks, builds, passes the full Vitest suite, smoke-tests an app generated outside the monorepo, and packs all public packages through `npm run release:check`. Live publication requires an npm token configured in the GitHub `npm` environment.
 
 ## Roadmap
 
@@ -147,8 +148,8 @@ Storm Stack v0.1.0 is release-ready locally: the monorepo lints, typechecks, bui
 - [x] `storm search`, `storm publish`, `storm create-plugin`
 - [x] `storm deps`, `storm migrate`, `storm docker`, `storm update`
 - [x] Storm Catalog (plugin marketplace registry + UI)
-- [ ] npm publish (v0.1.0)
-- [ ] Public GitHub remote + release tags
+- [ ] npm publish (v0.1.1)
+- [x] Public GitHub remote + immutable proof tags
 
 ## License
 
