@@ -7,7 +7,7 @@
       "name": "Auth",
       "shortName": "auth",
       "description": "Email/password + JWT cookies + RBAC + multi-tenant",
-      "version": "0.1.1",
+      "version": "0.1.2",
       "author": "stormeo",
       "tags": [
         "auth",
@@ -25,7 +25,7 @@
       "name": "Auth Social",
       "shortName": "auth-social",
       "description": "OAuth2 Google/GitHub/GitLab",
-      "version": "0.1.1",
+      "version": "0.1.2",
       "author": "stormeo",
       "tags": [
         "auth",
@@ -46,7 +46,7 @@
       "name": "Consentement",
       "shortName": "consent",
       "description": "Préférences de consentement et cookies par utilisateur",
-      "version": "0.1.1",
+      "version": "0.1.2",
       "author": "stormeo",
       "tags": [
         "consent",
@@ -66,7 +66,7 @@
       "name": "CRM",
       "shortName": "crm",
       "description": "Contacts, organisations et pipeline commercial",
-      "version": "0.1.1",
+      "version": "0.1.2",
       "author": "stormeo",
       "tags": [
         "crm",
@@ -86,7 +86,7 @@
       "name": "Ticketing",
       "shortName": "ticketing",
       "description": "Support tickets, commentaires, labels",
-      "version": "0.1.1",
+      "version": "0.1.2",
       "author": "stormeo",
       "tags": [
         "ticketing",
@@ -105,7 +105,7 @@
       "name": "Stripe",
       "shortName": "stripe",
       "description": "Paiements Stripe, webhooks, abonnements",
-      "version": "0.1.1",
+      "version": "0.1.2",
       "author": "stormeo",
       "tags": [
         "stripe",

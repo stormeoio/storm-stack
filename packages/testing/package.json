@@ -1,6 +1,6 @@
 {
   "name": "@stormeoio/testing",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Testing utilities for Storm Stack plugins — createTestContext, createTestApp, request helpers",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -21,7 +21,7 @@
     "registry": "https://registry.npmjs.org/"
   },
   "dependencies": {
-    "@stormeoio/core": "^0.1.1",
+    "@stormeoio/core": "^0.1.2",
     "express": "^5.0.0"
   },
   "devDependencies": {

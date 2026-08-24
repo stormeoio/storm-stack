@@ -1,6 +1,6 @@
 {
   "name": "@stormeoio/auth-social",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Storm Stack — social auth plugin (Google + GitHub + GitLab OAuth2)",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -21,8 +21,8 @@
     "registry": "https://registry.npmjs.org/"
   },
   "peerDependencies": {
-    "@stormeoio/auth": "^0.1.1",
-    "@stormeoio/core": "^0.1.1"
+    "@stormeoio/auth": "^0.1.2",
+    "@stormeoio/core": "^0.1.2"
   },
   "dependencies": {
     "drizzle-orm": "^0.45.2",

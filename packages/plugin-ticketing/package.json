@@ -1,6 +1,6 @@
 {
   "name": "@stormeoio/ticketing",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Storm Stack — ticketing plugin (support tickets, comments, labels)",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -26,8 +26,8 @@
     "registry": "https://registry.npmjs.org/"
   },
   "peerDependencies": {
-    "@stormeoio/auth": "^0.1.1",
-    "@stormeoio/core": "^0.1.1",
+    "@stormeoio/auth": "^0.1.2",
+    "@stormeoio/core": "^0.1.2",
     "@tanstack/react-query": "^5.0.0",
     "react": "^18.0.0 || ^19.0.0",
     "wouter": "^3.0.0"
