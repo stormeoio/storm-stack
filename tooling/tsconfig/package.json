@@ -1,6 +1,6 @@
 {
   "name": "@stormeoio/tsconfig",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "Shared TypeScript configs for Storm Stack",
   "private": true,
   "files": [

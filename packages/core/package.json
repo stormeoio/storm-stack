@@ -1,6 +1,6 @@
 {
   "name": "@stormeoio/core",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "Storm Stack core — plugin registry, auth, multi-tenant, middleware",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",

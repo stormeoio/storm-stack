@@ -1,6 +1,6 @@
 {
   "name": "@stormeoio/cli",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "CLI for Storm Stack — add plugins, scaffold, manage your SaaS",
   "bin": {
     "storm": "dist/index.mjs"
