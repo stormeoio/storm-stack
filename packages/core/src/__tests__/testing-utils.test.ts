@@ -6,7 +6,7 @@ import {
   expectEventEmitted,
   expectEventNotEmitted,
   getEmittedEvents,
-} from "@stormstack/testing";
+} from "./test-utils";
 
 afterEach(() => resetMockCounter());
 
@@ -126,8 +126,8 @@ describe("event assertions", () => {
 
     const booted = getEmittedEvents(ctx.events, "plugin.booted");
     expect(booted).toHaveLength(2);
-    expect(booted[0]!.payload.pluginId).toBe("a");
-    expect(booted[1]!.payload.pluginId).toBe("c");
+    expect(booted[0]).toMatchObject({ payload: { pluginId: "a" } });
+    expect(booted[1]).toMatchObject({ payload: { pluginId: "c" } });
   });
 
   it("getEmittedEvents returns all when no filter", async () => {

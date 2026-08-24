@@ -4,7 +4,7 @@ import path from "path";
 import express, { type Express, type RequestHandler } from "express";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { z } from "zod";
-import { createTestRequest } from "@stormstack/testing";
+import { createTestRequest } from "./test-utils";
 import { bootstrapPlugins } from "../plugin/bootstrap";
 import { initConfigStore } from "../plugin/config-store";
 import { eventBus } from "../plugin/event-bus";
