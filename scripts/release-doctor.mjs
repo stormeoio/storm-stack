@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import { spawnSync } from "node:child_process";
-import { existsSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
 import { readPackageJson, readRootPackageJson, releasePackageDirs, rootDir } from "./release-packages.mjs";
@@ -69,23 +69,32 @@ if (branch.ok && branch.output !== "main") {
   addWarning("Current branch", `Current branch is ${branch.output}.`, "Release tags should be created from main.");
 }
 
-const npmTokenPresent = Boolean(process.env.NPM_TOKEN || process.env.NODE_AUTH_TOKEN);
-const npmIdentity = run("npm", ["whoami", "--registry=https://registry.npmjs.org/"]);
-const npmAuthenticationOk = npmIdentity.ok && npmIdentity.output.length > 0;
-let npmAuthenticationDetail;
-if (npmAuthenticationOk) {
-  npmAuthenticationDetail = `Authenticated to npm as ${npmIdentity.output}.`;
-} else if (npmTokenPresent) {
-  npmAuthenticationDetail = "npm whoami rejected the configured credential.";
-} else {
-  npmAuthenticationDetail = "npm whoami could not authenticate this shell.";
-}
+const publishWorkflowPath = join(rootDir, ".github/workflows/publish.yml");
+const publishWorkflow = existsSync(publishWorkflowPath)
+  ? readFileSync(publishWorkflowPath, "utf8")
+  : "";
+const trustedPublishingConfigured =
+  publishWorkflow.includes("id-token: write")
+  && publishWorkflow.includes('node-version: "22.14.0"')
+  && publishWorkflow.includes("npm install --global npm@11.5.1")
+  && !publishWorkflow.includes("NODE_AUTH_TOKEN")
+  && !publishWorkflow.includes("NPM_TOKEN");
 addCheck(
-  "npm authentication",
-  npmAuthenticationOk,
-  npmAuthenticationDetail,
-  "Authenticate with npm login or configure a valid npm automation token, then verify it with npm whoami.",
+  "npm trusted publishing",
+  trustedPublishingConfigured,
+  trustedPublishingConfigured
+    ? "GitHub OIDC publishing uses Node.js 22.14.0 and npm 11.5.1 without a long-lived npm token."
+    : "The publish workflow is missing the required tokenless npm trusted-publishing configuration.",
+  "Configure id-token: write, Node.js 22.14.0, npm 11.5.1, and remove npm token environment variables from the live job.",
 );
+
+if (process.env.NPM_TOKEN || process.env.NODE_AUTH_TOKEN) {
+  addWarning(
+    "Legacy npm credential",
+    "NPM_TOKEN or NODE_AUTH_TOKEN is set locally but is not used by the trusted publish workflow.",
+    "Remove the legacy credential after the OIDC release path has been verified.",
+  );
+}
 
 const rootVersion = readRootPackageJson().version;
 const versionMismatches = releasePackageDirs.flatMap((packageDir) => {

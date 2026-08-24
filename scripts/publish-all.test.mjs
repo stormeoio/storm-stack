@@ -146,7 +146,7 @@ function liveEnvironment(shims, overrides = {}) {
     GITHUB_REF: currentTagRef,
     GITHUB_REPOSITORY: "stormeoio/storm-stack",
     GITHUB_WORKFLOW_REF: trustedWorkflowRef,
-    NODE_AUTH_TOKEN: "npm-automation-token",
+    NODE_AUTH_TOKEN: "",
     PATH: `${shims.directory}:${process.env.PATH}`,
     SHIM_HEAD_COMMIT: headCommit,
     SHIM_LOG: shims.logPath,
@@ -315,14 +315,27 @@ describe("live publication process guards", () => {
     expect(readFileSync(shims.logPath, "utf8")).toBe("");
   });
 
-  it("requires npm whoami before any registry lookup or publish", () => {
+  it("publishes through GitHub OIDC without npm whoami", () => {
     const shims = createCommandShims();
     const result = runPublishScript(liveEnvironment(shims, { SHIM_WHOAMI_FAIL: "1" }));
     const log = readFileSync(shims.logPath, "utf8");
 
+    expect(result.status).toBe(0);
+    expect(log).not.toContain("npm whoami");
+    expect(log).toContain("npm view");
+    expect(log).toContain("npm publish");
+  });
+
+  it("rejects an exposed legacy npm token before registry lookup or publish", () => {
+    const shims = createCommandShims();
+    const result = runPublishScript(
+      liveEnvironment(shims, { NODE_AUTH_TOKEN: "legacy-automation-token" }),
+    );
+    const log = readFileSync(shims.logPath, "utf8");
+
     expect(result.status).toBe(1);
-    expect(result.stderr).toContain("npm authentication failed");
-    expect(log).toContain("npm whoami");
+    expect(result.stderr).toContain("without an exposed npm token");
+    expect(log).not.toContain("npm whoami");
     expect(log).not.toContain("npm view");
     expect(log).not.toContain("npm publish");
   });
@@ -376,6 +389,26 @@ describe("live publication process guards", () => {
 });
 
 describe("manual live workflow authorization", () => {
+  it("uses an OIDC-capable runtime without exposing an npm token", () => {
+    const workflow = yaml.load(readFileSync(resolve(".github/workflows/publish.yml"), "utf8"));
+    const publishJob = workflow.jobs.publish;
+    const setupNode = publishJob.steps.find((step) => step.uses === "actions/setup-node@v6");
+    const installNpm = publishJob.steps.find(
+      (step) => step.name === "Install OIDC-compatible npm",
+    );
+    const publishStep = publishJob.steps.find((step) => step.name === "Publish (LIVE)");
+
+    expect(publishJob.permissions).toEqual({ contents: "read", "id-token": "write" });
+    expect(setupNode.with).toMatchObject({
+      "node-version": "22.14.0",
+      "package-manager-cache": false,
+      "registry-url": "https://registry.npmjs.org",
+    });
+    expect(installNpm.run).toBe("npm install --global npm@11.5.1");
+    expect(publishStep.env).toBeUndefined();
+    expect(publishStep.run).toBe("node scripts/publish-all.mjs --live --provenance");
+  });
+
   it("rejects main even when the exact package version tag points to HEAD", () => {
     const shims = createCommandShims();
     const { result, workflow } = runPublishWorkflowValidation(shims);
@@ -432,8 +465,8 @@ describe("release workflow publication dispatch", () => {
   });
 });
 
-describe("release doctor npm authentication", () => {
-  it("accepts npm login credentials even when token environment variables are absent", () => {
+describe("release doctor npm trusted publishing", () => {
+  it("passes without local npm credentials or npm whoami", () => {
     const shims = createCommandShims();
     const result = spawnSync(process.execPath, [resolve("scripts/release-doctor.mjs")], {
       encoding: "utf8",
@@ -444,11 +477,11 @@ describe("release doctor npm authentication", () => {
     });
 
     expect(result.status).toBe(0);
-    expect(result.stdout).toContain("[ok] npm authentication");
-    expect(result.stdout).toContain("Authenticated to npm as stormeo");
+    expect(result.stdout).toContain("[ok] npm trusted publishing");
+    expect(readFileSync(shims.logPath, "utf8")).not.toContain("npm whoami");
   });
 
-  it("fails a configured but invalid credential without exposing it", () => {
+  it("warns about a legacy credential without exposing it", () => {
     const shims = createCommandShims();
     const token = "not-a-real-secret-token";
     const result = spawnSync(process.execPath, [resolve("scripts/release-doctor.mjs")], {
@@ -461,9 +494,8 @@ describe("release doctor npm authentication", () => {
     });
     const output = `${result.stdout}\n${result.stderr}`;
 
-    expect(result.status).toBe(1);
-    expect(output).toContain("[fail] npm authentication");
-    expect(output).toContain("npm whoami rejected the configured credential");
+    expect(result.status).toBe(0);
+    expect(output).toContain("[warn] Legacy npm credential");
     expect(output).not.toContain(token);
   });
 });

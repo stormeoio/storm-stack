@@ -2,6 +2,13 @@
 
 All notable changes to Storm Stack are documented in this file.
 
+## [Unreleased]
+
+### Security
+
+- Replaced long-lived npm automation-token publishing with per-package npm Trusted Publishers bound to `stormeoio/storm-stack`, `.github/workflows/publish.yml`, and the protected GitHub `npm` environment.
+- Pinned the live publish job to Node.js 22.14.0 and npm 11.5.1, removed `NODE_AUTH_TOKEN`, and made the live guard reject any exposed npm token before registry access.
+
 ## [0.1.1] - 2026-08-22
 
 ### Added

@@ -4,11 +4,11 @@ This runbook describes the MVP release flow for Storm Stack packages.
 
 ## Prerequisites
 
-- Node.js `>=20.19.0` (`nvm use` and GitHub release workflows select the pinned `20.20.2`)
+- Node.js `>=20.19.0` for development (`nvm use` selects the pinned `20.20.2`)
 - npm 10+
 - A GitHub remote for `stormeoio/storm-stack`
-- An npm automation token available as `NPM_TOKEN` in the GitHub `npm` environment
-- npm provenance enabled in GitHub Actions (`id-token: write`)
+- A Trusted Publisher on every public package for `stormeoio/storm-stack`, `publish.yml`, and the GitHub `npm` environment
+- The live publish job pinned to Node.js `22.14.0` and npm `11.5.1`, with GitHub OIDC enabled through `id-token: write`
 
 Check the external release prerequisites before tagging or publishing:
 
@@ -16,7 +16,7 @@ Check the external release prerequisites before tagging or publishing:
 npm run release:doctor
 ```
 
-This doctor intentionally stays outside `release:check`: a local build can be release-ready even when the GitHub remote or npm authentication has not been configured yet. Authentication is verified with `npm whoami`, so either `npm login` or a token-backed npm configuration is accepted without printing credentials.
+This doctor intentionally stays outside `release:check`: a local build can be release-ready even when the GitHub remote or external Trusted Publisher connections have not been configured yet. It verifies the repository-side tokenless OIDC workflow without requiring local npm authentication.
 
 ## Local release gate
 
@@ -87,7 +87,7 @@ The workflow calls:
 node scripts/publish-all.mjs --live --provenance
 ```
 
-Live mode is fail-closed and only runs from the exact version tag in the trusted `stormeoio/storm-stack` publish workflow. Before the first registry write, it requires npm provenance and GitHub OIDC, a clean worktree, that tag at `HEAD`, the tagged commit in `origin/main`, and a successful `npm whoami` against the public registry.
+Live mode is fail-closed and only runs from the exact version tag in the trusted `stormeoio/storm-stack` publish workflow. Before the first registry write, it requires GitHub OIDC, refuses any exposed `NPM_TOKEN` or `NODE_AUTH_TOKEN`, requires a clean worktree, that tag at `HEAD`, and the tagged commit in `origin/main`. npm exchanges the GitHub identity for a short-lived publish credential only when `npm publish` runs; `npm whoami` is intentionally not used because it does not support Trusted Publisher authentication.
 
 The script preflights every package version before publishing the first package. A version is skipped after a partial failure only when all of these checks pass:
 
@@ -99,7 +99,7 @@ The script preflights every package version before publishing the first package.
 
 The preflight intentionally does not infer trust from the optional `internalParameters.github` numeric IDs and does not download and re-hash the tarball. Its package-content binding is the cryptographically verified attestation subject matched to npm's SHA-512 `dist.integrity`; npm remains the source of registry metadata and tarball integrity. Missing, ambiguous, malformed, unverifiable, or conflicting attestation data aborts the complete release train before the first publish.
 
-The implementation follows the official [npm provenance and verification documentation](https://docs.npmjs.com/generating-provenance-statements/), the [SLSA provenance v1 schema](https://slsa.dev/provenance/v1), the [GitHub Actions workflow build type](https://slsa-framework.github.io/github-actions-buildtypes/workflow/v1), and GitHub's documented [`GITHUB_TOKEN` workflow-dispatch exception](https://docs.github.com/en/actions/how-tos/writing-workflows/choosing-when-your-workflow-runs/triggering-a-workflow#triggering-a-workflow-from-a-workflow).
+The implementation follows the official [npm Trusted Publishers documentation](https://docs.npmjs.com/trusted-publishers/), [npm provenance and verification documentation](https://docs.npmjs.com/generating-provenance-statements/), the [SLSA provenance v1 schema](https://slsa.dev/provenance/v1), the [GitHub Actions workflow build type](https://slsa-framework.github.io/github-actions-buildtypes/workflow/v1), and GitHub's documented [`GITHUB_TOKEN` workflow-dispatch exception](https://docs.github.com/en/actions/how-tos/writing-workflows/choosing-when-your-workflow-runs/triggering-a-workflow#triggering-a-workflow-from-a-workflow).
 
 ## Audit policy
 

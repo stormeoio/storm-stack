@@ -123,7 +123,7 @@ The two-client update, rollback, and browser acceptance proof is documented in
 
 ## MVP Status
 
-Storm Stack v0.1.1 is release-ready: the monorepo lints, typechecks, builds, passes the full Vitest suite, smoke-tests an app generated outside the monorepo, and packs all public packages through `npm run release:check`. Live publication requires an npm token configured in the GitHub `npm` environment.
+Storm Stack v0.1.2 is published under `@stormeoio`: the monorepo lints, typechecks, builds, passes the full Vitest suite, smoke-tests an app generated outside the monorepo, and packs all public packages through `npm run release:check`. Live publication uses npm Trusted Publishers with short-lived GitHub OIDC credentials and no long-lived npm token.
 
 ## Roadmap
 
@@ -148,7 +148,7 @@ Storm Stack v0.1.1 is release-ready: the monorepo lints, typechecks, builds, pas
 - [x] `storm search`, `storm publish`, `storm create-plugin`
 - [x] `storm deps`, `storm migrate`, `storm docker`, `storm update`
 - [x] Storm Catalog (plugin marketplace registry + UI)
-- [ ] npm publish (v0.1.1)
+- [x] npm publish (`@stormeoio/*` v0.1.2)
 - [x] Public GitHub remote + immutable proof tags
 
 ## License

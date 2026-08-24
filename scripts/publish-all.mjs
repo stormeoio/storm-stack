@@ -216,11 +216,11 @@ export function assertLiveReleaseContext(rootVersion, options = {}) {
   ) {
     throw new Error("Live publication is restricted to the trusted stormeoio/storm-stack publish workflow.");
   }
-  if (!env.NPM_TOKEN && !env.NODE_AUTH_TOKEN) {
-    throw new Error("Live publication requires the npm token exposed to the GitHub Actions job.");
-  }
   if (!env.ACTIONS_ID_TOKEN_REQUEST_URL || !env.ACTIONS_ID_TOKEN_REQUEST_TOKEN) {
-    throw new Error("Live publication requires GitHub OIDC credentials for npm provenance.");
+    throw new Error("Live publication requires GitHub OIDC credentials for npm trusted publishing.");
+  }
+  if (env.NPM_TOKEN || env.NODE_AUTH_TOKEN) {
+    throw new Error("Live publication must use npm trusted publishing without an exposed npm token.");
   }
 
   const status = run("git", ["status", "--porcelain", "--untracked-files=all"], {
@@ -269,15 +269,8 @@ export function assertLiveReleaseContext(rootVersion, options = {}) {
     throw new Error(`Release HEAD ${headCommit} is not contained in origin/main.`);
   }
 
-  const whoami = run("npm", ["whoami", `--registry=${npmRegistry}`], { capture: true });
-  requireSuccessfulCommand(whoami, "npm authentication failed; refusing live publication.");
-  if (whoami.stdout.trim().length === 0) {
-    throw new Error("npm authentication returned no account identity; refusing live publication.");
-  }
-
   return {
     headCommit,
-    npmUser: whoami.stdout.trim(),
     workflowRef: env.GITHUB_WORKFLOW_REF,
   };
 }

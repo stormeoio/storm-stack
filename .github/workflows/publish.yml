@@ -190,16 +190,20 @@ jobs:
       id-token: write
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           # Live guards verify the exact tag and its ancestry in origin/main.
           fetch-depth: 0
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
-          node-version-file: .nvmrc
-          cache: npm
+          # npm trusted publishing requires Node.js >=22.14 and npm >=11.5.1.
+          node-version: "22.14.0"
           registry-url: https://registry.npmjs.org
+          package-manager-cache: false
+
+      - name: Install OIDC-compatible npm
+        run: npm install --global npm@11.5.1
 
       - run: npm ci
 
@@ -207,8 +211,6 @@ jobs:
         run: npx turbo build
 
       - name: Publish (LIVE)
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: node scripts/publish-all.mjs --live --provenance
 
       - name: Summary
