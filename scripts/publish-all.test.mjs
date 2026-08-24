@@ -146,7 +146,8 @@ function liveEnvironment(shims, overrides = {}) {
     GITHUB_REF: currentTagRef,
     GITHUB_REPOSITORY: "stormeoio/storm-stack",
     GITHUB_WORKFLOW_REF: trustedWorkflowRef,
-    NODE_AUTH_TOKEN: "",
+    // actions/setup-node emits this fixed, non-secret placeholder when registry-url is configured.
+    NODE_AUTH_TOKEN: "XXXXX-XXXXX-XXXXX-XXXXX",
     PATH: `${shims.directory}:${process.env.PATH}`,
     SHIM_HEAD_COMMIT: headCommit,
     SHIM_LOG: shims.logPath,

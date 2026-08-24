@@ -14,6 +14,7 @@ import { assertStableReleaseVersion } from "./release-version.mjs";
 export { npmRegistry };
 const trustedGitHubRepository = "stormeoio/storm-stack";
 const trustedPublishWorkflow = `${trustedGitHubRepository}/.github/workflows/publish.yml@`;
+const setupNodeAuthPlaceholder = "XXXXX-XXXXX-XXXXX-XXXXX";
 
 const allowedArguments = new Set([
   "--dry-run",
@@ -219,7 +220,10 @@ export function assertLiveReleaseContext(rootVersion, options = {}) {
   if (!env.ACTIONS_ID_TOKEN_REQUEST_URL || !env.ACTIONS_ID_TOKEN_REQUEST_TOKEN) {
     throw new Error("Live publication requires GitHub OIDC credentials for npm trusted publishing.");
   }
-  if (env.NPM_TOKEN || env.NODE_AUTH_TOKEN) {
+  if (
+    env.NPM_TOKEN
+    || (env.NODE_AUTH_TOKEN && env.NODE_AUTH_TOKEN !== setupNodeAuthPlaceholder)
+  ) {
     throw new Error("Live publication must use npm trusted publishing without an exposed npm token.");
   }
 

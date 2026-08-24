@@ -87,7 +87,7 @@ The workflow calls:
 node scripts/publish-all.mjs --live --provenance
 ```
 
-Live mode is fail-closed and only runs from the exact version tag in the trusted `stormeoio/storm-stack` publish workflow. Before the first registry write, it requires GitHub OIDC, refuses any exposed `NPM_TOKEN` or `NODE_AUTH_TOKEN`, requires a clean worktree, that tag at `HEAD`, and the tagged commit in `origin/main`. npm exchanges the GitHub identity for a short-lived publish credential only when `npm publish` runs; `npm whoami` is intentionally not used because it does not support Trusted Publisher authentication.
+Live mode is fail-closed and only runs from the exact version tag in the trusted `stormeoio/storm-stack` publish workflow. Before the first registry write, it requires GitHub OIDC, refuses `NPM_TOKEN` and every real `NODE_AUTH_TOKEN` value, permits only the fixed non-secret placeholder emitted by `actions/setup-node` for its registry configuration, requires a clean worktree, that tag at `HEAD`, and the tagged commit in `origin/main`. npm exchanges the GitHub identity for a short-lived publish credential only when `npm publish` runs; `npm whoami` is intentionally not used because it does not support Trusted Publisher authentication.
 
 The script preflights every package version before publishing the first package. A version is skipped after a partial failure only when all of these checks pass:
 
