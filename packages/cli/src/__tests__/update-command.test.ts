@@ -8,6 +8,7 @@ import { updateCommand } from "../commands/update";
 import { resolvePlugin } from "../registry";
 import { loadLocalPluginCopySources } from "../copy-source-files";
 import * as utils from "../utils";
+import { STORM_PACKAGE_RANGE, VERSION } from "../version";
 
 vi.mock("../utils", async (importOriginal) => {
   const actual = await importOriginal<typeof utils>();
@@ -107,13 +108,13 @@ function createNpmPackageFixture(root: string): string {
   const packageRoot = path.join(root, "npm-package");
   write(packageRoot, "package.json", `${JSON.stringify({
     name: "@stormeoio/auth",
-    version: "0.1.1",
+    version: VERSION,
     main: "index.js",
   }, null, 2)}\n`);
   write(
     packageRoot,
     "index.js",
-    "module.exports = { version: '0.1.1', createDatabaseRoleGuard: () => () => {} };\n",
+    `module.exports = { version: ${JSON.stringify(VERSION)}, createDatabaseRoleGuard: () => () => {} };\n`,
   );
   return packageRoot;
 }
@@ -129,7 +130,7 @@ const fs = require("node:fs");
 const { spawnSync } = require("node:child_process");
 const args = process.argv.slice(2);
 fs.writeFileSync(process.env.STORM_NPM_ARGUMENTS_LOG, JSON.stringify(args));
-if (args.join(" ") !== "install @stormeoio/auth@^0.1.1") process.exit(64);
+if (args.join(" ") !== ${JSON.stringify(`install @stormeoio/auth@${STORM_PACKAGE_RANGE}`)}) process.exit(64);
 const result = spawnSync(
   process.env.STORM_REAL_NPM,
   ["install", process.env.STORM_NPM_PACKAGE, "--offline", "--ignore-scripts", "--no-audit", "--no-fund"],
@@ -162,7 +163,7 @@ afterEach(() => {
 });
 
 describe("storm update command", () => {
-  it("installe réellement le train npm 0.1.1 depuis un plugin 0.1.0", async () => {
+  it(`installe réellement le train npm ${VERSION} depuis un plugin 0.1.0`, async () => {
     const root = createProject();
     write(root, "node_modules/@stormeoio/auth/package.json", `${JSON.stringify({
       name: "@stormeoio/auth",
@@ -180,7 +181,7 @@ describe("storm update command", () => {
     expect(runInstallMock).toHaveBeenCalledWith(
       fs.realpathSync(root),
       "npm",
-      ["@stormeoio/auth@^0.1.1"],
+      [`@stormeoio/auth@${STORM_PACKAGE_RANGE}`],
     );
     const server = fs.readFileSync(path.join(root, "server/index.ts"), "utf8");
     expect(server).toContain(
@@ -218,17 +219,17 @@ describe("storm update command", () => {
     expect(result.status).toBe("success");
     expect(JSON.parse(fs.readFileSync(argumentsLog, "utf8"))).toEqual([
       "install",
-      "@stormeoio/auth@^0.1.1",
+      `@stormeoio/auth@${STORM_PACKAGE_RANGE}`,
     ]);
     expect(projectPackage.dependencies["@stormeoio/auth"]).toBe("file:npm-package");
     expect(packageLock.packages[""]?.dependencies?.["@stormeoio/auth"]).toBe("file:npm-package");
-    expect(packageLock.packages["npm-package"]?.version).toBe("0.1.1");
-    expect(installedPackage.version).toBe("0.1.1");
+    expect(packageLock.packages["npm-package"]?.version).toBe(VERSION);
+    expect(installedPackage.version).toBe(VERSION);
     expect(fs.readFileSync(path.join(root, "server/index.ts"), "utf8"))
       .toContain(`requireAdmin: createDatabaseRoleGuard(ctx.db, "admin")`);
   }, SLOW_IO_TEST_TIMEOUT);
 
-  it("remplace tous les fichiers copy 0.1.0 par le train 0.1.1", async () => {
+  it(`remplace tous les fichiers copy 0.1.0 par le train ${VERSION}`, async () => {
     const root = createProject();
     await authPluginFiles(root);
     const upstream = await upstreamAuthFiles();
@@ -367,11 +368,11 @@ describe("storm update command", () => {
 
   it("ne migre pas le serveur d'un copy courant quand le préflight amont est indisponible", async () => {
     const root = createProject();
-    await authPluginFiles(root, "0.1.1");
+    await authPluginFiles(root, VERSION);
     write(
       root,
       "plugins/auth/index.ts",
-      `export { createDatabaseRoleGuard } from "./middleware";\nexport const authPlugin = { version: "0.1.1" };\n`,
+      `export { createDatabaseRoleGuard } from "./middleware";\nexport const authPlugin = { version: ${JSON.stringify(VERSION)} };\n`,
     );
     write(
       root,

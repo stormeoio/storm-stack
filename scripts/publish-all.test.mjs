@@ -23,6 +23,9 @@ import {
 
 const temporaryDirectories = [];
 const headCommit = "a".repeat(40);
+const currentVersion = JSON.parse(readFileSync(resolve("package.json"), "utf8")).version;
+const currentTagRef = `refs/tags/v${currentVersion}`;
+const trustedWorkflowRef = `stormeoio/storm-stack/.github/workflows/publish.yml@${currentTagRef}`;
 const packageInfo = {
   dir: "packages/core",
   name: "@stormeoio/core",
@@ -31,7 +34,7 @@ const packageInfo = {
     url: "git+https://github.com/stormeoio/storm-stack.git",
     directory: "packages/core",
   },
-  version: "0.1.1",
+  version: currentVersion,
 };
 
 function createTemporaryDirectory(prefix) {
@@ -107,8 +110,8 @@ case "$1" in
     exit 0
     ;;
   view)
-    if [ "\${SHIM_VIEW_MODE:-}" = "mismatch" ] && [ "$2" = "@stormeoio/core@0.1.1" ]; then
-      printf '%s\\n' '{"name":"@stormeoio/core","version":"0.1.1","gitHead":"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb","repository":{"type":"git","url":"git+https://github.com/stormeoio/storm-stack.git","directory":"packages/core"}}'
+    if [ "\${SHIM_VIEW_MODE:-}" = "mismatch" ] && [ "$2" = "@stormeoio/core@${currentVersion}" ]; then
+      printf '%s\\n' '{"name":"@stormeoio/core","version":"${currentVersion}","gitHead":"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb","repository":{"type":"git","url":"git+https://github.com/stormeoio/storm-stack.git","directory":"packages/core"}}'
       exit 0
     fi
     printf 'npm error code E404\\n' >&2
@@ -140,10 +143,9 @@ function liveEnvironment(shims, overrides = {}) {
     ACTIONS_ID_TOKEN_REQUEST_TOKEN: "oidc-request-token",
     ACTIONS_ID_TOKEN_REQUEST_URL: "https://actions.example.test/oidc",
     GITHUB_ACTIONS: "true",
-    GITHUB_REF: "refs/tags/v0.1.1",
+    GITHUB_REF: currentTagRef,
     GITHUB_REPOSITORY: "stormeoio/storm-stack",
-    GITHUB_WORKFLOW_REF:
-      "stormeoio/storm-stack/.github/workflows/publish.yml@refs/tags/v0.1.1",
+    GITHUB_WORKFLOW_REF: trustedWorkflowRef,
     NODE_AUTH_TOKEN: "npm-automation-token",
     PATH: `${shims.directory}:${process.env.PATH}`,
     SHIM_HEAD_COMMIT: headCommit,
@@ -194,7 +196,7 @@ function runReleaseWorkflowDispatch(shims, overrides = {}) {
       env: liveEnvironment(shims, {
         GH_TOKEN: "github-actions-token",
         RELEASE_REPOSITORY: "stormeoio/storm-stack",
-        RELEASE_VERSION: "0.1.1",
+        RELEASE_VERSION: currentVersion,
         ...overrides,
       }),
     }),
@@ -267,8 +269,7 @@ describe("publish argument and metadata guards", () => {
         packageInfo,
         {
           headCommit,
-          workflowRef:
-            "stormeoio/storm-stack/.github/workflows/publish.yml@refs/tags/v0.1.1",
+          workflowRef: trustedWorkflowRef,
         },
         { run },
       ),
@@ -357,7 +358,7 @@ describe("live publication process guards", () => {
 
     expect(result.status).toBe(1);
     expect(result.stderr).toContain("already exists with gitHead");
-    expect(log).toContain("npm view @stormeoio/core@0.1.1");
+    expect(log).toContain(`npm view @stormeoio/core@${currentVersion}`);
     expect(log).not.toContain("npm publish");
   });
 
@@ -388,11 +389,11 @@ describe("manual live workflow authorization", () => {
   it("authorizes manual live mode only after validating the exact tagged HEAD", () => {
     const shims = createCommandShims();
     const { githubOutput, result, workflow } = runPublishWorkflowValidation(shims, {
-      RELEASE_REF: "refs/tags/v0.1.1",
+      RELEASE_REF: currentTagRef,
     });
 
     expect(result.status).toBe(0);
-    expect(readFileSync(githubOutput, "utf8")).toBe("mode=live\nversion=0.1.1\n");
+    expect(readFileSync(githubOutput, "utf8")).toBe(`mode=live\nversion=${currentVersion}\n`);
     expect(workflow.jobs.publish.if).toContain(
       "github.ref == format('refs/tags/v{0}', needs.validate.outputs.version)",
     );
@@ -426,7 +427,7 @@ describe("release workflow publication dispatch", () => {
 
     expect(result.status).toBe(0);
     expect(log).toContain(
-      "gh workflow run publish.yml --repo stormeoio/storm-stack --ref v0.1.1 --field dry_run=false --field version=0.1.1",
+      `gh workflow run publish.yml --repo stormeoio/storm-stack --ref v${currentVersion} --field dry_run=false --field version=${currentVersion}`,
     );
   });
 });
