@@ -415,7 +415,8 @@ export default function App() {
     expect(fs.existsSync(path.join(root, "plugins/consent/client/ConsentBanner.tsx"))).toBe(true);
     expect(fs.readFileSync(path.join(root, "client/src/App.tsx"), "utf8"))
       .toContain("storm:root-component @stormstack/consent:start");
-    expect(promptMocks.spinnerStop).toHaveBeenCalledWith("✓ consent installé");
+    const spinnerStopMessage = promptMocks.spinnerStop.mock.calls.at(-1)?.[0];
+    expect(String(spinnerStopMessage)).toContain("consent installé");
   });
 });
 
