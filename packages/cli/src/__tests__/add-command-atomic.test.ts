@@ -416,7 +416,8 @@ export default function App() {
     expect(fs.readFileSync(path.join(root, "client/src/App.tsx"), "utf8"))
       .toContain("storm:root-component @stormstack/consent:start");
     const spinnerStopMessage = promptMocks.spinnerStop.mock.calls.at(-1)?.[0];
-    expect(String(spinnerStopMessage)).toContain("consent installé");
+    const normalizedSpinnerStopMessage = String(spinnerStopMessage).replace(/\u001b\[[0-9;]*m/g, "");
+    expect(normalizedSpinnerStopMessage).toContain("consent installé");
   });
 });
 
