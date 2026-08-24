@@ -31,7 +31,7 @@ export function StormRouter({
   notFound,
   onPluginError,
 }: StormRouterProps) {
-  const { manifest, components, user } = useStorm();
+  const { manifest, components, user, isLoading } = useStorm();
 
   const loadingFallback = fallback ?? (
     <div className="flex items-center justify-center min-h-[200px] text-sm text-gray-400">
@@ -42,6 +42,8 @@ export function StormRouter({
   const notFoundFallback = notFound ?? (
     <div className="p-8 text-sm text-gray-500">Page introuvable.</div>
   );
+
+  if (isLoading) return <>{loadingFallback}</>;
 
   return (
     <Suspense fallback={loadingFallback}>

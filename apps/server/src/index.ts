@@ -5,7 +5,7 @@ import { drizzle } from "drizzle-orm/node-postgres";
 import { Pool } from "pg";
 import { registry, bootstrapPlugins, eventBus } from "@stormstack/core";
 import type { StormContext, StormEnv } from "@stormstack/core";
-import { authPlugin } from "@stormstack/auth";
+import { authPlugin, createDatabaseRoleGuard } from "@stormstack/auth";
 import { crmPlugin } from "@stormstack/crm";
 import { ticketingPlugin } from "@stormstack/ticketing";
 import { createSocialAuthPlugin } from "@stormstack/auth-social";
@@ -60,7 +60,11 @@ async function main() {
   app.use(cors({ origin: "http://localhost:5173", credentials: true }));
   app.use(express.json());
 
-  await bootstrapPlugins({ app, ctx });
+  await bootstrapPlugins({
+    app,
+    ctx,
+    requireAdmin: createDatabaseRoleGuard(db, "admin"),
+  });
 
   app.get("/api/health", (_req, res) => {
     res.json({ ok: true, uptime: process.uptime() });

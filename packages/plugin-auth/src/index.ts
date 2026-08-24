@@ -5,7 +5,16 @@ import { createAppMiddleware } from "./middleware";
 import { createAuthRoutes } from "./routes";
 import { PACKAGE_VERSION } from "./version";
 
-export { isAuthenticated, requireRole, createAppMiddleware, signToken, setAuthCookie, clearAuthCookie, verifyToken } from "./middleware";
+export {
+  isAuthenticated,
+  requireRole,
+  createDatabaseRoleGuard,
+  createAppMiddleware,
+  signToken,
+  setAuthCookie,
+  clearAuthCookie,
+  verifyToken,
+} from "./middleware";
 export { users, tenants, tenantMembers } from "./schema";
 export type { User, InsertUser, Tenant, TenantMember } from "./schema";
 export type { AuthTokenPayload } from "./middleware";

@@ -1,6 +1,6 @@
 {
   "name": "@stormstack/react",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Storm Stack React bindings — dynamic nav, routes, and manifest from plugins",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -14,6 +14,7 @@
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
+    "test": "vitest run src/__tests__",
     "typecheck": "tsc --noEmit"
   },
   "publishConfig": {
@@ -21,6 +22,7 @@
     "registry": "https://registry.npmjs.org/"
   },
   "peerDependencies": {
+    "@stormstack/core": "^0.1.1",
     "react": "^18.0.0 || ^19.0.0",
     "react-dom": "^18.0.0 || ^19.0.0",
     "@tanstack/react-query": "^5.0.0",
@@ -31,13 +33,17 @@
     "clsx": "^2.1.0"
   },
   "devDependencies": {
+    "@testing-library/dom": "^10.4.1",
+    "@testing-library/react": "^16.3.2",
     "@tanstack/react-query": "^5.0.0",
     "@types/react": "^18.3.0",
     "@types/react-dom": "^18.3.0",
+    "jsdom": "^27.4.0",
     "react": "^18.3.0",
     "react-dom": "^18.3.0",
     "tsup": "^8.0.0",
     "typescript": "^5.4.0",
+    "vitest": "^4.1.7",
     "wouter": "^3.3.0"
   },
   "license": "MIT",

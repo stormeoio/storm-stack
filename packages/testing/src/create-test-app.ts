@@ -11,6 +11,7 @@ export interface TestAppOptions extends TestContextOptions {
   plugins: StormPlugin[];
   apiPrefix?: string;
   isAuthenticated?: RequestHandler;
+  requireAdmin?: RequestHandler;
 }
 
 export interface TestApp {
@@ -21,7 +22,7 @@ export interface TestApp {
 }
 
 export async function createTestApp(opts: TestAppOptions): Promise<TestApp> {
-  const { plugins, apiPrefix = "/api", isAuthenticated } = opts;
+  const { plugins, apiPrefix = "/api", isAuthenticated, requireAdmin } = opts;
 
   const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "storm-test-"));
 
@@ -41,6 +42,7 @@ export async function createTestApp(opts: TestAppOptions): Promise<TestApp> {
     apiPrefix,
     projectRoot: tmpDir,
     isAuthenticated,
+    requireAdmin,
   });
 
   const request = createTestRequest(app);

@@ -3,8 +3,17 @@ import pc from "picocolors";
 import fs from "fs";
 import path from "path";
 import { findProjectRoot, readConfig } from "../config";
-import { resolvePlugin, pluginSourceUrl, type PluginMeta } from "../registry";
-import { detectPackageManager, runInstall, fetchFile, writeFile } from "../utils";
+import { resolvePlugin, type PluginMeta } from "../registry";
+import { detectPackageManager, runInstall, writeFile } from "../utils";
+import { VERSION } from "../version";
+import {
+  loadRemotePluginCopySources,
+  rewriteCopiedPluginImports,
+} from "../copy-source-files";
+import {
+  ensureDatabaseAdminGuardWiring,
+  hasBootstrapAdminGuard,
+} from "../injector";
 
 interface UpdateOptions {
   yes?: boolean;
@@ -18,12 +27,36 @@ interface UpdateCandidate {
   latestVersion: string;
   mode: "npm" | "copy";
   changedFiles: string[];
+  needsAdminGuardMigration: boolean;
+  copySnapshot?: Map<string, string>;
 }
+
+interface CopyDetectionResult {
+  changedFiles: string[];
+  upstreamFiles: Map<string, string>;
+}
+
+export interface UpdateFailure {
+  pluginId: string;
+  message: string;
+}
+
+export type UpdateCommandResult =
+  | {
+      status: "success";
+      updatedPluginIds: string[];
+      failures: [];
+    }
+  | {
+      status: "failed";
+      updatedPluginIds: string[];
+      failures: UpdateFailure[];
+    };
 
 export async function updateCommand(
   pluginArg: string | undefined,
   opts: UpdateOptions = {},
-): Promise<void> {
+): Promise<UpdateCommandResult> {
   const root = findProjectRoot();
   if (!root) {
     p.log.error("Aucun projet détecté.");
@@ -38,7 +71,7 @@ export async function updateCommand(
 
   if (config.installed.length === 0) {
     p.log.info("Aucun plugin installé.");
-    return;
+    return successfulResult();
   }
 
   const pluginsToCheck = pluginArg
@@ -51,26 +84,82 @@ export async function updateCommand(
   spinner.start("Vérification des mises à jour…");
 
   const candidates: UpdateCandidate[] = [];
+  const detectionFailures: UpdateFailure[] = [];
 
   for (const idOrName of pluginsToCheck) {
     const plugin = resolvePlugin(idOrName);
     if (!plugin) continue;
     if (!config.installed.includes(plugin.id)) continue;
 
+    const backupDir = copyRecoveryBackupDirectory(root, config.pluginsDir, plugin);
+    try {
+      if (pathEntryExists(backupDir)) {
+        throw copyRecoveryBackupExistsError(plugin, backupDir);
+      }
+    } catch (error) {
+      detectionFailures.push({
+        pluginId: plugin.id,
+        message: error instanceof Error ? error.message : String(error),
+      });
+      continue;
+    }
+
     const mode = detectPluginMode(root, config.pluginsDir, plugin);
     const currentVersion = detectCurrentVersion(root, config.pluginsDir, plugin, mode);
     const latestVersion = plugin.status === "available" ? resolveLatestVersion(plugin) : currentVersion;
+    const needsAdminGuardMigration = plugin.id === "@stormstack/auth"
+      && !hasBootstrapAdminGuard(path.join(root, config.serverEntry));
 
     if (mode === "copy") {
-      const changedFiles = await detectCopyChanges(root, config.pluginsDir, plugin);
-      if (changedFiles.length > 0 || currentVersion !== latestVersion) {
-        candidates.push({ plugin, currentVersion, latestVersion, mode, changedFiles });
+      let detection: CopyDetectionResult;
+      try {
+        detection = await detectCopyChanges(root, config.pluginsDir, plugin);
+      } catch (error) {
+        detectionFailures.push({
+          pluginId: plugin.id,
+          message: error instanceof Error ? error.message : String(error),
+        });
+        continue;
+      }
+      const { changedFiles, upstreamFiles } = detection;
+      if (changedFiles.length > 0 || currentVersion !== latestVersion || needsAdminGuardMigration) {
+        candidates.push({
+          plugin,
+          currentVersion,
+          latestVersion,
+          mode,
+          changedFiles,
+          needsAdminGuardMigration,
+          copySnapshot: upstreamFiles,
+        });
       }
     } else {
-      if (currentVersion !== latestVersion) {
-        candidates.push({ plugin, currentVersion, latestVersion, mode, changedFiles: [] });
+      if (currentVersion !== latestVersion || needsAdminGuardMigration) {
+        candidates.push({
+          plugin,
+          currentVersion,
+          latestVersion,
+          mode,
+          changedFiles: [],
+          needsAdminGuardMigration,
+        });
       }
     }
+  }
+
+  if (detectionFailures.length > 0) {
+    spinner.stop(`${pc.red("✗")} Vérification des copies impossible`);
+    for (const failure of detectionFailures) {
+      p.log.error(failure.message);
+    }
+    p.log.warn(
+      `${pc.red("✗")} ${detectionFailures.length} plugin(s) non vérifié(s) — aucune mise à jour appliquée`,
+    );
+    return {
+      status: "failed",
+      updatedPluginIds: [],
+      failures: detectionFailures,
+    };
   }
 
   spinner.stop(
@@ -79,7 +168,7 @@ export async function updateCommand(
       : `${pc.green("✓")} Tous les plugins sont à jour`,
   );
 
-  if (candidates.length === 0) return;
+  if (candidates.length === 0) return successfulResult();
 
   // Display update table
   p.log.info("");
@@ -92,7 +181,10 @@ export async function updateCommand(
       ? pc.dim(` (${c.changedFiles.length} fichier(s) modifié(s))`)
       : "";
     const modeStr = pc.dim(`[${c.mode}]`);
-    p.log.info(`  ${pc.cyan(c.plugin.shortName)} ${versionStr} ${modeStr}${fileStr}`);
+    const guardStr = c.needsAdminGuardMigration
+      ? pc.dim(" (migration requireAdmin)")
+      : "";
+    p.log.info(`  ${pc.cyan(c.plugin.shortName)} ${versionStr} ${modeStr}${fileStr}${guardStr}`);
   }
 
   if (opts.dryRun) {
@@ -108,7 +200,7 @@ export async function updateCommand(
         }
       }
     }
-    return;
+    return successfulResult();
   }
 
   // Confirm
@@ -119,21 +211,43 @@ export async function updateCommand(
     });
     if (p.isCancel(confirmed) || !confirmed) {
       p.cancel("Annulé.");
-      return;
+      return successfulResult();
     }
   }
 
   // Apply updates
   const pm = detectPackageManager(root);
+  const successfulUpdates: UpdateCandidate[] = [];
+  const failures: UpdateFailure[] = [];
 
   for (const candidate of candidates) {
     const updateSpinner = p.spinner();
     updateSpinner.start(`Mise à jour de ${pc.cyan(candidate.plugin.shortName)}…`);
+    const serverEntryPath = path.join(root, config.serverEntry);
+    const originalServerEntry = candidate.needsAdminGuardMigration && fs.existsSync(serverEntryPath)
+      ? fs.readFileSync(serverEntryPath, "utf8")
+      : null;
+    let serverEntryModified = false;
 
     try {
+      if (candidate.needsAdminGuardMigration) {
+        const guardResult = ensureDatabaseAdminGuardWiring(serverEntryPath);
+        if (!guardResult.configured) {
+          throw new Error(
+            guardResult.reason ?? "Impossible de migrer requireAdmin vers le garde base de données",
+          );
+        }
+        serverEntryModified = guardResult.modified;
+        if (serverEntryModified) {
+          updateSpinner.message(`${pc.cyan(candidate.plugin.shortName)} — migration requireAdmin…`);
+        }
+      }
+
       if (candidate.mode === "npm") {
-        runInstall(root, pm, [`${candidate.plugin.id}@^${candidate.latestVersion}`]);
-      } else {
+        if (candidate.currentVersion !== candidate.latestVersion) {
+          runInstall(root, pm, [`${candidate.plugin.id}@^${candidate.latestVersion}`]);
+        }
+      } else if (candidate.changedFiles.length > 0) {
         await updateCopyPlugin(root, config.pluginsDir, candidate);
       }
 
@@ -146,14 +260,20 @@ export async function updateCommand(
       }
 
       updateSpinner.stop(`${pc.green("✓")} ${pc.cyan(candidate.plugin.shortName)} mis à jour`);
+      successfulUpdates.push(candidate);
     } catch (err) {
+      if (serverEntryModified && originalServerEntry !== null) {
+        fs.writeFileSync(serverEntryPath, originalServerEntry, "utf8");
+      }
+      const message = err instanceof Error ? err.message : String(err);
+      failures.push({ pluginId: candidate.plugin.id, message });
       updateSpinner.stop(`${pc.red("✗")} ${candidate.plugin.shortName}`);
-      p.log.error(err instanceof Error ? err.message : String(err));
+      p.log.error(message);
     }
   }
 
   // Post-update summary
-  const schemaUpdates = candidates.filter(
+  const schemaUpdates = successfulUpdates.filter(
     (c) => c.changedFiles.includes("schema.ts"),
   );
 
@@ -167,7 +287,21 @@ export async function updateCommand(
     p.log.info("");
   }
 
-  p.log.info(`${pc.green("✓")} ${candidates.length} plugin(s) mis à jour`);
+  if (successfulUpdates.length > 0) {
+    p.log.info(`${pc.green("✓")} ${successfulUpdates.length} plugin(s) mis à jour`);
+  }
+  if (failures.length > 0) {
+    p.log.warn(
+      `${pc.red("✗")} ${failures.length} plugin(s) non mis à jour — la commande se termine en échec`,
+    );
+    return {
+      status: "failed",
+      updatedPluginIds: successfulUpdates.map((candidate) => candidate.plugin.id),
+      failures,
+    };
+  }
+
+  return successfulResult(successfulUpdates.map((candidate) => candidate.plugin.id));
 }
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
@@ -197,7 +331,17 @@ function detectCurrentVersion(
     }
   }
 
-  // Copy mode — check if plugin's index has a version comment or read from plugin definition
+  // Copy mode — generated sources expose the package version in version.ts.
+  try {
+    const versionPath = path.join(root, pluginsDir, plugin.shortName, "version.ts");
+    const content = fs.readFileSync(versionPath, "utf8");
+    const match = content.match(/\bPACKAGE_VERSION\s*=\s*["']([^"']+)["']/);
+    if (match) return match[1]!;
+  } catch {
+    // Legacy copies did not include version.ts; fall back to their inline version.
+  }
+
+  // Legacy copy mode — the plugin definition contained an inline version.
   try {
     const indexPath = path.join(root, pluginsDir, plugin.shortName, "index.ts");
     const content = fs.readFileSync(indexPath, "utf8");
@@ -210,45 +354,73 @@ function detectCurrentVersion(
   return "0.0.0";
 }
 
-function resolveLatestVersion(_plugin: PluginMeta): string {
+export function resolveLatestVersion(_plugin: PluginMeta): string {
   // In monorepo context, latest is what the registry knows
   // In a real marketplace this would be an HTTP call
-  return "0.1.0";
+  return VERSION;
 }
 
 async function detectCopyChanges(
   root: string,
   pluginsDir: string,
   plugin: PluginMeta,
-): Promise<string[]> {
-  const changed: string[] = [];
+): Promise<CopyDetectionResult> {
+  const changed = new Set<string>();
+  const upstreamFiles = new Map<string, string>();
   const localDir = path.join(root, pluginsDir, plugin.shortName);
 
-  if (!fs.existsSync(localDir)) return [];
+  if (!fs.existsSync(localDir)) return { changedFiles: [], upstreamFiles };
 
-  for (const file of plugin.files) {
+  let remoteSources: Awaited<ReturnType<typeof loadRemotePluginCopySources>>;
+  try {
+    remoteSources = await loadRemotePluginCopySources(plugin);
+  } catch (error) {
+    const detail = error instanceof Error ? error.message : String(error);
+    throw new Error(`Impossible de vérifier la copie ${plugin.shortName} : ${detail}`);
+  }
+
+  for (const { file, content } of remoteSources) {
     const localPath = path.join(localDir, file);
+    const copiedContent = rewriteCopiedPluginImports(content, plugin, file);
+    upstreamFiles.set(file, copiedContent);
+
     if (!fs.existsSync(localPath)) {
-      changed.push(file);
+      changed.add(file);
       continue;
     }
 
     const localContent = fs.readFileSync(localPath, "utf8");
-    const localHash = simpleHash(localContent);
-
-    // Try to get upstream content for comparison
-    try {
-      const upstreamContent = await fetchFile(pluginSourceUrl(plugin, file));
-      const upstreamHash = simpleHash(upstreamContent);
-      if (localHash !== upstreamHash) {
-        changed.push(file);
-      }
-    } catch {
-      // Can't fetch upstream — skip this file
+    if (simpleHash(localContent) !== simpleHash(copiedContent)) {
+      changed.add(file);
     }
   }
 
-  return changed;
+  if (plugin.id === "@stormstack/auth") {
+    for (const file of missingDatabaseGuardCopyFiles(localDir)) {
+      changed.add(file);
+    }
+  }
+
+  return {
+    changedFiles: remoteSources.map(({ file }) => file).filter((file) => changed.has(file)),
+    upstreamFiles,
+  };
+}
+
+function missingDatabaseGuardCopyFiles(localDir: string): string[] {
+  const requiredMarkers = new Map<string, RegExp>([
+    [
+      "index.ts",
+      /export\s*\{[^}]*\bcreateDatabaseRoleGuard\b[^}]*\}\s*from\s*["']\.\/middleware["']/s,
+    ],
+    ["middleware.ts", /export\s+function\s+createDatabaseRoleGuard\s*\(/],
+  ]);
+
+  return [...requiredMarkers].flatMap(([file, marker]) => {
+    const localPath = path.join(localDir, file);
+    if (!fs.existsSync(localPath)) return [file];
+    return marker.test(fs.readFileSync(localPath, "utf8")) ? [] : [file];
+  });
 }
 
 async function updateCopyPlugin(
@@ -257,26 +429,59 @@ async function updateCopyPlugin(
   candidate: UpdateCandidate,
 ): Promise<void> {
   const targetDir = path.join(root, pluginsDir, candidate.plugin.shortName);
+  const backupDir = copyRecoveryBackupDirectory(root, pluginsDir, candidate.plugin);
+  let backupCreated = false;
 
-  // Create backup
-  const backupDir = path.join(root, pluginsDir, `.${candidate.plugin.shortName}.backup`);
+  // Reserve the recovery path atomically. This prevents a backup left by an
+  // interrupted update from ever being merged into or silently removed.
   if (fs.existsSync(targetDir)) {
-    fs.cpSync(targetDir, backupDir, { recursive: true });
+    const targetMode = fs.statSync(targetDir).mode;
+    try {
+      fs.mkdirSync(backupDir, { mode: targetMode });
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code === "EEXIST") {
+        throw copyRecoveryBackupExistsError(candidate.plugin, backupDir);
+      }
+      throw error;
+    }
+
+    try {
+      fs.cpSync(targetDir, backupDir, { recursive: true });
+      fs.chmodSync(backupDir, targetMode);
+      backupCreated = true;
+    } catch (error) {
+      fs.rmSync(backupDir, { recursive: true, force: true });
+      throw error;
+    }
   }
 
   try {
     for (const file of candidate.changedFiles) {
-      const url = pluginSourceUrl(candidate.plugin, file);
-      const content = await fetchFile(url);
-      const rewritten = rewritePluginImports(content);
-      writeFile(path.join(targetDir, file), rewritten);
+      const content = candidate.copySnapshot?.get(file);
+      if (content === undefined) {
+        throw new Error(
+          `Snapshot amont incomplet pour ${candidate.plugin.shortName}/${file}`,
+        );
+      }
+      writeFile(path.join(targetDir, file), content);
+    }
+
+    if (candidate.plugin.id === "@stormstack/auth") {
+      const missingGuardFiles = missingDatabaseGuardCopyFiles(targetDir);
+      if (missingGuardFiles.length > 0) {
+        throw new Error(
+          `La mise à jour auth copy n'expose pas createDatabaseRoleGuard dans : ${missingGuardFiles.join(", ")}`,
+        );
+      }
     }
 
     // Clean up backup on success
-    fs.rmSync(backupDir, { recursive: true, force: true });
+    if (backupCreated) {
+      fs.rmSync(backupDir, { recursive: true, force: true });
+    }
   } catch (err) {
     // Restore from backup
-    if (fs.existsSync(backupDir)) {
+    if (backupCreated && pathEntryExists(backupDir)) {
       fs.rmSync(targetDir, { recursive: true, force: true });
       fs.renameSync(backupDir, targetDir);
     }
@@ -284,10 +489,28 @@ async function updateCopyPlugin(
   }
 }
 
-function rewritePluginImports(content: string): string {
-  return content.replace(
-    /from\s+["']@stormstack\/(?!core)([^"']+)["']/g,
-    (_match, name) => `from "../${name}"`,
+function copyRecoveryBackupDirectory(
+  root: string,
+  pluginsDir: string,
+  plugin: PluginMeta,
+): string {
+  return path.join(root, pluginsDir, `.${plugin.shortName}.backup`);
+}
+
+function pathEntryExists(target: string): boolean {
+  try {
+    fs.lstatSync(target);
+    return true;
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === "ENOENT") return false;
+    throw error;
+  }
+}
+
+function copyRecoveryBackupExistsError(plugin: PluginMeta, backupDir: string): Error {
+  return new Error(
+    `Backup de récupération existant pour ${plugin.shortName}: ${backupDir}. `
+      + "Restaurez-le ou déplacez-le manuellement avant de relancer; aucun fichier n'a été modifié.",
   );
 }
 
@@ -298,4 +521,8 @@ function simpleHash(content: string): string {
     hash = ((hash << 5) - hash + char) | 0;
   }
   return hash.toString(36);
+}
+
+function successfulResult(updatedPluginIds: string[] = []): UpdateCommandResult {
+  return { status: "success", updatedPluginIds, failures: [] };
 }

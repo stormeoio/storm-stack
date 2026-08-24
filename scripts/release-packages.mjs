@@ -10,6 +10,7 @@ export const releasePackageDirs = [
   "packages/testing",
   "packages/plugin-auth",
   "packages/plugin-auth-social",
+  "packages/plugin-consent",
   "packages/plugin-crm",
   "packages/plugin-ticketing",
   "packages/plugin-stripe",

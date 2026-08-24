@@ -11,7 +11,7 @@ npm install @stormstack/react
 Peer dependencies:
 
 ```bash
-npm install react react-dom @tanstack/react-query wouter
+npm install @stormstack/core react react-dom @tanstack/react-query wouter
 ```
 
 ## Usage
@@ -40,6 +40,12 @@ export function App() {
 ```
 
 By default, `StormApp` reads the plugin manifest from `/api/storm/manifest` and the current user from `/api/auth/me`.
+
+`StormAdmin` expects the server to inject an explicit `requireAdmin` policy into
+`bootstrapPlugins`. Its Configuration and Events tabs keep their loading state
+until protected data succeeds, show a reconnect message for `401`, an access
+denied message for `403`, and the server error for other HTTP failures. Forms are
+not mounted from schema defaults when protected configuration failed to load.
 
 ## Main exports
 

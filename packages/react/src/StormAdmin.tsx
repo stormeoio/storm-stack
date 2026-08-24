@@ -1,5 +1,6 @@
 import { useState, useCallback, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { csrfFetch } from "@stormstack/core/csrf-client";
 import { useStorm } from "./context";
 import { resolveIcon } from "./icon-resolver";
 import { StormConfigForm } from "./StormConfigForm";
@@ -36,9 +37,75 @@ interface EventEntry {
 
 type AdminTab = "overview" | "config" | "events" | "catalog";
 
+interface AdminEndpoints {
+  apiBase: string;
+  csrfEndpoint: string;
+  allowedOrigins: string[];
+}
+
+class AdminHttpError extends Error {
+  constructor(
+    readonly status: number,
+    message: string,
+  ) {
+    super(message);
+    this.name = "AdminHttpError";
+  }
+}
+
+async function adminHttpError(response: Response, fallback: string): Promise<AdminHttpError> {
+  const body = await response.json().catch(() => null) as { error?: unknown } | null;
+  const serverMessage = typeof body?.error === "string" && body.error.trim()
+    ? body.error
+    : null;
+
+  if (response.status === 401) {
+    return new AdminHttpError(401, "Votre session a expiré. Reconnectez-vous.");
+  }
+  if (response.status === 403) {
+    return new AdminHttpError(403, "Accès administrateur refusé.");
+  }
+  return new AdminHttpError(
+    response.status,
+    serverMessage ?? `${fallback} (HTTP ${response.status})`,
+  );
+}
+
+function AdminErrorState({ error, fallback }: { error: unknown; fallback: string }) {
+  const status = error instanceof AdminHttpError ? error.status : undefined;
+  const message = error instanceof Error ? error.message : fallback;
+  return (
+    <div
+      role="alert"
+      data-http-status={status}
+      className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
+    >
+      {message}
+    </div>
+  );
+}
+
+function resolveAdminEndpoints(apiBase: string): AdminEndpoints {
+  const normalizedApiBase = apiBase.replace(/\/+$/, "");
+  const csrfEndpoint = `${normalizedApiBase}/storm/csrf`;
+
+  if (!/^https?:\/\//i.test(normalizedApiBase)) {
+    return { apiBase: normalizedApiBase, csrfEndpoint, allowedOrigins: [] };
+  }
+
+  const apiUrl = new URL(normalizedApiBase);
+  const currentOrigin = typeof window === "undefined" ? undefined : window.location.origin;
+  return {
+    apiBase: normalizedApiBase,
+    csrfEndpoint,
+    allowedOrigins: apiUrl.origin === currentOrigin ? [] : [apiUrl.origin],
+  };
+}
+
 export function StormAdmin({ apiBase = "/api" }: StormAdminProps) {
   const { manifest } = useStorm();
   const [activeTab, setActiveTab] = useState<AdminTab>("overview");
+  const endpoints = useMemo(() => resolveAdminEndpoints(apiBase), [apiBase]);
 
   const tabs: { id: AdminTab; label: string; icon: string }[] = [
     { id: "overview", label: "Plugins", icon: "Package" },
@@ -76,10 +143,10 @@ export function StormAdmin({ apiBase = "/api" }: StormAdminProps) {
       </div>
 
       {/* Tab content */}
-      {activeTab === "overview" && <OverviewTab apiBase={apiBase} />}
-      {activeTab === "config" && <ConfigTab apiBase={apiBase} manifest={manifest} />}
-      {activeTab === "events" && <EventsTab apiBase={apiBase} />}
-      {activeTab === "catalog" && <CatalogTab apiBase={apiBase} />}
+      {activeTab === "overview" && <OverviewTab apiBase={endpoints.apiBase} />}
+      {activeTab === "config" && <ConfigTab endpoints={endpoints} manifest={manifest} />}
+      {activeTab === "events" && <EventsTab apiBase={endpoints.apiBase} />}
+      {activeTab === "catalog" && <CatalogTab apiBase={endpoints.apiBase} />}
     </div>
   );
 }
@@ -165,30 +232,41 @@ function PluginCard({ plugin }: { plugin: PluginInfo }) {
 
 // ── Config Tab ───────────────────────────────────────────────────────────────
 
-function ConfigTab({ apiBase, manifest }: { apiBase: string; manifest: StormManifest }) {
+function ConfigTab({
+  endpoints,
+  manifest,
+}: {
+  endpoints: AdminEndpoints;
+  manifest: StormManifest;
+}) {
   const qc = useQueryClient();
+  const { apiBase, csrfEndpoint, allowedOrigins } = endpoints;
   const schemas: Record<string, Record<string, FieldDescriptor>> = manifest.configSchemas ?? {};
   const pluginIds = Object.keys(schemas);
   const [activePlugin, setActivePlugin] = useState<string>(pluginIds[0] ?? "");
 
-  const { data: configs } = useQuery({
-    queryKey: ["storm", "config"],
+  const { data: configs, isLoading, error } = useQuery({
+    queryKey: ["storm", "config", apiBase],
     queryFn: async () => {
       const res = await fetch(`${apiBase}/storm/config`, { credentials: "include" });
-      if (!res.ok) throw new Error("Failed to fetch configs");
+      if (!res.ok) throw await adminHttpError(res, "Impossible de charger la configuration");
       const data = await res.json() as { configs: Record<string, Record<string, unknown>> };
       return data.configs;
     },
+    enabled: pluginIds.length > 0,
     staleTime: 30_000,
   });
 
   const saveMutation = useMutation({
     mutationFn: async ({ pluginId, values }: { pluginId: string; values: Record<string, unknown> }) => {
-      const res = await fetch(`${apiBase}/storm/config/${encodeURIComponent(pluginId)}`, {
+      const res = await csrfFetch(`${apiBase}/storm/config/${encodeURIComponent(pluginId)}`, {
         method: "PATCH",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(values),
+      }, {
+        endpoint: csrfEndpoint,
+        allowedOrigins,
       });
       if (!res.ok) {
         const body = await res.json().catch(() => ({})) as { error?: string; details?: string[] };
@@ -196,7 +274,7 @@ function ConfigTab({ apiBase, manifest }: { apiBase: string; manifest: StormMani
       }
     },
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["storm", "config"] });
+      qc.invalidateQueries({ queryKey: ["storm", "config", apiBase] });
     },
   });
 
@@ -213,6 +291,14 @@ function ConfigTab({ apiBase, manifest }: { apiBase: string; manifest: StormMani
         </p>
       </div>
     );
+  }
+
+  if (error) {
+    return <AdminErrorState error={error} fallback="Impossible de charger la configuration" />;
+  }
+
+  if (isLoading || !configs) {
+    return <div className="text-sm text-gray-500">Chargement…</div>;
   }
 
   return (
@@ -247,9 +333,10 @@ function ConfigTab({ apiBase, manifest }: { apiBase: string; manifest: StormMani
               {activePlugin.replace("@stormstack/", "").replace(/^\w/, (c) => c.toUpperCase())}
             </h2>
             <StormConfigForm
+              key={activePlugin}
               pluginId={activePlugin}
               fields={schemas[activePlugin]!}
-              values={configs?.[activePlugin] ?? {}}
+              values={configs[activePlugin] ?? {}}
               onSave={handleSave}
               saving={saveMutation.isPending}
             />
@@ -263,11 +350,11 @@ function ConfigTab({ apiBase, manifest }: { apiBase: string; manifest: StormMani
 // ── Events Tab ───────────────────────────────────────────────────────────────
 
 function EventsTab({ apiBase }: { apiBase: string }) {
-  const { data, isLoading } = useQuery({
-    queryKey: ["storm", "admin", "events"],
+  const { data, isLoading, error } = useQuery({
+    queryKey: ["storm", "admin", "events", apiBase],
     queryFn: async () => {
       const res = await fetch(`${apiBase}/storm/events?limit=100`, { credentials: "include" });
-      if (!res.ok) throw new Error("Failed to fetch events");
+      if (!res.ok) throw await adminHttpError(res, "Impossible de charger les événements");
       return res.json() as Promise<{
         emitters: Record<string, string[]>;
         listeners: Record<string, string[]>;
@@ -278,13 +365,15 @@ function EventsTab({ apiBase }: { apiBase: string }) {
     staleTime: 3000,
   });
 
-  if (isLoading) {
+  if (error) {
+    return <AdminErrorState error={error} fallback="Impossible de charger les événements" />;
+  }
+
+  if (isLoading || !data) {
     return <div className="text-sm text-gray-500">Chargement…</div>;
   }
 
-  const emitters = data?.emitters ?? {};
-  const listeners = data?.listeners ?? {};
-  const history = data?.history ?? [];
+  const { emitters, listeners, history } = data;
 
   return (
     <div className="space-y-6">

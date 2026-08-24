@@ -9,8 +9,10 @@ npx create-storm-app my-app
 cd my-app
 docker compose up -d
 cp .env.example .env
+node -e "const fs=require('node:fs'),crypto=require('node:crypto'),file='.env',placeholder='SESSION_SECRET=change-me-to-a-random-32-char-secret-minimum',env=fs.readFileSync(file,'utf8');if(env.indexOf(placeholder)<0)throw new Error('SESSION_SECRET placeholder not found');fs.writeFileSync(file,env.replace(placeholder,'SESSION_SECRET='+crypto.randomBytes(32).toString('hex')))"
 npm install
-npm run db:push
+npm run db:generate
+npm run db:migrate
 npm run dev
 ```
 
@@ -21,6 +23,7 @@ npm run dev
 | [`@stormstack/core`](./packages/core) | Plugin registry & bootstrap engine |
 | [`@stormstack/auth`](./packages/plugin-auth) | Email/password + JWT + RBAC |
 | [`@stormstack/auth-social`](./packages/plugin-auth-social) | OAuth2 Google/GitHub/GitLab |
+| [`@stormstack/consent`](./packages/plugin-consent) | Préférences de consentement et bannière cookies |
 | [`@stormstack/crm`](./packages/plugin-crm) | Contacts, organisations, pipeline |
 | [`@stormstack/ticketing`](./packages/plugin-ticketing) | Support tickets & helpdesk |
 | [`@stormstack/stripe`](./packages/plugin-stripe) | Stripe payments & webhooks |
@@ -111,14 +114,16 @@ npm run build
 npm run lint
 npm run typecheck
 npm test
-npm run pack:all
+npm run release:check
 ```
 
 Release preparation and npm publishing are documented in [`docs/RELEASE.md`](./docs/RELEASE.md).
+The two-client update, rollback, and browser acceptance proof is documented in
+[`docs/PHASE_C_PROOF.md`](./docs/PHASE_C_PROOF.md).
 
 ## MVP Status
 
-Storm Stack v0.1.0 is release-ready locally: the monorepo lints, typechecks, builds, passes the full Vitest suite, smoke-tests an app generated outside the monorepo, and packs all public packages through `npm run release:check`. Publishing still requires a GitHub remote plus npm credentials.
+Storm Stack v0.1.1 is release-ready: the monorepo lints, typechecks, builds, passes the full Vitest suite, smoke-tests an app generated outside the monorepo, and packs all public packages through `npm run release:check`. Live publication requires an npm token configured in the GitHub `npm` environment.
 
 ## Roadmap
 
@@ -131,6 +136,7 @@ Storm Stack v0.1.0 is release-ready locally: the monorepo lints, typechecks, bui
 - [x] Auto-generated plugin settings UI from Zod schemas
 - [x] `@stormstack/auth` — JWT + RBAC + multi-tenant
 - [x] `@stormstack/auth-social` — OAuth2 (Google, GitHub, GitLab)
+- [x] `@stormstack/consent` — préférences RGPD et bannière cookies
 - [x] `@stormstack/crm` — contacts, organisations, pipeline
 - [x] `@stormstack/ticketing` — tickets, comments, labels
 - [x] `@stormstack/stripe` — payments and webhooks
@@ -142,8 +148,8 @@ Storm Stack v0.1.0 is release-ready locally: the monorepo lints, typechecks, bui
 - [x] `storm search`, `storm publish`, `storm create-plugin`
 - [x] `storm deps`, `storm migrate`, `storm docker`, `storm update`
 - [x] Storm Catalog (plugin marketplace registry + UI)
-- [ ] npm publish (v0.1.0)
-- [ ] Public GitHub remote + release tags
+- [ ] npm publish (v0.1.1)
+- [x] Public GitHub remote + immutable proof tags
 
 ## License
 

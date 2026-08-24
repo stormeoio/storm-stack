@@ -166,6 +166,7 @@ export type PluginId =
   | "@stormstack/vault"
   | "@stormstack/integrations"
   | "@stormstack/auth-social"
+  | "@stormstack/consent"
   | "@stormstack/rgpd"
   | "@stormstack/design"
   | "@stormstack/search"

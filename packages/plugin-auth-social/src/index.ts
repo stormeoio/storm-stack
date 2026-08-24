@@ -3,7 +3,7 @@ import { oauthAccounts, oauthProviderEnum } from "./schema";
 import { createSocialAuthRoutes, type SocialAuthConfig } from "./routes";
 import { PACKAGE_VERSION } from "./version";
 
-export { oauthAccounts } from "./schema";
+export { oauthAccounts, oauthProviderEnum } from "./schema";
 export type { OAuthAccount, InsertOAuthAccount, OAuthProvider } from "./schema";
 export type { SocialAuthConfig } from "./routes";
 

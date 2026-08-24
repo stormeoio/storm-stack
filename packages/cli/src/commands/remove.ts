@@ -8,9 +8,10 @@ import {
   removePluginRegistration,
   removeDrizzleSchema,
   removeClientComponents,
+  removeRootComponent,
   removeStripeWebhookRawBody,
-  updateProjectClaudeMd,
 } from "../injector";
+import { updateProjectClaudeMd } from "../project-claude";
 import { detectPackageManager, runUninstall, removeDir } from "../utils";
 
 export async function removeCommand(pluginArg: string | undefined): Promise<void> {
@@ -80,6 +81,11 @@ export async function removeCommand(pluginArg: string | undefined): Promise<void
   spinner.start(`Suppression de ${pc.cyan(plugin.shortName)}…`);
 
   try {
+    const rootResult = removeRootComponent(root, plugin);
+    if (rootResult.blocked) {
+      throw new Error(`${rootResult.reason}. Réparez les marqueurs dans client/src/App.tsx avant de réessayer.`);
+    }
+
     // Run onUninstall lifecycle hook if the plugin exports one
     await runUninstallHook(root, plugin);
 

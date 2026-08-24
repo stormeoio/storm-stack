@@ -507,6 +507,13 @@ import { StormAdmin } from "@stormstack/react";
 
 Props: \`apiBase\` (default \`"/api"\`). The component auto-fetches plugins, config schemas, events, and catalog from the Storm Stack API.
 
+The server must inject an explicit \`requireAdmin\` middleware into
+\`bootstrapPlugins\`. Without it, authenticated configuration and event-history
+requests fail closed with \`503 STORM_ADMIN_GUARD_REQUIRED\`; a configured policy
+returns \`403\` when the current user is not an administrator. \`StormAdmin\`
+shows explicit session-expired (\`401\`) and access-denied (\`403\`) states rather
+than rendering forms or empty event data.
+
 ### Tabs
 
 - **Plugins** — installed plugin cards with tags, version, pricing badge
@@ -516,18 +523,18 @@ Props: \`apiBase\` (default \`"/api"\`). The component auto-fetches plugins, con
 
 ## Config API
 
-| Method | Path | Description |
-|--------|------|-------------|
-| GET | \`/api/storm/config\` | All plugin configs |
-| GET | \`/api/storm/config/:id\` | Single plugin config |
-| PATCH | \`/api/storm/config/:id\` | Update plugin config |
+| Method | Path | Description | Access |
+|--------|------|-------------|--------|
+| GET | \`/api/storm/config\` | All plugin configs | Authenticated + injected admin policy |
+| GET | \`/api/storm/config/:id\` | Single plugin config | Authenticated + injected admin policy |
+| PATCH | \`/api/storm/config/:id\` | Update plugin config | Authenticated + injected admin policy |
 
 ## Events API
 
-| Method | Path | Description |
-|--------|------|-------------|
-| GET | \`/api/storm/events\` | Emitters, listeners, history |
-| GET | \`/api/storm/events?limit=100\` | Custom history limit |
+| Method | Path | Description | Access |
+|--------|------|-------------|--------|
+| GET | \`/api/storm/events\` | Emitters, listeners, history | Authenticated + injected admin policy |
+| GET | \`/api/storm/events?limit=100\` | Custom history limit | Authenticated + injected admin policy |
 
 ## Catalog API
 

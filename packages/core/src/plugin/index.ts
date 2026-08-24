@@ -29,6 +29,8 @@ export { StormPluginRegistry, registry } from "./registry";
 export { bootstrapPlugins } from "./bootstrap";
 export type { BootstrapOptions } from "./bootstrap";
 export { mountManifestRoute } from "./manifest-route";
+export type { ManifestRouteGuards } from "./manifest-route";
+export { requireStormUser, rejectUnconfiguredStormAdmin } from "./admin-guards";
 export { initConfigStore, getPluginConfig, setPluginConfig, getAllConfigs, zodSchemaToDescriptor } from "./config-store";
 export type { FieldDescriptor } from "./config-store";
 export { StormEventBus, eventBus } from "./event-bus";

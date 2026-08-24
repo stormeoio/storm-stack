@@ -1,15 +1,21 @@
 {
   "version": 1,
-  "updatedAt": "2026-05-21T00:00:00.000Z",
+  "updatedAt": "2026-08-09T00:00:00.000Z",
   "plugins": [
     {
       "id": "@stormstack/auth",
       "name": "Auth",
       "shortName": "auth",
       "description": "Email/password + JWT cookies + RBAC + multi-tenant",
-      "version": "0.1.0",
+      "version": "0.1.1",
       "author": "stormeo",
-      "tags": ["auth", "jwt", "rbac", "multi-tenant", "session"],
+      "tags": [
+        "auth",
+        "jwt",
+        "rbac",
+        "multi-tenant",
+        "session"
+      ],
       "requires": [],
       "status": "available",
       "npmPackage": "@stormstack/auth"
@@ -19,22 +25,59 @@
       "name": "Auth Social",
       "shortName": "auth-social",
       "description": "OAuth2 Google/GitHub/GitLab",
-      "version": "0.1.0",
+      "version": "0.1.1",
       "author": "stormeo",
-      "tags": ["auth", "oauth", "google", "github", "gitlab", "sso"],
-      "requires": ["@stormstack/auth"],
+      "tags": [
+        "auth",
+        "oauth",
+        "google",
+        "github",
+        "gitlab",
+        "sso"
+      ],
+      "requires": [
+        "@stormstack/auth"
+      ],
       "status": "available",
       "npmPackage": "@stormstack/auth-social"
+    },
+    {
+      "id": "@stormstack/consent",
+      "name": "Consentement",
+      "shortName": "consent",
+      "description": "Préférences de consentement et cookies par utilisateur",
+      "version": "0.1.1",
+      "author": "stormeo",
+      "tags": [
+        "consent",
+        "cookies",
+        "privacy",
+        "rgpd",
+        "gdpr"
+      ],
+      "requires": [
+        "@stormstack/auth"
+      ],
+      "status": "available",
+      "npmPackage": "@stormstack/consent"
     },
     {
       "id": "@stormstack/crm",
       "name": "CRM",
       "shortName": "crm",
       "description": "Contacts, organisations et pipeline commercial",
-      "version": "0.1.0",
+      "version": "0.1.1",
       "author": "stormeo",
-      "tags": ["crm", "contacts", "deals", "pipeline", "sales"],
-      "requires": ["@stormstack/auth"],
+      "tags": [
+        "crm",
+        "contacts",
+        "deals",
+        "pipeline",
+        "sales"
+      ],
+      "requires": [
+        "@stormstack/auth"
+      ],
       "status": "available",
       "npmPackage": "@stormstack/crm"
     },
@@ -43,10 +86,17 @@
       "name": "Ticketing",
       "shortName": "ticketing",
       "description": "Support tickets, commentaires, labels",
-      "version": "0.1.0",
+      "version": "0.1.1",
       "author": "stormeo",
-      "tags": ["ticketing", "support", "helpdesk", "tickets"],
-      "requires": ["@stormstack/auth"],
+      "tags": [
+        "ticketing",
+        "support",
+        "helpdesk",
+        "tickets"
+      ],
+      "requires": [
+        "@stormstack/auth"
+      ],
       "status": "available",
       "npmPackage": "@stormstack/ticketing"
     },
@@ -55,10 +105,18 @@
       "name": "Stripe",
       "shortName": "stripe",
       "description": "Paiements Stripe, webhooks, abonnements",
-      "version": "0.1.0",
+      "version": "0.1.1",
       "author": "stormeo",
-      "tags": ["stripe", "payments", "billing", "subscriptions", "webhooks"],
-      "requires": ["@stormstack/auth"],
+      "tags": [
+        "stripe",
+        "payments",
+        "billing",
+        "subscriptions",
+        "webhooks"
+      ],
+      "requires": [
+        "@stormstack/auth"
+      ],
       "status": "available",
       "npmPackage": "@stormstack/stripe"
     },
@@ -69,8 +127,15 @@
       "description": "Facturation, abonnements recurrents, devis",
       "version": "0.1.0",
       "author": "stormeo",
-      "tags": ["billing", "invoices", "subscriptions", "quotes"],
-      "requires": ["@stormstack/auth"],
+      "tags": [
+        "billing",
+        "invoices",
+        "subscriptions",
+        "quotes"
+      ],
+      "requires": [
+        "@stormstack/auth"
+      ],
       "status": "coming-soon",
       "npmPackage": "@stormstack/billing"
     },
@@ -81,8 +146,16 @@
       "description": "Gestion de contenu, pages, articles",
       "version": "0.1.0",
       "author": "stormeo",
-      "tags": ["cms", "content", "pages", "blog", "articles"],
-      "requires": ["@stormstack/auth"],
+      "tags": [
+        "cms",
+        "content",
+        "pages",
+        "blog",
+        "articles"
+      ],
+      "requires": [
+        "@stormstack/auth"
+      ],
       "status": "coming-soon",
       "npmPackage": "@stormstack/cms"
     },
@@ -93,8 +166,15 @@
       "description": "Messagerie interne, emails transactionnels",
       "version": "0.1.0",
       "author": "stormeo",
-      "tags": ["messaging", "email", "notifications", "chat"],
-      "requires": ["@stormstack/auth"],
+      "tags": [
+        "messaging",
+        "email",
+        "notifications",
+        "chat"
+      ],
+      "requires": [
+        "@stormstack/auth"
+      ],
       "status": "coming-soon",
       "npmPackage": "@stormstack/messaging"
     },
@@ -105,8 +185,16 @@
       "description": "Stockage de fichiers, GED, partage",
       "version": "0.1.0",
       "author": "stormeo",
-      "tags": ["drive", "files", "storage", "ged", "documents"],
-      "requires": ["@stormstack/auth"],
+      "tags": [
+        "drive",
+        "files",
+        "storage",
+        "ged",
+        "documents"
+      ],
+      "requires": [
+        "@stormstack/auth"
+      ],
       "status": "coming-soon",
       "npmPackage": "@stormstack/drive"
     },
@@ -117,8 +205,15 @@
       "description": "Uptime, health checks, alertes",
       "version": "0.1.0",
       "author": "stormeo",
-      "tags": ["monitoring", "uptime", "health", "alerts"],
-      "requires": ["@stormstack/auth"],
+      "tags": [
+        "monitoring",
+        "uptime",
+        "health",
+        "alerts"
+      ],
+      "requires": [
+        "@stormstack/auth"
+      ],
       "status": "coming-soon",
       "npmPackage": "@stormstack/monitoring"
     }
