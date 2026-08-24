@@ -65,7 +65,7 @@ export async function removeCommand(pluginArg: string | undefined): Promise<void
   });
 
   if (dependents.length > 0) {
-    const names = dependents.map((d) => pc.yellow(d.replace("@stormstack/", ""))).join(", ");
+    const names = dependents.map((d) => pc.yellow(d.replace("@stormeoio/", ""))).join(", ");
     p.log.error(`Impossible de retirer ${pc.cyan(plugin.shortName)} — requis par : ${names}`);
     p.log.info("Retirez d'abord les plugins dépendants.");
     process.exit(1);
@@ -94,7 +94,7 @@ export async function removeCommand(pluginArg: string | undefined): Promise<void
     // Remove from server entry
     const serverEntryPath = path.join(root, config.serverEntry);
     removePluginRegistration(serverEntryPath, plugin);
-    if (plugin.id === "@stormstack/stripe") {
+    if (plugin.id === "@stormeoio/stripe") {
       const rawBodyResult = removeStripeWebhookRawBody(serverEntryPath);
       if (rawBodyResult.modified) {
         spinner.message(`${pc.cyan(plugin.shortName)} — restauration du parser JSON…`);

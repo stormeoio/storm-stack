@@ -1,23 +1,23 @@
-# @stormstack/react
+# @stormeoio/react
 
 React bindings for Storm Stack applications: manifest-driven navigation, dynamic routes, settings UI, and an all-in-one app shell.
 
 ## Installation
 
 ```bash
-npm install @stormstack/react
+npm install @stormeoio/react
 ```
 
 Peer dependencies:
 
 ```bash
-npm install @stormstack/core react react-dom @tanstack/react-query wouter
+npm install @stormeoio/core react react-dom @tanstack/react-query wouter
 ```
 
 ## Usage
 
 ```tsx
-import { StormApp, createComponentMapFromGlob } from "@stormstack/react";
+import { StormApp, createComponentMapFromGlob } from "@stormeoio/react";
 import { lazy } from "react";
 import { LoginPage } from "./pages/LoginPage";
 import { DashboardPage } from "./pages/DashboardPage";

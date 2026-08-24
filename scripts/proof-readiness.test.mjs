@@ -219,8 +219,8 @@ describe("owned resource helpers", () => {
 
 describe("npm pack parsing", () => {
   it("accepts npm's JSON array and rejects unsafe filenames", () => {
-    expect(parseNpmPackFilename('[{"filename":"stormstack-core-0.1.0.tgz"}]')).toBe(
-      "stormstack-core-0.1.0.tgz",
+    expect(parseNpmPackFilename('[{"filename":"stormeoio-core-0.1.0.tgz"}]')).toBe(
+      "stormeoio-core-0.1.0.tgz",
     );
     expect(() => parseNpmPackFilename('[{"filename":"../escape.tgz"}]')).toThrow("safe tarball");
     expect(() => parseNpmPackFilename("not-json")).toThrow("valid JSON");

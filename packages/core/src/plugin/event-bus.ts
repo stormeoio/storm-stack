@@ -8,7 +8,7 @@ import type { StormContext } from "./types";
  * Central event map. Plugins extend this interface to register typed events:
  *
  * ```ts
- * declare module "@stormstack/core" {
+ * declare module "@stormeoio/core" {
  *   interface StormEvents {
  *     "ticket.created": { ticketId: string; title: string; reporterId: string };
  *   }

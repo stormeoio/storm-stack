@@ -1,7 +1,7 @@
-# @stormstack/auth-social — Claude Copilot Guide
+# @stormeoio/auth-social — Claude Copilot Guide
 
 ## What this plugin does
-OAuth2 social login with Google, GitHub, and GitLab. Extends `@stormstack/auth` with SSO providers. Creates/links social accounts to existing users.
+OAuth2 social login with Google, GitHub, and GitLab. Extends `@stormeoio/auth` with SSO providers. Creates/links social accounts to existing users.
 
 ## Schema (Drizzle — PostgreSQL)
 
@@ -29,7 +29,7 @@ Unique index on (provider, providerAccountId).
 
 ## Exports
 ```ts
-import { createSocialAuthPlugin } from "@stormstack/auth-social";
+import { createSocialAuthPlugin } from "@stormeoio/auth-social";
 
 const socialPlugin = createSocialAuthPlugin({
   google: { clientId: "...", clientSecret: "...", callbackUrl: "..." },
@@ -51,7 +51,7 @@ Note: This plugin uses a **factory function** — you must call `createSocialAut
 At least one provider pair must be configured.
 
 ## Requires
-- `@stormstack/auth` — extends the auth system, uses `users` table + `signToken`
+- `@stormeoio/auth` — extends the auth system, uses `users` table + `signToken`
 
 ## Common Customizations
 

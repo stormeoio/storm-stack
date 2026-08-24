@@ -106,7 +106,7 @@ function AppShell({
  *
  * Usage:
  * ```tsx
- * import { StormApp, createPluginLoader } from "@stormstack/react";
+ * import { StormApp, createPluginLoader } from "@stormeoio/react";
  *
  * const { components } = createPluginLoader([...]);
  *

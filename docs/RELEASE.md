@@ -38,7 +38,7 @@ npm run publish:dry-run
 - production dependencies pass `npm audit --omit=dev --audit-level=moderate`
 - lint, typecheck, build, and Vitest pass
 - built CommonJS and ESM package exports report the exact version declared by their manifests
-- `create-storm-app` can generate and build an app outside the monorepo
+- `@stormeoio/create-storm-app` can generate and build an app outside the monorepo
 - every public package can be packed
 
 `publish:dry-run` runs the full release gate, then dry-runs npm publish for all public packages in dependency order.
@@ -51,7 +51,7 @@ For a local version bump:
 npm run version:all
 ```
 
-This bumps the root and workspace package versions, then syncs internal `@stormstack/*`
+This bumps the root and workspace package versions, then syncs internal `@stormeoio/*`
 dependency ranges and the versions of every `available` plugin in `registry.json`.
 
 ## Immutable proof tarballs

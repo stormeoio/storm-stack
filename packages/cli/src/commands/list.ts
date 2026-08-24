@@ -29,7 +29,7 @@ export async function listCommand(): Promise<void> {
       : pc.dim("  ○ disponible");
     const name = pl.shortName.padEnd(maxName + 2);
     const deps = pl.requires.length > 0
-      ? pc.dim(` (requiert ${pl.requires.map((d) => d.replace("@stormstack/", "")).join(", ")})`)
+      ? pc.dim(` (requiert ${pl.requires.map((d) => d.replace("@stormeoio/", "")).join(", ")})`)
       : "";
     const version = pl.version ? pc.dim(` v${pl.version}`) : "";
     const source = pl.source === "remote" ? pc.magenta(" [registre]") : "";

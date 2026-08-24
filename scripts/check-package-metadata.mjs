@@ -13,6 +13,10 @@ const packagesDir = join(rootDir, "packages");
 const npmRegistry = "https://registry.npmjs.org/";
 const sourceExtensions = new Set([".cjs", ".cts", ".js", ".jsx", ".mjs", ".mts", ".ts", ".tsx"]);
 const nodeBuiltins = new Set(builtinModules.map((specifier) => specifier.replace(/^node:/, "")));
+const expectedBins = new Map([
+  ["@stormeoio/cli", { storm: "dist/index.mjs" }],
+  ["@stormeoio/create-storm-app", { "create-storm-app": "dist/index.js" }],
+]);
 
 function readPackageJson(path) {
   return JSON.parse(readFileSync(path, "utf8"));
@@ -163,6 +167,15 @@ function validatePackageMetadata(path) {
 
   if (manifest.publishConfig?.registry !== npmRegistry) {
     errors.push(`${label}: publishConfig.registry must be "${npmRegistry}".`);
+  }
+
+  const expectedBin = expectedBins.get(manifest.name);
+  if (expectedBin) {
+    const actualEntries = Object.entries(manifest.bin ?? {}).sort(([left], [right]) => left.localeCompare(right));
+    const expectedEntries = Object.entries(expectedBin).sort(([left], [right]) => left.localeCompare(right));
+    if (JSON.stringify(actualEntries) !== JSON.stringify(expectedEntries)) {
+      errors.push(`${label}: bin must be ${JSON.stringify(expectedBin)}.`);
+    }
   }
 
   const runtimeDependencyNames = new Set([

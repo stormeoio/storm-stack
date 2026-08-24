@@ -1,3 +1,3 @@
-const stormConfig = require("@stormstack/eslint-config");
+const stormConfig = require("@stormeoio/eslint-config");
 
 module.exports = stormConfig;

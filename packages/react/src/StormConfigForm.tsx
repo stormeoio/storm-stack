@@ -2,7 +2,7 @@ import { useState, useCallback } from "react";
 import type { FieldDescriptor } from "./types";
 
 export interface StormConfigFormProps {
-  /** Plugin ID (e.g. "@stormstack/stripe") */
+  /** Plugin ID (e.g. "@stormeoio/stripe") */
   pluginId: string;
   /** Field descriptors from the manifest configSchemas */
   fields: Record<string, FieldDescriptor>;

@@ -1,4 +1,4 @@
-// ─── Client manifest types (mirrors @stormstack/core PluginClientManifest) ────
+// ─── Client manifest types (mirrors @stormeoio/core PluginClientManifest) ────
 
 export interface StormNavItem {
   id: string;

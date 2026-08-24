@@ -7,7 +7,7 @@ const headCommit = "a".repeat(40);
 const integrityDigest = Buffer.alloc(64, 0xab);
 const integrityHex = integrityDigest.toString("hex");
 const packageInfo = {
-  name: "@stormstack/core",
+  name: "@stormeoio/core",
   version: "0.1.1",
 };
 const packageSpec = `${packageInfo.name}@${packageInfo.version}`;
@@ -20,7 +20,7 @@ function createStatement(overrides = {}) {
     subject: [
       {
         digest: { sha512: integrityHex },
-        name: "pkg:npm/%40stormstack/core@0.1.1",
+        name: "pkg:npm/%40stormeoio/core@0.1.1",
       },
     ],
     predicateType: "https://slsa.dev/provenance/v1",
@@ -72,7 +72,7 @@ function createMetadata() {
     "dist.attestations": {
       provenance: { predicateType: "https://slsa.dev/provenance/v1" },
       url:
-        "https://registry.npmjs.org/-/npm/v1/attestations/@stormstack%2fcore@0.1.1",
+        "https://registry.npmjs.org/-/npm/v1/attestations/@stormeoio%2fcore@0.1.1",
     },
     "dist.integrity": `sha512-${integrityDigest.toString("base64")}`,
   };
@@ -185,7 +185,7 @@ describe("npm provenance verification", () => {
     });
     expect(fixture.fetchImpl).toHaveBeenCalledWith(
       new URL(
-        "https://registry.npmjs.org/-/npm/v1/attestations/@stormstack%2fcore@0.1.1",
+        "https://registry.npmjs.org/-/npm/v1/attestations/@stormeoio%2fcore@0.1.1",
       ),
       expect.objectContaining({ redirect: "error" }),
     );

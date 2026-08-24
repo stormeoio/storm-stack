@@ -12,17 +12,17 @@ interface GeneratedPluginDefinition {
 // Generator-local source of truth; this intentionally is not a second manifest API.
 export const generatedPluginDefinitions: GeneratedPluginDefinition[] = [
   {
-    id: "@stormstack/auth",
+    id: "@stormeoio/auth",
     serverImports: [
-      `import { authPlugin, createDatabaseRoleGuard } from "@stormstack/auth";`,
+      `import { authPlugin, createDatabaseRoleGuard } from "@stormeoio/auth";`,
     ],
     registration: "registry.register(authPlugin);",
-    schemaPath: "node_modules/@stormstack/auth/dist/index.js",
+    schemaPath: "node_modules/@stormeoio/auth/dist/index.js",
   },
   {
-    id: "@stormstack/auth-social",
-    requires: ["@stormstack/auth"],
-    serverImports: [`import { createSocialAuthPlugin } from "@stormstack/auth-social";`],
+    id: "@stormeoio/auth-social",
+    requires: ["@stormeoio/auth"],
+    serverImports: [`import { createSocialAuthPlugin } from "@stormeoio/auth-social";`],
     registration: `if (env["GOOGLE_CLIENT_ID"] || env["GITHUB_CLIENT_ID"]) {
   const socialPlugin = createSocialAuthPlugin({
     google: env["GOOGLE_CLIENT_ID"]
@@ -34,40 +34,40 @@ export const generatedPluginDefinitions: GeneratedPluginDefinition[] = [
   });
   registry.register(socialPlugin);
 }`,
-    schemaPath: "node_modules/@stormstack/auth-social/dist/index.js",
+    schemaPath: "node_modules/@stormeoio/auth-social/dist/index.js",
     envLines: ["", "# OAuth (optionnel)", "# GOOGLE_CLIENT_ID=", "# GOOGLE_CLIENT_SECRET=", "# GITHUB_CLIENT_ID=", "# GITHUB_CLIENT_SECRET="],
   },
   {
-    id: "@stormstack/consent",
-    requires: ["@stormstack/auth"],
-    serverImports: [`import { consentPlugin } from "@stormstack/consent";`],
+    id: "@stormeoio/consent",
+    requires: ["@stormeoio/auth"],
+    serverImports: [`import { consentPlugin } from "@stormeoio/consent";`],
     registration: "registry.register(consentPlugin);",
-    schemaPath: "node_modules/@stormstack/consent/dist/index.js",
-    componentImports: [`import { ConsentBanner } from "@stormstack/consent/client";`],
+    schemaPath: "node_modules/@stormeoio/consent/dist/index.js",
+    componentImports: [`import { ConsentBanner } from "@stormeoio/consent/client";`],
     componentEntries: ["  ConsentBanner,"],
   },
   {
-    id: "@stormstack/crm",
-    requires: ["@stormstack/auth"],
-    serverImports: [`import { crmPlugin } from "@stormstack/crm";`],
+    id: "@stormeoio/crm",
+    requires: ["@stormeoio/auth"],
+    serverImports: [`import { crmPlugin } from "@stormeoio/crm";`],
     registration: "registry.register(crmPlugin);",
-    schemaPath: "node_modules/@stormstack/crm/dist/index.js",
+    schemaPath: "node_modules/@stormeoio/crm/dist/index.js",
     componentImports: [`import { ContactsPage } from "./pages/ContactsPage";`, `import { ContactDetailPage } from "./pages/ContactDetailPage";`, `import { DealsPage } from "./pages/DealsPage";`],
     componentEntries: ["  CrmPage: ContactsPage,", "  ContactDetailPage,", "  DealsPage,"],
   },
   {
-    id: "@stormstack/ticketing",
-    requires: ["@stormstack/auth"],
-    serverImports: [`import { ticketingPlugin } from "@stormstack/ticketing";`],
+    id: "@stormeoio/ticketing",
+    requires: ["@stormeoio/auth"],
+    serverImports: [`import { ticketingPlugin } from "@stormeoio/ticketing";`],
     registration: "registry.register(ticketingPlugin);",
-    schemaPath: "node_modules/@stormstack/ticketing/dist/index.js",
+    schemaPath: "node_modules/@stormeoio/ticketing/dist/index.js",
     componentImports: [`import { TicketsPage } from "./pages/TicketsPage";`],
     componentEntries: ["  TicketsPage,"],
   },
   {
-    id: "@stormstack/stripe",
-    requires: ["@stormstack/auth"],
-    serverImports: [`import type { Request } from "express";`, `import { stripePlugin } from "@stormstack/stripe";`],
+    id: "@stormeoio/stripe",
+    requires: ["@stormeoio/auth"],
+    serverImports: [`import type { Request } from "express";`, `import { stripePlugin } from "@stormeoio/stripe";`],
     registration: "registry.register(stripePlugin);",
     envLines: ["", "# Stripe", "STRIPE_SECRET_KEY=sk_test_...", "STRIPE_WEBHOOK_SECRET=whsec_..."],
   },

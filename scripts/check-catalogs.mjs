@@ -52,7 +52,7 @@ function extractPluginIds(path, marker) {
 function extractStormPackageNames(path, marker) {
   const source = readText(path);
   const block = extractArrayBlock(source, marker, path);
-  return [...block.matchAll(/"(@stormstack\/[^"]+)"/g)].map((match) => match[1]);
+  return [...block.matchAll(/"(@stormeoio\/[^"]+)"/g)].map((match) => match[1]);
 }
 
 function compareIds(label, actual, expected) {
@@ -83,15 +83,15 @@ const expectedAvailableIds = registry
   .filter(({ status }) => status === "available")
   .map(({ id }) => id);
 const infrastructurePackages = new Set([
-  "@stormstack/core",
-  "@stormstack/react",
-  "@stormstack/testing",
-  "@stormstack/cli",
-  "create-storm-app",
+  "@stormeoio/core",
+  "@stormeoio/react",
+  "@stormeoio/testing",
+  "@stormeoio/cli",
+  "@stormeoio/create-storm-app",
 ]);
 const releasedPluginIds = releasePackageDirs
   .map((directory) => readPackageJson(directory).name)
-  .filter((name) => name.startsWith("@stormstack/") && !infrastructurePackages.has(name));
+  .filter((name) => name.startsWith("@stormeoio/") && !infrastructurePackages.has(name));
 const targets = [
   {
     label: relative(rootDir, join(rootDir, "packages/cli/src/registry.ts")),

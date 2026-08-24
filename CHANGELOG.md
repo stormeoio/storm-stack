@@ -6,7 +6,7 @@ All notable changes to Storm Stack are documented in this file.
 
 ### Added
 
-- Added the public `@stormstack/consent` block with authenticated consent preferences, policy-version checks, withdrawal, database constraints, and a React cookie banner.
+- Added the public `@stormeoio/consent` block with authenticated consent preferences, policy-version checks, withdrawal, database constraints, and a React cookie banner.
 - Added signed double-submit CSRF protection for generated servers and a browser client that bootstraps, scopes, and safely retries protected requests.
 - Added deterministic non-interactive project generation, dependency-aware plugin selection, and root-component wiring for functional blocks.
 - Added a reproducible two-client Phase C proof covering immutable package refs, interrupted runs, additive migration, rollback, artifact integrity, and browser acceptance.

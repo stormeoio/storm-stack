@@ -1,4 +1,4 @@
-# @stormstack/auth — Claude Copilot Guide
+# @stormeoio/auth — Claude Copilot Guide
 
 ## What this plugin does
 Email/password authentication with JWT cookies, RBAC roles, and multi-tenant support. Provides `isAuthenticated` middleware, user registration/login, and a tenant membership system.
@@ -48,13 +48,13 @@ Email/password authentication with JWT cookies, RBAC roles, and multi-tenant sup
 ## Exports
 ```ts
 // Server
-import { authPlugin } from "@stormstack/auth";
-import { isAuthenticated, requireRole, signToken, verifyToken } from "@stormstack/auth";
-import { users, tenants, tenantMembers } from "@stormstack/auth";
-import type { User, InsertUser, AuthTokenPayload } from "@stormstack/auth";
+import { authPlugin } from "@stormeoio/auth";
+import { isAuthenticated, requireRole, signToken, verifyToken } from "@stormeoio/auth";
+import { users, tenants, tenantMembers } from "@stormeoio/auth";
+import type { User, InsertUser, AuthTokenPayload } from "@stormeoio/auth";
 
 // Client
-import { LoginPage, RegisterPage } from "@stormstack/auth/client";
+import { LoginPage, RegisterPage } from "@stormeoio/auth/client";
 ```
 
 ## Environment Variables
@@ -71,7 +71,7 @@ import { LoginPage, RegisterPage } from "@stormstack/auth/client";
 
 ### Add role-based route protection
 ```ts
-import { isAuthenticated, requireRole } from "@stormstack/auth";
+import { isAuthenticated, requireRole } from "@stormeoio/auth";
 router.get("/admin-only", isAuthenticated, requireRole("admin"), handler);
 ```
 

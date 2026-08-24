@@ -1,4 +1,4 @@
-# @stormstack/consent — Guide de contribution
+# @stormeoio/consent — Guide de contribution
 
 ## Périmètre 0.1.1
 
@@ -8,7 +8,7 @@ Ce package gère uniquement les préférences nécessaires, de mesure d’audien
 - Routes : `GET /api/consent/state`, `PUT /api/consent/preferences`, `POST /api/consent/withdraw`
 - Client : `ConsentBanner`
 - Authentification : middleware `isAuthenticated` injecté par `PluginRouteOptions`
-- CSRF : le serveur généré monte la protection globale de `@stormstack/core`; le client utilise `csrfFetch`
+- CSRF : le serveur généré monte la protection globale de `@stormeoio/core`; le client utilise `csrfFetch`
 
 L'évolution 0.1.1 est additive : la colonne nullable `withdrawn_at`, la route de
 retrait et son état visible complètent le contrat 0.1.0 sans modifier les props
@@ -31,7 +31,7 @@ publiques React.
 ## Commandes
 
 ```bash
-npm run test --workspace @stormstack/consent
-npm run typecheck --workspace @stormstack/consent
-npm run build --workspace @stormstack/consent
+npm run test --workspace @stormeoio/consent
+npm run typecheck --workspace @stormeoio/consent
+npm run build --workspace @stormeoio/consent
 ```

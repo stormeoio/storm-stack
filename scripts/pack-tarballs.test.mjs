@@ -40,7 +40,7 @@ function write(path, content) {
 function createCommittedRepository() {
   const repository = createTemporaryDirectory("stormstack-pack-test-repo-");
   run("git", ["init", "--quiet"], repository);
-  run("git", ["config", "user.email", "pack-tests@stormstack.local"], repository);
+  run("git", ["config", "user.email", "pack-tests@stormeoio.local"], repository);
   run("git", ["config", "user.name", "Storm Stack tests"], repository);
   write(join(repository, "tracked.txt"), "tracked\n");
   run("git", ["add", "tracked.txt"], repository);
@@ -53,7 +53,7 @@ function createPackableRepository() {
   mkdirSync(join(repository, "packages", "demo"), { recursive: true });
   mkdirSync(join(repository, "scripts"), { recursive: true });
   run("git", ["init", "--quiet"], repository);
-  run("git", ["config", "user.email", "pack-tests@stormstack.local"], repository);
+  run("git", ["config", "user.email", "pack-tests@stormeoio.local"], repository);
   run("git", ["config", "user.name", "Storm Stack tests"], repository);
 
   write(
@@ -79,7 +79,7 @@ function createPackableRepository() {
     join(repository, "packages", "demo", "package.json"),
     `${JSON.stringify(
       {
-        name: "@stormstack/demo",
+        name: "@stormeoio/demo",
         version: "1.2.3",
         type: "module",
         files: ["dist"],
@@ -122,13 +122,13 @@ describe("parsePackArguments", () => {
         "--ref",
         "proof/consent-v0.1.0",
         "--workspace",
-        "@stormstack/core",
+        "@stormeoio/core",
         "--workspace",
         "packages/plugin-auth",
       ]),
     ).toEqual({
       destination: "/tmp/packs",
-      workspaces: ["@stormstack/core", "packages/plugin-auth"],
+      workspaces: ["@stormeoio/core", "packages/plugin-auth"],
       ref: "proof/consent-v0.1.0",
       help: false,
     });
@@ -226,7 +226,7 @@ describe("packTarballs integration", () => {
     const result = await packTarballs({
       destination,
       ref: "HEAD",
-      workspaces: ["@stormstack/demo"],
+      workspaces: ["@stormeoio/demo"],
       repositoryRoot: repository,
     });
 
@@ -239,12 +239,13 @@ describe("packTarballs integration", () => {
       rootVersion: "1.2.3",
       artifacts: [
         {
-          name: "@stormstack/demo",
+          name: "@stormeoio/demo",
           version: "1.2.3",
           workspace: "packages/demo",
         },
       ],
     });
+    expect(result.manifest.artifacts[0].filename).toBe("stormeoio-demo-1.2.3.tgz");
     expect(result.manifest.artifacts[0].sha256).toMatch(/^[a-f0-9]{64}$/);
 
     const tarballPath = join(destination, result.manifest.artifacts[0].filename);

@@ -270,7 +270,7 @@ async function runMigrations(root: string, migrationsDir: string, opts: MigrateO
 
   p.log.info(`${pc.yellow(String(pending.length))} migration(s) en attente :\n`);
   for (const entry of pending) {
-    const plugin = entry.plugin.replace("@stormstack/", "");
+    const plugin = entry.plugin.replace("@stormeoio/", "");
     p.log.info(`  ${pc.dim("○")} ${entry.id} ${pc.dim(`(${plugin})`)}`);
   }
   p.log.info("");
@@ -337,7 +337,7 @@ async function rollbackMigration(root: string, migrationsDir: string, opts: Migr
   }
 
   const last = applied[applied.length - 1]!;
-  const plugin = last.plugin.replace("@stormstack/", "");
+  const plugin = last.plugin.replace("@stormeoio/", "");
 
   p.log.info(`Dernière migration : ${pc.cyan(last.id)} ${pc.dim(`(${plugin})`)}`);
 
@@ -395,7 +395,7 @@ function showStatus(root: string, migrationsDir: string, installed: string[]): v
   if (applied.length > 0) {
     p.log.info(pc.green(`Appliquées (${applied.length}) :`));
     for (const entry of applied) {
-      const plugin = entry.plugin.replace("@stormstack/", "");
+      const plugin = entry.plugin.replace("@stormeoio/", "");
       const date = entry.appliedAt ? new Date(entry.appliedAt).toLocaleString("fr-FR") : "?";
       p.log.info(`  ${pc.green("✓")} ${entry.id} ${pc.dim(`(${plugin})`)} ${pc.dim(date)}`);
     }
@@ -405,7 +405,7 @@ function showStatus(root: string, migrationsDir: string, installed: string[]): v
   if (pending.length > 0) {
     p.log.info(pc.yellow(`En attente (${pending.length}) :`));
     for (const entry of pending) {
-      const plugin = entry.plugin.replace("@stormstack/", "");
+      const plugin = entry.plugin.replace("@stormeoio/", "");
       p.log.info(`  ${pc.dim("○")} ${entry.id} ${pc.dim(`(${plugin})`)}`);
     }
     p.log.info("");
@@ -419,7 +419,7 @@ function showStatus(root: string, migrationsDir: string, installed: string[]): v
   );
 
   if (pluginsWithoutMigrations.length > 0) {
-    p.log.info(pc.dim(`Plugins sans migration : ${pluginsWithoutMigrations.map((id) => id.replace("@stormstack/", "")).join(", ")}`));
+    p.log.info(pc.dim(`Plugins sans migration : ${pluginsWithoutMigrations.map((id) => id.replace("@stormeoio/", "")).join(", ")}`));
     p.log.info(`Exécutez ${pc.cyan("storm migrate generate")} pour les créer.`);
   }
 }

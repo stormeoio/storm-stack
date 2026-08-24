@@ -67,7 +67,7 @@ export interface PluginSchema {
 
 export interface PluginRouteOptions {
   ctx: StormContext;
-  /** Only present if @stormstack/auth multi-tenant is enabled */
+  /** Only present if @stormeoio/auth multi-tenant is enabled */
   getTenantContext?: (req: Request) => TenantContext | null;
   /** isAuthenticated middleware — attach to any route that needs auth */
   isAuthenticated: RequestHandler;
@@ -153,30 +153,30 @@ export interface PluginEventConfig {
 // ─── Plugin dependencies ──────────────────────────────────────────────────────
 
 export type PluginId =
-  | "@stormstack/core"
-  | "@stormstack/auth"
-  | "@stormstack/stripe"
-  | "@stormstack/billing"
-  | "@stormstack/crm"
-  | "@stormstack/ticketing"
-  | "@stormstack/messaging"
-  | "@stormstack/drive"
-  | "@stormstack/monitoring"
-  | "@stormstack/cms"
-  | "@stormstack/vault"
-  | "@stormstack/integrations"
-  | "@stormstack/auth-social"
-  | "@stormstack/consent"
-  | "@stormstack/rgpd"
-  | "@stormstack/design"
-  | "@stormstack/search"
-  | "@stormstack/dock"
+  | "@stormeoio/core"
+  | "@stormeoio/auth"
+  | "@stormeoio/stripe"
+  | "@stormeoio/billing"
+  | "@stormeoio/crm"
+  | "@stormeoio/ticketing"
+  | "@stormeoio/messaging"
+  | "@stormeoio/drive"
+  | "@stormeoio/monitoring"
+  | "@stormeoio/cms"
+  | "@stormeoio/vault"
+  | "@stormeoio/integrations"
+  | "@stormeoio/auth-social"
+  | "@stormeoio/consent"
+  | "@stormeoio/rgpd"
+  | "@stormeoio/design"
+  | "@stormeoio/search"
+  | "@stormeoio/dock"
   | (string & {});
 
 // ─── Main plugin manifest ─────────────────────────────────────────────────────
 
 export interface StormPlugin {
-  /** Unique plugin identifier e.g. "@stormstack/stripe" or "acme/my-plugin" */
+  /** Unique plugin identifier e.g. "@stormeoio/stripe" or "acme/my-plugin" */
   id: PluginId;
   /** Human-readable name */
   name: string;

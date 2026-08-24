@@ -1,18 +1,18 @@
-# @stormstack/core
+# @stormeoio/core
 
 Plugin registry and bootstrap engine for Storm Stack applications.
 
 ## Installation
 
 ```bash
-npm install @stormstack/core
+npm install @stormeoio/core
 ```
 
 ## Usage
 
 ```ts
-import { registry, bootstrapPlugins } from "@stormstack/core";
-import { createDatabaseRoleGuard } from "@stormstack/auth";
+import { registry, bootstrapPlugins } from "@stormeoio/core";
+import { createDatabaseRoleGuard } from "@stormeoio/auth";
 import express from "express";
 
 const app = express();
@@ -54,10 +54,10 @@ Omitting `requireAdmin` is deliberately fail-closed:
   but is not an administrator.
 
 Migration from `0.1.0`: inject a current-source-of-truth guard when calling
-`bootstrapPlugins`. With `@stormstack/auth`, use:
+`bootstrapPlugins`. With `@stormeoio/auth`, use:
 
 ```ts
-import { createDatabaseRoleGuard } from "@stormstack/auth";
+import { createDatabaseRoleGuard } from "@stormeoio/auth";
 
 await bootstrapPlugins({
   app,
@@ -73,7 +73,7 @@ middleware that revalidates current administrator rights.
 ## Creating a plugin
 
 ```ts
-import type { StormPlugin } from "@stormstack/core";
+import type { StormPlugin } from "@stormeoio/core";
 
 export const myPlugin: StormPlugin = {
   id: "my-org/my-plugin",

@@ -15,7 +15,7 @@ import {
 import { registry } from "../plugin/registry";
 import type { StormContext } from "../plugin/types";
 
-const TEST_PLUGIN_ID = "@stormstack/manifest-auth-test";
+const TEST_PLUGIN_ID = "@stormeoio/manifest-auth-test";
 const USER_HEADERS = {
   "x-test-user-id": "user-1",
   "x-test-user-role": "member",

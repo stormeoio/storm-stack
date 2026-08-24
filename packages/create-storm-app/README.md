@@ -5,7 +5,7 @@ Scaffold a full-stack Storm Stack application in seconds.
 ## Usage
 
 ```bash
-npx create-storm-app my-app
+npx @stormeoio/create-storm-app my-app
 ```
 
 Or with a specific package manager:
@@ -22,7 +22,7 @@ For deterministic CI or automation, use the non-interactive mode:
 create-storm-app alpha --yes --plugins auth,consent --with-client --package-manager npm
 ```
 
-Plugin IDs can be short (`auth`) or complete (`@stormstack/auth`). Add `--force`
+Plugin IDs can be short (`auth`) or complete (`@stormeoio/auth`). Add `--force`
 to replace an existing target directory. Run `create-storm-app --help` for all
 options.
 
@@ -61,12 +61,12 @@ my-app/
 
 | Plugin | Description |
 |--------|-------------|
-| `@stormstack/auth` | Email/password + JWT + RBAC |
-| `@stormstack/auth-social` | OAuth2 Google/GitHub/GitLab |
-| `@stormstack/crm` | Contacts, orgs, pipeline |
-| `@stormstack/ticketing` | Support tickets + feedback |
-| `@stormstack/stripe` | Stripe payments + webhooks |
-| `@stormstack/consent` | RGPD consent preferences + cookie banner |
+| `@stormeoio/auth` | Email/password + JWT + RBAC |
+| `@stormeoio/auth-social` | OAuth2 Google/GitHub/GitLab |
+| `@stormeoio/crm` | Contacts, orgs, pipeline |
+| `@stormeoio/ticketing` | Support tickets + feedback |
+| `@stormeoio/stripe` | Stripe payments + webhooks |
+| `@stormeoio/consent` | RGPD consent preferences + cookie banner |
 
 ## License
 

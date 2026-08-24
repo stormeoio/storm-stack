@@ -81,7 +81,7 @@ function CatalogCard({ entry }: { entry: CatalogEntry }) {
       {entry.requires.length > 0 && (
         <div className="flex items-center gap-1.5 text-[10px] text-gray-400">
           <Lock size={9} />
-          Requiert {entry.requires.map((r) => r.replace("@stormstack/", "")).join(", ")}
+          Requiert {entry.requires.map((r) => r.replace("@stormeoio/", "")).join(", ")}
         </div>
       )}
 

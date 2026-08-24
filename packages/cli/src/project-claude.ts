@@ -35,7 +35,7 @@ ${routes}`;
 ## Stack
 - **Server:** Express 5 + TypeScript + Drizzle ORM + PostgreSQL
 - **Client:** React 18 + wouter + TanStack Query + Tailwind CSS
-- **Plugin system:** \`@stormstack/core\` registry + bootstrap
+- **Plugin system:** \`@stormeoio/core\` registry + bootstrap
 
 ## Commands
 \`\`\`bash
@@ -62,9 +62,9 @@ ${pluginSections || "No plugins installed yet. Run `storm add auth` to get start
 
 ## Conventions
 - All API routes are mounted at \`/api/<plugin-name>/\`
-- Auth-protected routes use \`isAuthenticated\` middleware from \`@stormstack/auth\`
+- Auth-protected routes use \`isAuthenticated\` middleware from \`@stormeoio/auth\`
 - Zod validation on all POST/PATCH/PUT bodies (\`safeParse\`)
-- Client uses \`@stormstack/react\` for dynamic nav/routes from plugin manifests
+- Client uses \`@stormeoio/react\` for dynamic nav/routes from plugin manifests
 - French UI text for user-facing strings
 `;
 

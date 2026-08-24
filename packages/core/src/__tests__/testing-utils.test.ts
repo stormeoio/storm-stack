@@ -55,7 +55,7 @@ describe("createMockPlugin", () => {
   it("creates a plugin with defaults", () => {
     const plugin = createMockPlugin();
 
-    expect(plugin.id).toContain("@stormstack/test-plugin-");
+    expect(plugin.id).toContain("@stormeoio/test-plugin-");
     expect(plugin.name).toContain("TestPlugin");
     expect(plugin.version).toBe("1.0.0");
     expect(plugin.description).toContain("Mock plugin");
@@ -63,12 +63,12 @@ describe("createMockPlugin", () => {
 
   it("accepts overrides", () => {
     const plugin = createMockPlugin({
-      id: "@stormstack/my-custom",
+      id: "@stormeoio/my-custom",
       name: "MyCustom",
       version: "2.0.0",
     });
 
-    expect(plugin.id).toBe("@stormstack/my-custom");
+    expect(plugin.id).toBe("@stormeoio/my-custom");
     expect(plugin.name).toBe("MyCustom");
     expect(plugin.version).toBe("2.0.0");
   });

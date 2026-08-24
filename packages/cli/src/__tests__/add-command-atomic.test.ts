@@ -86,7 +86,7 @@ describe("storm add atomic server wiring", () => {
     );
     fs.writeFileSync(
       path.join(root, "server/index.ts"),
-      `import { registry, bootstrapPlugins } from "@stormstack/core";\nasync function main() {\n  await bootstrapPlugins({ app, ctx: createContext(db) });\n}\n`,
+      `import { registry, bootstrapPlugins } from "@stormeoio/core";\nasync function main() {\n  await bootstrapPlugins({ app, ctx: createContext(db) });\n}\n`,
     );
 
     vi.spyOn(process, "cwd").mockReturnValue(root);
@@ -159,15 +159,15 @@ describe("storm add atomic server wiring", () => {
       serverEntry: "server/index.ts",
       drizzleConfig: "drizzle.config.ts",
       registry: "",
-      installed: ["@stormstack/auth"],
+      installed: ["@stormeoio/auth"],
     }, null, 2));
     write(
       root,
       "server/index.ts",
       fs.readFileSync(path.join(root, "server/index.ts"), "utf8")
         .replace(
-          'import { registry, bootstrapPlugins } from "@stormstack/core";',
-          'import { registry, bootstrapPlugins } from "@stormstack/core";\nimport { authPlugin, createDatabaseRoleGuard } from "@stormstack/auth";',
+          'import { registry, bootstrapPlugins } from "@stormeoio/core";',
+          'import { registry, bootstrapPlugins } from "@stormeoio/core";\nimport { authPlugin, createDatabaseRoleGuard } from "@stormeoio/auth";',
         )
         .replace("async function main() {", "registry.register(authPlugin);\n\nasync function main() {")
         .replace(
@@ -256,7 +256,7 @@ describe("storm add atomic server wiring", () => {
     expect(server).toContain("app.use(express.json({");
     expect(server.match(/request\.rawBody\s*=\s*Buffer\.from\(buf\)/g)).toHaveLength(2);
     expect(JSON.parse(fs.readFileSync(path.join(root, "storm.json"), "utf8"))).toMatchObject({
-      installed: ["@stormstack/auth", "@stormstack/stripe"],
+      installed: ["@stormeoio/auth", "@stormeoio/stripe"],
     });
   });
 
@@ -392,7 +392,7 @@ describe("storm add atomic server wiring", () => {
     write(root, "client/src/App.tsx", `import {
   StormLayout,
   StormRouter,
-} from "@stormstack/react";
+} from "@stormeoio/react";
 
 export default function App() {
   return <StormLayout appName="Test">
@@ -410,11 +410,11 @@ export default function App() {
 
     expect(exitSpy).not.toHaveBeenCalled();
     expect(JSON.parse(fs.readFileSync(path.join(root, "storm.json"), "utf8"))).toMatchObject({
-      installed: ["@stormstack/auth", "@stormstack/consent"],
+      installed: ["@stormeoio/auth", "@stormeoio/consent"],
     });
     expect(fs.existsSync(path.join(root, "plugins/consent/client/ConsentBanner.tsx"))).toBe(true);
     expect(fs.readFileSync(path.join(root, "client/src/App.tsx"), "utf8"))
-      .toContain("storm:root-component @stormstack/consent:start");
+      .toContain("storm:root-component @stormeoio/consent:start");
     const spinnerStopMessage = promptMocks.spinnerStop.mock.calls.at(-1)?.[0];
     const normalizedSpinnerStopMessage = String(spinnerStopMessage).replace(/\u001b\[[0-9;]*m/g, "");
     expect(normalizedSpinnerStopMessage).toContain("consent installé");
@@ -433,7 +433,7 @@ function createCompleteProject(): string {
   write(root, "bun.lockb", "bunb-before");
   write(root, "server/index.ts", `import "dotenv/config";
 import express from "express";
-import { registry, bootstrapPlugins } from "@stormstack/core";
+import { registry, bootstrapPlugins } from "@stormeoio/core";
 
 async function main() {
   const app = express();
@@ -470,15 +470,15 @@ function configureAuthAsInstalled(root: string): void {
     serverEntry: "server/index.ts",
     drizzleConfig: "drizzle.config.ts",
     registry: "",
-    installed: ["@stormstack/auth"],
+    installed: ["@stormeoio/auth"],
   }, null, 2));
   write(
     root,
     "server/index.ts",
     fs.readFileSync(path.join(root, "server/index.ts"), "utf8")
       .replace(
-        'import { registry, bootstrapPlugins } from "@stormstack/core";',
-        'import { registry, bootstrapPlugins } from "@stormstack/core";\nimport { authPlugin, createDatabaseRoleGuard } from "@stormstack/auth";',
+        'import { registry, bootstrapPlugins } from "@stormeoio/core";',
+        'import { registry, bootstrapPlugins } from "@stormeoio/core";\nimport { authPlugin, createDatabaseRoleGuard } from "@stormeoio/auth";',
       )
       .replace("async function main() {", "registry.register(authPlugin);\n\nasync function main() {")
       .replace(

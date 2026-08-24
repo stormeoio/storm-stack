@@ -176,7 +176,7 @@ function EventMap({
           {entries.map(([pluginId, events]) => (
             <div key={pluginId}>
               <p className="text-[10px] font-medium text-gray-600 font-mono mb-1">
-                {pluginId.replace("@stormstack/", "")}
+                {pluginId.replace("@stormeoio/", "")}
               </p>
               <div className="flex flex-wrap gap-1">
                 {events.map((e) => (
@@ -217,7 +217,7 @@ function EventRow({ event }: { event: StormEvent }) {
           {event.name}
         </span>
         <span className="text-[10px] text-gray-400 font-mono">
-          {event.source.replace("@stormstack/", "")}
+          {event.source.replace("@stormeoio/", "")}
         </span>
         {!expanded && !isLargePayload && (
           <span className="text-[10px] text-gray-400 font-mono truncate ml-auto max-w-[200px]">

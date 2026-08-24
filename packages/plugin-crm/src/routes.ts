@@ -2,7 +2,7 @@ import { Router } from "express";
 import { eq, and, desc } from "drizzle-orm";
 import { z } from "zod";
 import { organizations, contacts, deals } from "./schema";
-import type { StormContext } from "@stormstack/core";
+import type { StormContext } from "@stormeoio/core";
 import type { RequestHandler } from "express";
 
 const orgSchema = z.object({
@@ -108,7 +108,7 @@ export function createCrmRoutes(ctx: StormContext, isAuthenticated: RequestHandl
       contactId: row!.id,
       email: parsed.data.email,
       tenantId: req.tenant!.tenantId,
-    }, "@stormstack/crm").catch(() => {});
+    }, "@stormeoio/crm").catch(() => {});
   });
 
   router.get("/contacts/:id", isAuthenticated, async (req, res) => {
@@ -164,7 +164,7 @@ export function createCrmRoutes(ctx: StormContext, isAuthenticated: RequestHandl
       dealId: row!.id,
       title: parsed.data.title,
       tenantId: req.tenant!.tenantId,
-    }, "@stormstack/crm").catch(() => {});
+    }, "@stormeoio/crm").catch(() => {});
   });
 
   router.patch("/deals/:id", isAuthenticated, async (req, res) => {
@@ -193,12 +193,12 @@ export function createCrmRoutes(ctx: StormContext, isAuthenticated: RequestHandl
     if (parsed.data.stage && prev && parsed.data.stage !== prev.stage) {
       events.emit("deal.stage_changed", {
         dealId: id, from: prev.stage ?? "new", to: parsed.data.stage, tenantId,
-      }, "@stormstack/crm").catch(() => {});
+      }, "@stormeoio/crm").catch(() => {});
       if (parsed.data.stage === "won") {
-        events.emit("deal.won", { dealId: id, value: row!.value, tenantId }, "@stormstack/crm").catch(() => {});
+        events.emit("deal.won", { dealId: id, value: row!.value, tenantId }, "@stormeoio/crm").catch(() => {});
       }
       if (parsed.data.stage === "lost") {
-        events.emit("deal.lost", { dealId: id, tenantId }, "@stormstack/crm").catch(() => {});
+        events.emit("deal.lost", { dealId: id, tenantId }, "@stormeoio/crm").catch(() => {});
       }
     }
   });

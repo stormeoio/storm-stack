@@ -7,7 +7,7 @@ import { StormAdmin } from "../StormAdmin";
 import { StormContext } from "../context";
 import type { StormManifest } from "../types";
 
-const pluginId = "@stormstack/demo";
+const pluginId = "@stormeoio/demo";
 const manifest: StormManifest = {
   navItems: [],
   dockItems: [],

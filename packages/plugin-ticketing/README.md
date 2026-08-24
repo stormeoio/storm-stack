@@ -1,18 +1,18 @@
-# @stormstack/ticketing
+# @stormeoio/ticketing
 
 Support ticketing plugin for Storm Stack — tickets, comments, and labels.
 
 ## Installation
 
 ```bash
-npm install @stormstack/ticketing
+npm install @stormeoio/ticketing
 ```
 
 ## Usage
 
 ```ts
-import { ticketingPlugin } from "@stormstack/ticketing";
-import { registry } from "@stormstack/core";
+import { ticketingPlugin } from "@stormeoio/ticketing";
+import { registry } from "@stormeoio/core";
 
 registry.register(ticketingPlugin);
 ```
@@ -47,7 +47,7 @@ registry.register(ticketingPlugin);
 
 ## Requires
 
-- `@stormstack/auth`
+- `@stormeoio/auth`
 
 ## License
 

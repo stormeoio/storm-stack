@@ -1,5 +1,5 @@
 {
-  "name": "@stormstack/server",
+  "name": "@stormeoio/server",
   "version": "0.1.1",
   "private": true,
   "description": "StormClaude — Express server bootstrapping all Storm Stack plugins",
@@ -13,11 +13,11 @@
     "db:studio": "drizzle-kit studio"
   },
   "dependencies": {
-    "@stormstack/auth": "^0.1.1",
-    "@stormstack/auth-social": "^0.1.1",
-    "@stormstack/core": "^0.1.1",
-    "@stormstack/crm": "^0.1.1",
-    "@stormstack/ticketing": "^0.1.1",
+    "@stormeoio/auth": "^0.1.1",
+    "@stormeoio/auth-social": "^0.1.1",
+    "@stormeoio/core": "^0.1.1",
+    "@stormeoio/crm": "^0.1.1",
+    "@stormeoio/ticketing": "^0.1.1",
     "cors": "^2.8.5",
     "dotenv": "^16.4.0",
     "drizzle-orm": "^0.45.2",

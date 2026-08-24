@@ -89,7 +89,7 @@ export function rewriteCopiedPluginImports(
   file: string,
 ): string {
   const rewrite = (specifier: string): string => {
-    const match = /^@stormstack\/([^/]+)(\/.*)?$/.exec(specifier);
+    const match = /^@stormeoio\/([^/]+)(\/.*)?$/.exec(specifier);
     if (!match) return specifier;
     const dependency = PLUGINS.find((candidate) => candidate.shortName === match[1]);
     if (!dependency) return specifier;
@@ -102,15 +102,15 @@ export function rewriteCopiedPluginImports(
 
   return content
     .replace(
-      /(\bfrom\s*)(["'])(@stormstack\/[^"']+)\2/g,
+      /(\bfrom\s*)(["'])(@stormeoio\/[^"']+)\2/g,
       (_match, prefix: string, quote: string, specifier: string) => `${prefix}${quote}${rewrite(specifier)}${quote}`,
     )
     .replace(
-      /(\b(?:import|require)\s*\(\s*)(["'])(@stormstack\/[^"']+)\2(\s*\))/g,
+      /(\b(?:import|require)\s*\(\s*)(["'])(@stormeoio\/[^"']+)\2(\s*\))/g,
       (_match, prefix: string, quote: string, specifier: string, suffix: string) => `${prefix}${quote}${rewrite(specifier)}${quote}${suffix}`,
     )
     .replace(
-      /(\bimport\s*)(["'])(@stormstack\/[^"']+)\2/g,
+      /(\bimport\s*)(["'])(@stormeoio\/[^"']+)\2/g,
       (_match, prefix: string, quote: string, specifier: string) => `${prefix}${quote}${rewrite(specifier)}${quote}`,
     );
 }

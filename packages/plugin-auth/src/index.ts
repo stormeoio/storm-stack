@@ -1,4 +1,4 @@
-import type { StormPlugin } from "@stormstack/core";
+import type { StormPlugin } from "@stormeoio/core";
 import { z } from "zod";
 import { users, tenants, tenantMembers } from "./schema";
 import { createAppMiddleware } from "./middleware";
@@ -20,7 +20,7 @@ export type { User, InsertUser, Tenant, TenantMember } from "./schema";
 export type { AuthTokenPayload } from "./middleware";
 
 export const authPlugin: StormPlugin = {
-  id: "@stormstack/auth",
+  id: "@stormeoio/auth",
   name: "Auth",
   version: PACKAGE_VERSION,
   description: "Email/password authentication with JWT cookies, RBAC, and multi-tenant support",

@@ -11,12 +11,12 @@ export interface ScaffoldOptions {
 }
 
 const AVAILABLE_PLUGINS = [
-  { value: "@stormstack/auth", label: "auth", hint: "Email/password + JWT + RBAC (recommended)" },
-  { value: "@stormstack/auth-social", label: "auth-social", hint: "OAuth2 Google/GitHub/GitLab" },
-  { value: "@stormstack/crm", label: "crm", hint: "Contacts, organisations, pipeline" },
-  { value: "@stormstack/ticketing", label: "ticketing", hint: "Support tickets + feedback" },
-  { value: "@stormstack/stripe", label: "stripe", hint: "Stripe payments + webhooks" },
-  { value: "@stormstack/consent", label: "consent", hint: "Consentement RGPD + bannière cookies" },
+  { value: "@stormeoio/auth", label: "auth", hint: "Email/password + JWT + RBAC (recommended)" },
+  { value: "@stormeoio/auth-social", label: "auth-social", hint: "OAuth2 Google/GitHub/GitLab" },
+  { value: "@stormeoio/crm", label: "crm", hint: "Contacts, organisations, pipeline" },
+  { value: "@stormeoio/ticketing", label: "ticketing", hint: "Support tickets + feedback" },
+  { value: "@stormeoio/stripe", label: "stripe", hint: "Stripe payments + webhooks" },
+  { value: "@stormeoio/consent", label: "consent", hint: "Consentement RGPD + bannière cookies" },
 ];
 
 export async function runPrompts(nameArg?: string): Promise<ScaffoldOptions> {
@@ -42,7 +42,7 @@ export async function runPrompts(nameArg?: string): Promise<ScaffoldOptions> {
         p.multiselect({
           message: "Plugins à installer",
           options: AVAILABLE_PLUGINS,
-          initialValues: ["@stormstack/auth"],
+          initialValues: ["@stormeoio/auth"],
           required: false,
         }),
 

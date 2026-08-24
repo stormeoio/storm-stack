@@ -1,23 +1,23 @@
-# @stormstack/stripe
+# @stormeoio/stripe
 
 Stripe plugin for Storm Stack - active prices, subscription checkout, and signed webhook handling.
 
 ## Installation
 
 ```bash
-npm install @stormstack/stripe
+npm install @stormeoio/stripe
 ```
 
 ## Usage
 
 ```ts
-import { stripePlugin } from "@stormstack/stripe";
-import { registry } from "@stormstack/core";
+import { stripePlugin } from "@stormeoio/stripe";
+import { registry } from "@stormeoio/core";
 
 registry.register(stripePlugin);
 ```
 
-For generated apps, `create-storm-app` and `storm add stripe` configure the Express JSON parser to preserve the raw webhook body required by Stripe signature verification.
+For generated apps, `@stormeoio/create-storm-app` and `storm add stripe` configure the Express JSON parser to preserve the raw webhook body required by Stripe signature verification.
 
 ## API Routes
 
@@ -42,7 +42,7 @@ For generated apps, `create-storm-app` and `storm add stripe` configure the Expr
 
 ## Requires
 
-- `@stormstack/auth`
+- `@stormeoio/auth`
 
 ## License
 

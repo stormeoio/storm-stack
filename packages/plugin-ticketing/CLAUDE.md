@@ -1,4 +1,4 @@
-# @stormstack/ticketing — Claude Copilot Guide
+# @stormeoio/ticketing — Claude Copilot Guide
 
 ## What this plugin does
 Support ticket management with priorities, statuses, comments, and labels. Provides APIs and React pages for a helpdesk workflow.
@@ -55,15 +55,15 @@ Support ticket management with priorities, statuses, comments, and labels. Provi
 ## Exports
 ```ts
 // Server
-import { ticketingPlugin } from "@stormstack/ticketing";
-import { tickets, ticketComments, ticketLabels } from "@stormstack/ticketing";
+import { ticketingPlugin } from "@stormeoio/ticketing";
+import { tickets, ticketComments, ticketLabels } from "@stormeoio/ticketing";
 
 // Client
-import { TicketsPage, TicketDetailPage } from "@stormstack/ticketing/client";
+import { TicketsPage, TicketDetailPage } from "@stormeoio/ticketing/client";
 ```
 
 ## Requires
-- `@stormstack/auth` — uses `isAuthenticated` middleware and `users` table FK
+- `@stormeoio/auth` — uses `isAuthenticated` middleware and `users` table FK
 
 ## Common Customizations
 

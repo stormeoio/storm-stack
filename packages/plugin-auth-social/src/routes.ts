@@ -2,7 +2,7 @@ import { Router } from "express";
 import { eq, and } from "drizzle-orm";
 import { oauthAccounts } from "./schema";
 import { PROVIDERS, buildAuthUrl, exchangeCode, fetchOAuthUser, type OAuthProviderConfig } from "./oauth";
-import type { StormContext } from "@stormstack/core";
+import type { StormContext } from "@stormeoio/core";
 import type { OAuthProvider } from "./schema";
 
 export interface SocialAuthConfig {
@@ -64,8 +64,8 @@ export function createSocialAuthRoutes(ctx: StormContext, config: SocialAuthConf
           userId = existing.userId;
           await db.update(oauthAccounts).set({ accessToken, tokenExpiresAt: null }).where(eq(oauthAccounts.id, existing.id));
         } else {
-          // Import users table from @stormstack/auth at runtime to avoid circular deps
-          const { users } = await import("@stormstack/auth");
+          // Import users table from @stormeoio/auth at runtime to avoid circular deps
+          const { users } = await import("@stormeoio/auth");
 
           // Try to find existing user by email, else create
           const [existingUser] = await db.select({ id: users.id }).from(users).where(eq(users.email, oauthUser.email)).limit(1);
@@ -91,9 +91,9 @@ export function createSocialAuthRoutes(ctx: StormContext, config: SocialAuthConf
           });
         }
 
-        // Issue JWT cookie via @stormstack/auth helpers
-        const { signToken, setAuthCookie } = await import("@stormstack/auth");
-        const { users } = await import("@stormstack/auth");
+        // Issue JWT cookie via @stormeoio/auth helpers
+        const { signToken, setAuthCookie } = await import("@stormeoio/auth");
+        const { users } = await import("@stormeoio/auth");
         const [user] = await db.select().from(users).where(eq(users.id, userId)).limit(1);
         if (!user) throw new Error("User not found after OAuth");
 

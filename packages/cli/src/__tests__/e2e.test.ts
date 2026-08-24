@@ -44,8 +44,8 @@ function setupProject() {
 
   fs.writeFileSync(path.join(FIXTURES, "server/index.ts"), `import "dotenv/config";
 import express from "express";
-import { registry, bootstrapPlugins } from "@stormstack/core";
-import type { StormContext, StormEnv } from "@stormstack/core";
+import { registry, bootstrapPlugins } from "@stormeoio/core";
+import type { StormContext, StormEnv } from "@stormeoio/core";
 
 const env: StormEnv = {
   DATABASE_URL: process.env["DATABASE_URL"] ?? "",
@@ -99,8 +99,8 @@ function writeFixture(file: string, content: string): void {
 function wireLegacyAuthServer(): string {
   const legacy = readFixture("server/index.ts")
     .replace(
-      'import { registry, bootstrapPlugins } from "@stormstack/core";',
-      'import { registry, bootstrapPlugins } from "@stormstack/core";\nimport { authPlugin } from "@stormstack/auth";',
+      'import { registry, bootstrapPlugins } from "@stormeoio/core";',
+      'import { registry, bootstrapPlugins } from "@stormeoio/core";\nimport { authPlugin } from "@stormeoio/auth";',
     )
     .replace("async function main() {", "registry.register(authPlugin);\n\nasync function main() {");
   writeFixture("server/index.ts", legacy);
@@ -110,8 +110,8 @@ function wireLegacyAuthServer(): string {
 function wireCurrentAuthServer(): string {
   const current = readFixture("server/index.ts")
     .replace(
-      'import { registry, bootstrapPlugins } from "@stormstack/core";',
-      'import { registry, bootstrapPlugins } from "@stormstack/core";\nimport { authPlugin, createDatabaseRoleGuard } from "@stormstack/auth";',
+      'import { registry, bootstrapPlugins } from "@stormeoio/core";',
+      'import { registry, bootstrapPlugins } from "@stormeoio/core";\nimport { authPlugin, createDatabaseRoleGuard } from "@stormeoio/auth";',
     )
     .replace("async function main() {", "registry.register(authPlugin);\n\nasync function main() {")
     .replace(
@@ -167,12 +167,12 @@ describe("storm add --copy --local", () => {
 
     // storm.json updated
     const config = readConfig();
-    expect(config.installed).toContain("@stormstack/auth");
+    expect(config.installed).toContain("@stormeoio/auth");
 
     // CLAUDE.md generated
     expect(fs.existsSync(path.join(FIXTURES, "CLAUDE.md"))).toBe(true);
     const claude = readFixture("CLAUDE.md");
-    expect(claude).toContain("@stormstack/auth");
+    expect(claude).toContain("@stormeoio/auth");
     expect(claude).toContain("SESSION_SECRET");
   });
 
@@ -189,7 +189,7 @@ describe("storm add --copy --local", () => {
     expect(drizzle).toContain("./plugins/crm/schema.ts");
 
     const config = readConfig();
-    expect(config.installed).toEqual(["@stormstack/auth", "@stormstack/crm"]);
+    expect(config.installed).toEqual(["@stormeoio/auth", "@stormeoio/crm"]);
   });
 
   it("adds 3 plugins and imports stack correctly", () => {
@@ -252,7 +252,7 @@ describe("storm remove", () => {
 
     // Config updated
     const config = readConfig();
-    expect(config.installed).toEqual(["@stormstack/auth"]);
+    expect(config.installed).toEqual(["@stormeoio/auth"]);
   });
 
   it("removes stripe and restores the default JSON parser", () => {
@@ -273,7 +273,7 @@ describe("storm remove", () => {
     expect(server).toContain("crmPlugin");
 
     const config = readConfig();
-    expect(config.installed).toEqual(["@stormstack/auth", "@stormstack/crm"]);
+    expect(config.installed).toEqual(["@stormeoio/auth", "@stormeoio/crm"]);
   }, REAL_PROCESS_TEST_TIMEOUT);
 
   it("blocks removal of auth when crm depends on it", () => {
@@ -310,7 +310,7 @@ describe("storm publish", () => {
 
   it("generates registry entry in dry-run mode", () => {
     const output = run("publish auth --dry-run --yes");
-    expect(output).toContain("@stormstack/auth");
+    expect(output).toContain("@stormeoio/auth");
     expect(output).toContain("dry-run");
   });
 });
@@ -322,7 +322,7 @@ describe("storm create-plugin", () => {
   it("scaffolds a plugin with correct structure", () => {
     const output = run("create-plugin test-widget --yes");
 
-    expect(output).toContain("@stormstack/test-widget");
+    expect(output).toContain("@stormeoio/test-widget");
 
     const pluginDir = path.join(FIXTURES, "plugin-test-widget");
     expect(fs.existsSync(path.join(pluginDir, "src/index.ts"))).toBe(true);
@@ -340,7 +340,7 @@ describe("storm create-plugin", () => {
     const pluginDir = path.join(FIXTURES, "plugin-my-analytics");
     const index = fs.readFileSync(path.join(pluginDir, "src/index.ts"), "utf8");
 
-    expect(index).toContain('id: "@stormstack/my-analytics"');
+    expect(index).toContain('id: "@stormeoio/my-analytics"');
     expect(index).toContain('name: "MyAnalytics"');
     expect(index).toContain("myAnalyticsPlugin");
     expect(index).toContain("StormPlugin");
@@ -366,11 +366,11 @@ describe("storm create-plugin", () => {
     const pluginDir = path.join(FIXTURES, "plugin-cool-feature");
     const pkg = JSON.parse(fs.readFileSync(path.join(pluginDir, "package.json"), "utf8"));
 
-    expect(pkg.name).toBe("@stormstack/cool-feature");
+    expect(pkg.name).toBe("@stormeoio/cool-feature");
     expect(pkg.version).toBe("0.1.0");
     expect(pkg.exports["."]).toBeDefined();
-    expect(pkg.peerDependencies["@stormstack/core"]).toBe(`^${CLI_PACKAGE.version}`);
-    expect(pkg.peerDependencies["@stormstack/auth"]).toBe(`^${CLI_PACKAGE.version}`);
+    expect(pkg.peerDependencies["@stormeoio/core"]).toBe(`^${CLI_PACKAGE.version}`);
+    expect(pkg.peerDependencies["@stormeoio/auth"]).toBe(`^${CLI_PACKAGE.version}`);
   });
 
   it("refuses to overwrite existing directory", () => {
@@ -405,7 +405,7 @@ describe("storm deps", () => {
     run(`add auth --copy --local ${MONOREPO} --yes`);
     const output = run("deps auth");
     expect(output).toContain("Auth");
-    expect(output).toContain("@stormstack/auth");
+    expect(output).toContain("@stormeoio/auth");
   });
 
   it("shows dependents for auth", () => {
@@ -422,7 +422,7 @@ describe("storm deps", () => {
     expect(parsed.cycles).toBeDefined();
     expect(Array.isArray(parsed.order)).toBe(true);
     expect(parsed.order.length).toBeGreaterThan(0);
-    expect(parsed.order[0]).toBe("@stormstack/auth");
+    expect(parsed.order[0]).toBe("@stormeoio/auth");
   });
 
   it("shows no plugins message when empty", () => {
@@ -450,7 +450,7 @@ describe("storm migrate", () => {
     expect(fs.existsSync(journalPath)).toBe(true);
     const journal = JSON.parse(fs.readFileSync(journalPath, "utf8"));
     expect(journal.entries.length).toBeGreaterThan(0);
-    expect(journal.entries[0].plugin).toBe("@stormstack/auth");
+    expect(journal.entries[0].plugin).toBe("@stormeoio/auth");
     expect(journal.entries[0].applied).toBe(false);
   });
 
@@ -467,7 +467,7 @@ describe("storm migrate", () => {
   });
 
   it("generates migrations from npm package entrypoint schemas", () => {
-    writeFixture("node_modules/@stormstack/auth/dist/index.js", `
+    writeFixture("node_modules/@stormeoio/auth/dist/index.js", `
 const { pgTable, text, timestamp } = require("drizzle-orm/pg-core");
 exports.users = pgTable("users", {
   id: text("id").primaryKey(),
@@ -476,7 +476,7 @@ exports.users = pgTable("users", {
 });
 `);
     const config = JSON.parse(readFixture("storm.json")) as { installed: string[] };
-    config.installed = ["@stormstack/auth"];
+    config.installed = ["@stormeoio/auth"];
     writeFixture("storm.json", `${JSON.stringify(config, null, 2)}\n`);
 
     const output = run("migrate generate --yes");
@@ -630,10 +630,10 @@ describe("storm update", () => {
       serverEntry: "server/index.ts",
       drizzleConfig: "drizzle.config.ts",
       registry: "",
-      installed: ["@stormstack/auth"],
+      installed: ["@stormeoio/auth"],
     }));
-    writeFixture("node_modules/@stormstack/auth/package.json", JSON.stringify({
-      name: "@stormstack/auth",
+    writeFixture("node_modules/@stormeoio/auth/package.json", JSON.stringify({
+      name: "@stormeoio/auth",
       version: CLI_PACKAGE.version,
     }));
     wireCurrentAuthServer();
@@ -649,10 +649,10 @@ describe("storm update", () => {
       serverEntry: "server/index.ts",
       drizzleConfig: "drizzle.config.ts",
       registry: "",
-      installed: ["@stormstack/auth"],
+      installed: ["@stormeoio/auth"],
     }));
-    writeFixture("node_modules/@stormstack/auth/package.json", JSON.stringify({
-      name: "@stormstack/auth",
+    writeFixture("node_modules/@stormeoio/auth/package.json", JSON.stringify({
+      name: "@stormeoio/auth",
       version: CLI_PACKAGE.version,
     }));
     const serverBefore = wireLegacyAuthServer();
@@ -671,18 +671,18 @@ describe("storm update", () => {
       serverEntry: "server/index.ts",
       drizzleConfig: "drizzle.config.ts",
       registry: "",
-      installed: ["@stormstack/auth", "@stormstack/crm"],
+      installed: ["@stormeoio/auth", "@stormeoio/crm"],
     }));
     for (const id of ["auth", "crm"]) {
-      writeFixture(`node_modules/@stormstack/${id}/package.json`, JSON.stringify({
-        name: `@stormstack/${id}`,
+      writeFixture(`node_modules/@stormeoio/${id}/package.json`, JSON.stringify({
+        name: `@stormeoio/${id}`,
         version: CLI_PACKAGE.version,
       }));
     }
     const serverBefore = wireLegacyAuthServer()
       .replace(
-        'import { authPlugin } from "@stormstack/auth";',
-        'import { authPlugin } from "@stormstack/auth";\nimport { crmPlugin } from "@stormstack/crm";',
+        'import { authPlugin } from "@stormeoio/auth";',
+        'import { authPlugin } from "@stormeoio/auth";\nimport { crmPlugin } from "@stormeoio/crm";',
       )
       .replace("registry.register(authPlugin);", "registry.register(authPlugin);\nregistry.register(crmPlugin);");
     writeFixture("server/index.ts", serverBefore);
@@ -708,10 +708,10 @@ describe("storm update", () => {
       serverEntry: "server/index.ts",
       drizzleConfig: "drizzle.config.ts",
       registry: "",
-      installed: ["@stormstack/auth"],
+      installed: ["@stormeoio/auth"],
     }));
-    writeFixture("node_modules/@stormstack/auth/package.json", JSON.stringify({
-      name: "@stormstack/auth",
+    writeFixture("node_modules/@stormeoio/auth/package.json", JSON.stringify({
+      name: "@stormeoio/auth",
       version: CLI_PACKAGE.version,
     }));
     wireLegacyAuthServer();
@@ -722,7 +722,7 @@ describe("storm update", () => {
     expect(output).toContain("migration requireAdmin");
     expect(output).toContain("1 plugin(s) mis à jour");
     expect(server).toContain(
-      'import { authPlugin, createDatabaseRoleGuard } from "@stormstack/auth";',
+      'import { authPlugin, createDatabaseRoleGuard } from "@stormeoio/auth";',
     );
     expect(server).toContain(
       'requireAdmin: createDatabaseRoleGuard({} as any, "admin")',
@@ -736,7 +736,7 @@ describe("storm update", () => {
       serverEntry: "server/index.ts",
       drizzleConfig: "drizzle.config.ts",
       registry: "",
-      installed: ["@stormstack/auth"],
+      installed: ["@stormeoio/auth"],
     }));
     writeFixture("plugins/auth/version.ts", 'export const PACKAGE_VERSION = "0.1.0";\n');
     const pluginBefore = readFixture("plugins/auth/version.ts");
@@ -771,10 +771,10 @@ describe("storm update", () => {
       serverEntry: "server/index.ts",
       drizzleConfig: "drizzle.config.ts",
       registry: "",
-      installed: ["@stormstack/auth"],
+      installed: ["@stormeoio/auth"],
     }));
-    writeFixture("node_modules/@stormstack/auth/package.json", JSON.stringify({
-      name: "@stormstack/auth",
+    writeFixture("node_modules/@stormeoio/auth/package.json", JSON.stringify({
+      name: "@stormeoio/auth",
       version: "0.1.0",
     }));
     const serverBefore = wireLegacyAuthServer();
@@ -791,7 +791,7 @@ describe("storm update", () => {
     expect(output).toContain("1 plugin(s) non mis à jour");
     expect(output).not.toContain("1 plugin(s) mis à jour");
     expect(output).not.toContain("Action requise");
-    expect(JSON.parse(readFixture("node_modules/@stormstack/auth/package.json"))).toMatchObject({
+    expect(JSON.parse(readFixture("node_modules/@stormeoio/auth/package.json"))).toMatchObject({
       version: "0.1.0",
     });
     expect(readFixture("server/index.ts")).toBe(serverBefore);

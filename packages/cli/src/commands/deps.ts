@@ -38,7 +38,7 @@ export async function depsCommand(pluginArg?: string, opts: DepsOptions = {}): P
   }
 
   if (pluginArg) {
-    const plugin = pluginMap.get(pluginArg) ?? pluginMap.get(`@stormstack/${pluginArg}`);
+    const plugin = pluginMap.get(pluginArg) ?? pluginMap.get(`@stormeoio/${pluginArg}`);
     if (!plugin) {
       p.log.error(`Plugin ${pc.red(pluginArg)} introuvable`);
       process.exit(1);
@@ -324,7 +324,7 @@ function formatNode(node: DepNode, installedIds: Set<string>): string {
 }
 
 function shortId(id: string): string {
-  return id.replace("@stormstack/", "");
+  return id.replace("@stormeoio/", "");
 }
 
 function computeStats(graph: Map<string, DepNode>, installedIds: Set<string>) {

@@ -1,6 +1,6 @@
 import { useState, useCallback, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { csrfFetch } from "@stormstack/core/csrf-client";
+import { csrfFetch } from "@stormeoio/core/csrf-client";
 import { useStorm } from "./context";
 import { resolveIcon } from "./icon-resolver";
 import { StormConfigForm } from "./StormConfigForm";
@@ -306,7 +306,7 @@ function ConfigTab({
       <div className="w-48 shrink-0">
         <nav className="space-y-1">
           {pluginIds.map((id) => {
-            const shortName = id.replace("@stormstack/", "");
+            const shortName = id.replace("@stormeoio/", "");
             const label = shortName.charAt(0).toUpperCase() + shortName.slice(1);
             return (
               <button
@@ -330,7 +330,7 @@ function ConfigTab({
         {activePlugin && schemas[activePlugin] && (
           <div className="bg-white border border-gray-200 rounded-xl p-6">
             <h2 className="text-base font-semibold text-gray-900 mb-4">
-              {activePlugin.replace("@stormstack/", "").replace(/^\w/, (c) => c.toUpperCase())}
+              {activePlugin.replace("@stormeoio/", "").replace(/^\w/, (c) => c.toUpperCase())}
             </h2>
             <StormConfigForm
               key={activePlugin}
@@ -388,7 +388,7 @@ function EventsTab({ apiBase }: { apiBase: string }) {
               {Object.entries(emitters).map(([pluginId, events]) => (
                 <div key={pluginId}>
                   <div className="text-xs font-medium text-gray-600">
-                    {pluginId.replace("@stormstack/", "")}
+                    {pluginId.replace("@stormeoio/", "")}
                   </div>
                   <div className="flex flex-wrap gap-1 mt-1">
                     {events.map((e) => (
@@ -412,7 +412,7 @@ function EventsTab({ apiBase }: { apiBase: string }) {
               {Object.entries(listeners).map(([pluginId, events]) => (
                 <div key={pluginId}>
                   <div className="text-xs font-medium text-gray-600">
-                    {pluginId.replace("@stormstack/", "")}
+                    {pluginId.replace("@stormeoio/", "")}
                   </div>
                   <div className="flex flex-wrap gap-1 mt-1">
                     {events.map((e) => (
@@ -444,7 +444,7 @@ function EventsTab({ apiBase }: { apiBase: string }) {
                   <span className="font-mono text-xs text-storm-600 font-medium">{event.name}</span>
                   {event.source && (
                     <span className="text-xs text-gray-400">
-                      ← {event.source.replace("@stormstack/", "")}
+                      ← {event.source.replace("@stormeoio/", "")}
                     </span>
                   )}
                   <span className="text-xs text-gray-300 ml-auto">
@@ -584,7 +584,7 @@ function CatalogCard({ entry }: { entry: CatalogEntry }) {
           </span>
           {entry.requires.length > 0 && (
             <span className="text-xs text-gray-400">
-              requiert {entry.requires.map((r) => r.replace("@stormstack/", "")).join(", ")}
+              requiert {entry.requires.map((r) => r.replace("@stormeoio/", "")).join(", ")}
             </span>
           )}
         </div>

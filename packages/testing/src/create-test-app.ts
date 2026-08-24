@@ -1,6 +1,6 @@
 import express, { type Express, type RequestHandler } from "express";
-import type { StormPlugin, StormContext } from "@stormstack/core";
-import { registry, bootstrapPlugins, eventBus } from "@stormstack/core";
+import type { StormPlugin, StormContext } from "@stormeoio/core";
+import { registry, bootstrapPlugins, eventBus } from "@stormeoio/core";
 import { createTestContext, type TestContextOptions } from "./create-test-context";
 import { createTestRequest } from "./test-request";
 import fs from "fs";

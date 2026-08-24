@@ -2,7 +2,7 @@ import { Router } from "express";
 import { eq, and, desc, type SQL } from "drizzle-orm";
 import { z } from "zod";
 import { tickets, ticketComments, ticketLabels } from "./schema";
-import type { StormContext } from "@stormstack/core";
+import type { StormContext } from "@stormeoio/core";
 import type { RequestHandler } from "express";
 
 const TICKET_STATUSES = ["open", "in_progress", "waiting", "resolved", "closed"] as const;
@@ -91,7 +91,7 @@ export function createTicketingRoutes(ctx: StormContext, isAuthenticated: Reques
       title: parsed.data.title,
       reporterId: req.user!.id,
       tenantId: req.tenant!.tenantId,
-    }, "@stormstack/ticketing").catch(() => {});
+    }, "@stormeoio/ticketing").catch(() => {});
   });
 
   router.get("/:id", isAuthenticated, async (req, res) => {
@@ -125,12 +125,12 @@ export function createTicketingRoutes(ctx: StormContext, isAuthenticated: Reques
     // Emit events based on status change
     const tenantId = req.user!.id;
     const changes = Object.keys(parsed.data);
-    events.emit("ticket.updated", { ticketId: id, changes, tenantId }, "@stormstack/ticketing").catch(() => {});
+    events.emit("ticket.updated", { ticketId: id, changes, tenantId }, "@stormeoio/ticketing").catch(() => {});
     if (parsed.data.status === "resolved") {
-      events.emit("ticket.resolved", { ticketId: id, resolvedBy: req.user!.id, tenantId }, "@stormstack/ticketing").catch(() => {});
+      events.emit("ticket.resolved", { ticketId: id, resolvedBy: req.user!.id, tenantId }, "@stormeoio/ticketing").catch(() => {});
     }
     if (parsed.data.status === "closed") {
-      events.emit("ticket.closed", { ticketId: id, tenantId }, "@stormstack/ticketing").catch(() => {});
+      events.emit("ticket.closed", { ticketId: id, tenantId }, "@stormeoio/ticketing").catch(() => {});
     }
   });
 
@@ -161,7 +161,7 @@ export function createTicketingRoutes(ctx: StormContext, isAuthenticated: Reques
       commentId: row!.id,
       authorId: req.user!.id,
       isInternal: parsed.data.isInternal ?? false,
-    }, "@stormstack/ticketing").catch(() => {});
+    }, "@stormeoio/ticketing").catch(() => {});
   });
 
   router.patch("/:id/comments/:commentId", isAuthenticated, async (req, res) => {

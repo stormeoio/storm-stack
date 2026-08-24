@@ -1,4 +1,4 @@
-# @stormstack/stripe — Claude Copilot Guide
+# @stormeoio/stripe — Claude Copilot Guide
 
 ## What this plugin does
 Stripe integration for payments, checkout sessions, and webhook handling.
@@ -15,7 +15,7 @@ Stripe integration for payments, checkout sessions, and webhook handling.
 
 ## Exports
 ```ts
-import { stripePlugin } from "@stormstack/stripe";
+import { stripePlugin } from "@stormeoio/stripe";
 ```
 
 ## Environment Variables
@@ -26,7 +26,7 @@ import { stripePlugin } from "@stormstack/stripe";
 | STRIPE_PRICE_ID | No | Default price ID for checkout |
 
 ## Requires
-- `@stormstack/auth` — uses `isAuthenticated` + user context
+- `@stormeoio/auth` — uses `isAuthenticated` + user context
 
 ## Common Customizations
 

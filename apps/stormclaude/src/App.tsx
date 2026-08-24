@@ -1,7 +1,7 @@
 import { lazy } from "react";
 import { Route } from "wouter";
 import { QueryClient } from "@tanstack/react-query";
-import { StormApp, createPluginLoader, mergeComponentMaps } from "@stormstack/react";
+import { StormApp, createPluginLoader, mergeComponentMaps } from "@stormeoio/react";
 import { LoginPage } from "@/pages/LoginPage";
 import { DashboardPage } from "@/pages/DashboardPage";
 import { api } from "@/lib/api";
@@ -12,7 +12,7 @@ const queryClient = new QueryClient({
 
 const { components: pluginComponents } = createPluginLoader([
   {
-    pluginId: "@stormstack/crm",
+    pluginId: "@stormeoio/crm",
     components: {
       CrmPage: () => import("@/pages/ContactsPage"),
       ContactDetailPage: () => import("@/pages/ContactsPage"),
@@ -20,7 +20,7 @@ const { components: pluginComponents } = createPluginLoader([
     },
   },
   {
-    pluginId: "@stormstack/ticketing",
+    pluginId: "@stormeoio/ticketing",
     components: {
       TicketsPage: () => import("@/pages/TicketsPage"),
       TicketDetailPage: () => import("@/pages/TicketsPage"),

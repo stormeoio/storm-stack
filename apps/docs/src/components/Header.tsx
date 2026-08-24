@@ -44,7 +44,7 @@ export function Header() {
             <Github size={18} />
           </a>
           <code className="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded font-mono">
-            npx create-storm-app
+            npx @stormeoio/create-storm-app
           </code>
         </div>
       </div>

@@ -5,10 +5,10 @@ export const DOC_CONTENT_GUIDES: Record<string, DocsContentEntry> = {
     title: "Plugin Testing",
     body: `## Overview
 
-\`@stormstack/testing\` provides utilities for writing isolated plugin tests without a real database or running server.
+\`@stormeoio/testing\` provides utilities for writing isolated plugin tests without a real database or running server.
 
 \`\`\`bash
-npm install -D @stormstack/testing
+npm install -D @stormeoio/testing
 \`\`\`
 
 ## createTestContext
@@ -16,7 +16,7 @@ npm install -D @stormstack/testing
 Creates a \`StormContext\` with sensible test defaults — mock db, test env, silent logger, and a live event bus.
 
 \`\`\`ts
-import { createTestContext } from "@stormstack/testing";
+import { createTestContext } from "@stormeoio/testing";
 
 const ctx = createTestContext();
 // ctx.env.NODE_ENV === "test"
@@ -39,7 +39,7 @@ const ctx = createTestContext({
 Full Express app with plugins bootstrapped — ready for HTTP assertions.
 
 \`\`\`ts
-import { createTestApp, createMockPlugin } from "@stormstack/testing";
+import { createTestApp, createMockPlugin } from "@stormeoio/testing";
 import { myPlugin } from "../src";
 
 const { app, ctx, request, cleanup } = await createTestApp({
@@ -60,11 +60,11 @@ The \`request\` helper provides \`.get()\`, \`.post()\`, \`.put()\`, \`.patch()\
 Quick throwaway plugin for testing interactions, dependencies, or lifecycle hooks.
 
 \`\`\`ts
-import { createMockPlugin } from "@stormstack/testing";
+import { createMockPlugin } from "@stormeoio/testing";
 
-const dep = createMockPlugin({ id: "@stormstack/dep" });
+const dep = createMockPlugin({ id: "@stormeoio/dep" });
 const main = createMockPlugin({
-  requires: ["@stormstack/dep"],
+  requires: ["@stormeoio/dep"],
   lifecycle: {
     async onBoot(ctx) { /* ... */ },
   },
@@ -82,7 +82,7 @@ import {
   expectEventEmitted,
   expectEventNotEmitted,
   getEmittedEvents,
-} from "@stormstack/testing";
+} from "@stormeoio/testing";
 
 await ctx.events.emit("ticket.created", { ticketId: "1" });
 
@@ -98,7 +98,7 @@ expect(events[0].payload.ticketId).toBe("1");
 
 \`\`\`ts
 import { describe, it, expect, afterEach } from "vitest";
-import { createTestContext, createMockPlugin, resetMockCounter, expectEventEmitted } from "@stormstack/testing";
+import { createTestContext, createMockPlugin, resetMockCounter, expectEventEmitted } from "@stormeoio/testing";
 
 afterEach(() => resetMockCounter());
 

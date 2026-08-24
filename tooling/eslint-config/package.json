@@ -1,5 +1,5 @@
 {
-  "name": "@stormstack/eslint-config",
+  "name": "@stormeoio/eslint-config",
   "version": "0.0.2",
   "description": "Shared ESLint config for Storm Stack",
   "private": true,

@@ -186,7 +186,7 @@ describe("proof filesystem and package guards", () => {
     const target = path.join(temporaryDirectory(), "alpha");
     scaffold({
       projectName: "alpha",
-      plugins: ["@stormstack/auth", "@stormstack/consent"],
+      plugins: ["@stormeoio/auth", "@stormeoio/consent"],
       packageManager: "npm",
       withClient: true,
     }, target);
@@ -194,7 +194,7 @@ describe("proof filesystem and package guards", () => {
     customizeFixture(target, definition);
     const app = readFileSync(path.join(target, "client/src/App.tsx"), "utf8");
     expect(app).toContain('<ConsentBanner policyVersion="1.0-alpha" />');
-    expect(app).toContain("/* storm:root-auth @stormstack/consent:start */");
+    expect(app).toContain("/* storm:root-auth @stormeoio/consent:start */");
     expect(app).not.toContain("return user ? <ConsentBanner /> : null");
     const index = readFileSync(path.join(target, "client/index.html"), "utf8");
     expect(index.indexOf("data-storm-proof-page-errors"))
@@ -259,18 +259,18 @@ describe("proof filesystem and package guards", () => {
 
   it("patches only generated Storm Stack dependency entries", () => {
     const manifest = {
-      dependencies: { "@stormstack/core": "^0.1.0", express: "^5" },
-      devDependencies: { "@stormstack/cli": "^0.1.0" },
+      dependencies: { "@stormeoio/core": "^0.1.0", express: "^5" },
+      devDependencies: { "@stormeoio/cli": "^0.1.0" },
     };
     const artifacts = [
-      { name: "@stormstack/core", tarballPath: "/proof/core.tgz" },
-      { name: "@stormstack/cli", tarballPath: "/proof/cli.tgz" },
+      { name: "@stormeoio/core", tarballPath: "/proof/core.tgz" },
+      { name: "@stormeoio/cli", tarballPath: "/proof/cli.tgz" },
     ];
     const patched = patchStormDependencies(manifest, artifacts);
     expect(patched.packageJson.dependencies.express).toBe("^5");
-    expect(patched.packageJson.dependencies["@stormstack/core"]).toBe("file:/proof/core.tgz");
-    expect(patched.installed).toEqual(["@stormstack/cli", "@stormstack/core"]);
-    expect(manifest.dependencies["@stormstack/core"]).toBe("^0.1.0");
+    expect(patched.packageJson.dependencies["@stormeoio/core"]).toBe("file:/proof/core.tgz");
+    expect(patched.installed).toEqual(["@stormeoio/cli", "@stormeoio/core"]);
+    expect(manifest.dependencies["@stormeoio/core"]).toBe("^0.1.0");
   });
 
   it("rejects a tarball hash mismatch before installation", () => {
@@ -279,7 +279,7 @@ describe("proof filesystem and package guards", () => {
     writeFileSync(tarballPath, "packed bytes", "utf8");
     const actual = createHash("sha256").update("packed bytes").digest("hex");
     expect(() => assertArtifactHashes([{
-      name: "@stormstack/core",
+      name: "@stormeoio/core",
       tarballPath,
       expectedSha256: "0".repeat(64),
       actualSha256: actual,
@@ -291,19 +291,19 @@ describe("proof filesystem and package guards", () => {
     const tarballPath = path.join(appDir, "core.tgz");
     writeFileSync(tarballPath, "core", "utf8");
     writeFileSync(path.join(appDir, "package.json"), JSON.stringify({
-      dependencies: { "@stormstack/core": `file:${tarballPath}` },
+      dependencies: { "@stormeoio/core": `file:${tarballPath}` },
     }), "utf8");
     writeFileSync(path.join(appDir, "package-lock.json"), JSON.stringify({
       packages: {
-        "": { dependencies: { "@stormstack/core": `file:${tarballPath}` } },
-        "node_modules/@stormstack/core": {
+        "": { dependencies: { "@stormeoio/core": `file:${tarballPath}` } },
+        "node_modules/@stormeoio/core": {
           version: "0.1.0",
           resolved: `file:${tarballPath}`,
         },
       },
     }), "utf8");
     expect(() => assertInstalledTrain(appDir, [{
-      name: "@stormstack/core",
+      name: "@stormeoio/core",
       tarballPath,
     }], "0.1.1")).toThrow("Lockfile is stale");
   });
@@ -313,19 +313,19 @@ describe("proof filesystem and package guards", () => {
     const tarballPath = path.join(appDir, "core.tgz");
     writeFileSync(tarballPath, "core", "utf8");
     writeFileSync(path.join(appDir, "package.json"), JSON.stringify({
-      dependencies: { "@stormstack/core": `file:${tarballPath}` },
+      dependencies: { "@stormeoio/core": `file:${tarballPath}` },
     }), "utf8");
     writeFileSync(path.join(appDir, "package-lock.json"), JSON.stringify({
       packages: {
-        "": { dependencies: { "@stormstack/core": `file:${tarballPath}` } },
-        "node_modules/@stormstack/core": {
+        "": { dependencies: { "@stormeoio/core": `file:${tarballPath}` } },
+        "node_modules/@stormeoio/core": {
           version: "0.1.1",
-          resolved: "https://registry.npmjs.org/@stormstack/core/-/core-0.1.1.tgz",
+          resolved: "https://registry.npmjs.org/@stormeoio/core/-/core-0.1.1.tgz",
         },
       },
     }), "utf8");
     expect(() => assertInstalledTrain(appDir, [{
-      name: "@stormstack/core",
+      name: "@stormeoio/core",
       tarballPath,
     }], "0.1.1")).toThrow("is not a file tarball");
   });
@@ -335,20 +335,20 @@ describe("proof filesystem and package guards", () => {
     const tarballPath = path.join(appDir, "core.tgz");
     const bytes = Buffer.from("exact core tarball");
     writeFileSync(tarballPath, bytes);
-    const installedDir = path.join(appDir, "node_modules/@stormstack/core");
+    const installedDir = path.join(appDir, "node_modules/@stormeoio/core");
     mkdirSync(installedDir, { recursive: true });
     writeFileSync(path.join(installedDir, "package.json"), JSON.stringify({
-      name: "@stormstack/core",
+      name: "@stormeoio/core",
       version: "0.1.1",
     }), "utf8");
     const specifier = `file:${tarballPath}`;
     writeFileSync(path.join(appDir, "package.json"), JSON.stringify({
-      dependencies: { "@stormstack/core": specifier },
+      dependencies: { "@stormeoio/core": specifier },
     }), "utf8");
     writeFileSync(path.join(appDir, "package-lock.json"), JSON.stringify({
       packages: {
-        "": { dependencies: { "@stormstack/core": specifier } },
-        "node_modules/@stormstack/core": {
+        "": { dependencies: { "@stormeoio/core": specifier } },
+        "node_modules/@stormeoio/core": {
           version: "0.1.1",
           resolved: specifier,
           integrity: `sha512-${createHash("sha512").update(bytes).digest("base64")}`,
@@ -356,9 +356,9 @@ describe("proof filesystem and package guards", () => {
       },
     }), "utf8");
     expect(assertInstalledTrain(appDir, [{
-      name: "@stormstack/core",
+      name: "@stormeoio/core",
       tarballPath,
-    }], "0.1.1")).toEqual(["@stormstack/core"]);
+    }], "0.1.1")).toEqual(["@stormeoio/core"]);
   });
 
   it("fails customization when an anchor is absent or ambiguous", () => {
@@ -735,7 +735,7 @@ function packedConsentArtifact(root, label, version, declaration, clientExport) 
   mkdirSync(path.join(packageRoot, "dist/client"), { recursive: true });
   writeFileSync(path.join(packageRoot, "dist/client/index.d.ts"), declaration, "utf8");
   writeFileSync(path.join(packageRoot, "package.json"), JSON.stringify({
-    name: "@stormstack/consent",
+    name: "@stormeoio/consent",
     version,
     exports: { "./client": clientExport },
   }), "utf8");
@@ -744,7 +744,7 @@ function packedConsentArtifact(root, label, version, declaration, clientExport) 
   if (packed.status !== 0) throw new Error(`test tar failed: ${packed.stderr}`);
   const digest = createHash("sha256").update(readFileSync(tarballPath)).digest("hex");
   return {
-    name: "@stormstack/consent",
+    name: "@stormeoio/consent",
     version,
     workspace: "packages/plugin-consent",
     filename: path.basename(tarballPath),
@@ -764,7 +764,7 @@ function gitTestCommand(cwd, args) {
 function checkpointArtifactTrain(directory, version, commit, bytesByName) {
   mkdirSync(directory, { recursive: true });
   return REQUIRED_RELEASE_PACKAGES.map((name, index) => {
-    const filename = `${name.replace("@stormstack/", "stormstack-")}-${version}.tgz`;
+    const filename = `${name.replace("@stormeoio/", "stormeoio-")}-${version}.tgz`;
     const tarballPath = path.join(directory, filename);
     const bytes = bytesByName.get(name) ?? Buffer.from(`artifact-${name}`);
     writeFileSync(tarballPath, bytes);

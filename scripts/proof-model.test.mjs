@@ -97,9 +97,9 @@ function artifact(name, version, commit) {
   return {
     name,
     version,
-    workspace: name === "create-storm-app" ? "packages/create-storm-app" : `packages/${name.split("/").at(-1)}`,
-    filename: `${name.replace("@stormstack/", "stormstack-")}-${version}.tgz`,
-    tarballPath: `/tmp/proof/${name.replace("@stormstack/", "stormstack-")}-${version}.tgz`,
+    workspace: name === "@stormeoio/create-storm-app" ? "packages/create-storm-app" : `packages/${name.split("/").at(-1)}`,
+    filename: `${name.replace("@stormeoio/", "stormeoio-")}-${version}.tgz`,
+    tarballPath: `/tmp/proof/${name.replace("@stormeoio/", "stormeoio-")}-${version}.tgz`,
     commit,
     expectedSha256: hash,
     actualSha256: hash,

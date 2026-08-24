@@ -1,13 +1,13 @@
 import { Router, type Request } from "express";
 import { z } from "zod";
-import type { StormPlugin } from "@stormstack/core/plugin";
+import type { StormPlugin } from "@stormeoio/core/plugin";
 import Stripe from "stripe";
 import { PACKAGE_VERSION } from "./version";
 
 type StripeWebhookRequest = Request & { rawBody?: Buffer };
 
 export const stripePlugin: StormPlugin = {
-  id: "@stormstack/stripe",
+  id: "@stormeoio/stripe",
   name: "Stripe Billing",
   version: PACKAGE_VERSION,
   description: "Subscriptions, invoices, and payment webhooks via Stripe",
@@ -16,7 +16,7 @@ export const stripePlugin: StormPlugin = {
   tags: ["billing", "payments", "subscriptions", "stripe"],
   pricing: "free",
 
-  requires: ["@stormstack/auth"],
+  requires: ["@stormeoio/auth"],
 
   env: {
     STRIPE_SECRET_KEY: {
@@ -106,7 +106,7 @@ export const stripePlugin: StormPlugin = {
       }
 
       ctx.logger.info("Stripe webhook received", { type: event.type });
-      await ctx.events.emit("stripe.webhook.received", { type: event.type, id: event.id }, "@stormstack/stripe");
+      await ctx.events.emit("stripe.webhook.received", { type: event.type, id: event.id }, "@stormeoio/stripe");
       res.json({ received: true });
     });
 

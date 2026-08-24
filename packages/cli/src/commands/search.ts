@@ -64,7 +64,7 @@ export async function searchCommand(query?: string): Promise<void> {
 
     // Dependencies
     const deps = plugin.requires.length > 0
-      ? pc.dim(` (requiert ${plugin.requires.map((d) => d.replace("@stormstack/", "")).join(", ")})`)
+      ? pc.dim(` (requiert ${plugin.requires.map((d) => d.replace("@stormeoio/", "")).join(", ")})`)
       : "";
 
     console.log(`  ${pc.cyan(name)}${plugin.description}${version}${sourceBadge}${deps}${status}`);

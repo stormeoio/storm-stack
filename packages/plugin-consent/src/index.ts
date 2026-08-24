@@ -1,4 +1,4 @@
-import { getPluginConfig, type StormPlugin } from "@stormstack/core";
+import { getPluginConfig, type StormPlugin } from "@stormeoio/core";
 import { consentConfigSchema, createConsentRoutes } from "./routes";
 import { consentPreferences } from "./schema";
 import { PACKAGE_VERSION } from "./version";
@@ -13,13 +13,13 @@ export { consentPreferences } from "./schema";
 export type { ConsentPreference, InsertConsentPreference } from "./schema";
 
 export const consentPlugin: StormPlugin = {
-  id: "@stormstack/consent",
+  id: "@stormeoio/consent",
   name: "Consentement",
   version: PACKAGE_VERSION,
   description: "Préférences de consentement et cookies, persistées par utilisateur",
   tags: ["consent", "cookies", "privacy", "rgpd", "gdpr"],
   pricing: "free",
-  requires: ["@stormstack/auth"],
+  requires: ["@stormeoio/auth"],
 
   events: {
     emits: ["consent.preferences_updated", "consent.withdrawn"],
@@ -34,6 +34,6 @@ export const consentPlugin: StormPlugin = {
   routes: ({ ctx, isAuthenticated }) => createConsentRoutes(
     ctx,
     isAuthenticated,
-    () => consentConfigSchema.parse(getPluginConfig("@stormstack/consent")).policyVersion,
+    () => consentConfigSchema.parse(getPluginConfig("@stormeoio/consent")).policyVersion,
   ),
 };

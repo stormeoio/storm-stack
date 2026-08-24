@@ -1,18 +1,18 @@
-# @stormstack/crm
+# @stormeoio/crm
 
 CRM plugin for Storm Stack — contacts, organisations, and deal pipeline.
 
 ## Installation
 
 ```bash
-npm install @stormstack/crm
+npm install @stormeoio/crm
 ```
 
 ## Usage
 
 ```ts
-import { crmPlugin } from "@stormstack/crm";
-import { registry } from "@stormstack/core";
+import { crmPlugin } from "@stormeoio/crm";
+import { registry } from "@stormeoio/core";
 
 registry.register(crmPlugin);
 ```
@@ -50,7 +50,7 @@ registry.register(crmPlugin);
 
 ## Requires
 
-- `@stormstack/auth`
+- `@stormeoio/auth`
 
 ## License
 

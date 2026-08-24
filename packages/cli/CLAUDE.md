@@ -1,10 +1,10 @@
-# @stormstack/cli — Claude Context
+# @stormeoio/cli — Claude Context
 
 ## Ce package
 
 CLI pour Storm Stack : `storm add/remove/list/init`.
 Deux modes d'installation de plugins :
-- **npm** (défaut) : `npm install @stormstack/<plugin>` + auto-wiring
+- **npm** (défaut) : `npm install @stormeoio/<plugin>` + auto-wiring
 - **copy** (`--copy`) : copie le code source dans `plugins/<name>/` style shadcn
 
 ## Architecture

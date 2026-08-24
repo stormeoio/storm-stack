@@ -1,18 +1,18 @@
-# @stormstack/auth-social
+# @stormeoio/auth-social
 
 OAuth2 social login for Storm Stack — Google, GitHub, and GitLab. No passport dependency.
 
 ## Installation
 
 ```bash
-npm install @stormstack/auth-social
+npm install @stormeoio/auth-social
 ```
 
 ## Usage
 
 ```ts
-import { createSocialAuthPlugin } from "@stormstack/auth-social";
-import { registry } from "@stormstack/core";
+import { createSocialAuthPlugin } from "@stormeoio/auth-social";
+import { registry } from "@stormeoio/core";
 
 const socialAuth = createSocialAuthPlugin({
   google: {
@@ -41,7 +41,7 @@ Supported providers: `google`, `github`, `gitlab`.
 
 ## Requires
 
-- `@stormstack/auth` (for user creation and JWT)
+- `@stormeoio/auth` (for user creation and JWT)
 
 ## License
 

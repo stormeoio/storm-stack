@@ -1,5 +1,5 @@
 {
-  "name": "@stormstack/cli",
+  "name": "@stormeoio/cli",
   "version": "0.1.1",
   "description": "CLI for Storm Stack — add plugins, scaffold, manage your SaaS",
   "bin": {

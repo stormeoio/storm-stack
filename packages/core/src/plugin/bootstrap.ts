@@ -18,14 +18,14 @@ export interface BootstrapOptions {
   /**
    * isAuthenticated middleware used by all plugins.
    * If not provided, falls back to a basic req.user check.
-   * Typically use @stormstack/auth's isAuthenticated export.
+   * Typically use @stormeoio/auth's isAuthenticated export.
    */
   isAuthenticated?: RequestHandler;
   /**
    * Authorization middleware for project-wide Storm administration routes.
    * It runs after isAuthenticated. If omitted, every authenticated administration
    * request fails closed with 503; Core never trusts a JWT role claim by default.
-   * With @stormstack/auth, inject createDatabaseRoleGuard(db, "admin").
+   * With @stormeoio/auth, inject createDatabaseRoleGuard(db, "admin").
    */
   requireAdmin?: RequestHandler;
   /**
@@ -131,7 +131,7 @@ export async function bootstrapPlugins(opts: BootstrapOptions): Promise<void> {
 
     if (plugin.routes) {
       const router = plugin.routes({ ctx, isAuthenticated });
-      const pluginPath = `${apiPrefix}/${plugin.id.replace("@stormstack/", "").replace("/", "-")}`;
+      const pluginPath = `${apiPrefix}/${plugin.id.replace("@stormeoio/", "").replace("/", "-")}`;
       app.use(pluginPath, router);
       console.log(`[storm-stack] ✓ ${plugin.id} routes → ${pluginPath}`);
     }

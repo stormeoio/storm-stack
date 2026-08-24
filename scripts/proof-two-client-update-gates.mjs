@@ -13,7 +13,7 @@ import {
   sha256Buffer,
 } from "./proof-two-client-update-helpers.mjs";
 
-const CONSENT_PACKAGE = "@stormstack/consent";
+const CONSENT_PACKAGE = "@stormeoio/consent";
 const CLIENT_DECLARATION_ENTRY = "package/dist/client/index.d.ts";
 const PACKAGE_MANIFEST_ENTRY = "package/package.json";
 

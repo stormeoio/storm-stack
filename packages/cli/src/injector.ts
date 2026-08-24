@@ -27,7 +27,7 @@ const STRIPE_RAW_BODY_JSON_PARSER = `app.use(express.json({
 /**
  * Injects a plugin import + registration into server/index.ts.
  *
- * For npm mode: `import { crmPlugin } from "@stormstack/crm";`
+ * For npm mode: `import { crmPlugin } from "@stormeoio/crm";`
  * For copy mode: `import { crmPlugin } from "../plugins/crm";`
  */
 export function injectPluginRegistration(
@@ -47,7 +47,7 @@ export function injectPluginRegistration(
   }
 
   const bootstrapOptions = findBootstrapOptions(content);
-  const needsDatabaseAdminGuard = plugin.id === "@stormstack/auth"
+  const needsDatabaseAdminGuard = plugin.id === "@stormeoio/auth"
     && !bootstrapOptions?.properties.some((property) => findObjectProperty([property], "requireAdmin"));
   const databaseExpression = needsDatabaseAdminGuard
     ? findBootstrapDatabaseExpression(content, bootstrapOptions)
@@ -214,7 +214,7 @@ export function removePluginRegistration(
   const registerRegex = new RegExp(`^\\s*registry\\.register\\(${plugin.exportName}\\);?\\s*\\n`, "m");
   content = content.replace(registerRegex, "");
 
-  if (plugin.id === "@stormstack/auth") {
+  if (plugin.id === "@stormeoio/auth") {
     content = content.replace(
       /^[ \t]*requireAdmin:[ \t]*createDatabaseRoleGuard\([^\r\n]+\),?[ \t]*(?:\r?\n|$)/m,
       "",

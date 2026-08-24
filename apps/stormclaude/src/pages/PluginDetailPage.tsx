@@ -139,11 +139,11 @@ export function PluginDetailPage() {
           <div className="space-y-3">
             <CodeBlock
               label="npm (package)"
-              code={`npx @stormstack/cli add ${plugin.shortName}`}
+              code={`npx @stormeoio/cli add ${plugin.shortName}`}
             />
             <CodeBlock
               label="copy (code source)"
-              code={`npx @stormstack/cli add ${plugin.shortName} --copy`}
+              code={`npx @stormeoio/cli add ${plugin.shortName} --copy`}
             />
           </div>
 
@@ -175,7 +175,7 @@ export function PluginDetailPage() {
                     <AlertTriangle size={12} className="text-amber-500" />
                   )}
                   <Link
-                    href={`/catalog/${dep.replace("@stormstack/", "")}`}
+                    href={`/catalog/${dep.replace("@stormeoio/", "")}`}
                     className="font-mono text-xs text-storm-600 hover:underline"
                   >
                     {dep}

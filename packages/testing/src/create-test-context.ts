@@ -1,5 +1,5 @@
-import type { StormContext, StormEnv, StormLogger } from "@stormstack/core";
-import { StormEventBus } from "@stormstack/core";
+import type { StormContext, StormEnv, StormLogger } from "@stormeoio/core";
+import { StormEventBus } from "@stormeoio/core";
 
 export interface TestContextOptions {
   env?: Partial<StormEnv>;

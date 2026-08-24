@@ -66,8 +66,8 @@ function setupCleanProject() {
     path.join(FIXTURES, "server/index.ts"),
     `import "dotenv/config";
 import express from "express";
-import { registry, bootstrapPlugins } from "@stormstack/core";
-import type { StormContext, StormEnv } from "@stormstack/core";
+import { registry, bootstrapPlugins } from "@stormeoio/core";
+import type { StormContext, StormEnv } from "@stormeoio/core";
 
 const env: StormEnv = {
   DATABASE_URL: process.env["DATABASE_URL"] ?? "",
@@ -148,13 +148,13 @@ describe("Full pipeline: init → add → verify → remove → verify", () => {
 
   it("step 1: storm.json tracks auth", () => {
     const config = readJson("storm.json") as { installed: string[] };
-    expect(config.installed).toEqual(["@stormstack/auth"]);
+    expect(config.installed).toEqual(["@stormeoio/auth"]);
   });
 
   it("step 1: CLAUDE.md generated with auth info", () => {
     expect(exists("CLAUDE.md")).toBe(true);
     const claude = read("CLAUDE.md");
-    expect(claude).toContain("@stormstack/auth");
+    expect(claude).toContain("@stormeoio/auth");
     expect(claude).toContain("SESSION_SECRET");
   });
 
@@ -188,7 +188,7 @@ describe("Full pipeline: init → add → verify → remove → verify", () => {
 
   it("step 2: storm.json tracks both plugins in order", () => {
     const config = readJson("storm.json") as { installed: string[] };
-    expect(config.installed).toEqual(["@stormstack/auth", "@stormstack/crm"]);
+    expect(config.installed).toEqual(["@stormeoio/auth", "@stormeoio/crm"]);
   });
 
   // ── Step 3: Add ticketing (depends on auth) ────────────────────────────
@@ -211,9 +211,9 @@ describe("Full pipeline: init → add → verify → remove → verify", () => {
 
     const config = readJson("storm.json") as { installed: string[] };
     expect(config.installed).toHaveLength(3);
-    expect(config.installed).toContain("@stormstack/auth");
-    expect(config.installed).toContain("@stormstack/crm");
-    expect(config.installed).toContain("@stormstack/ticketing");
+    expect(config.installed).toContain("@stormeoio/auth");
+    expect(config.installed).toContain("@stormeoio/crm");
+    expect(config.installed).toContain("@stormeoio/ticketing");
   });
 
   it("step 3: drizzle config has all three schemas", () => {
@@ -257,7 +257,7 @@ describe("Full pipeline: init → add → verify → remove → verify", () => {
 
   it("step 6: publish dry-run generates registry entry", () => {
     const output = run("publish auth --dry-run --yes");
-    expect(output).toContain("@stormstack/auth");
+    expect(output).toContain("@stormeoio/auth");
     expect(output).toContain("dry-run");
   });
 
@@ -297,7 +297,7 @@ describe("Full pipeline: init → add → verify → remove → verify", () => {
 
     // Config updated
     const config = readJson("storm.json") as { installed: string[] };
-    expect(config.installed).toEqual(["@stormstack/auth", "@stormstack/ticketing"]);
+    expect(config.installed).toEqual(["@stormeoio/auth", "@stormeoio/ticketing"]);
   });
 
   // ── Step 9: Can't remove auth (ticketing depends on it) ───────────────
@@ -316,7 +316,7 @@ describe("Full pipeline: init → add → verify → remove → verify", () => {
     });
 
     let config = readJson("storm.json") as { installed: string[] };
-    expect(config.installed).toEqual(["@stormstack/auth"]);
+    expect(config.installed).toEqual(["@stormeoio/auth"]);
 
     execSync(`echo y | node ${CLI} remove auth`, {
       cwd: FIXTURES,
@@ -348,7 +348,7 @@ describe("Full pipeline: init → add → verify → remove → verify", () => {
     expect(server).toContain("authPlugin");
 
     const config = readJson("storm.json") as { installed: string[] };
-    expect(config.installed).toEqual(["@stormstack/auth"]);
+    expect(config.installed).toEqual(["@stormeoio/auth"]);
   });
 });
 
@@ -393,12 +393,12 @@ describe("Edge cases", () => {
     run(`add crm --copy --local ${MONOREPO} --yes`);
 
     const config = readJson("storm.json") as { installed: string[] };
-    expect(config.installed).toContain("@stormstack/auth");
-    expect(config.installed).toContain("@stormstack/crm");
+    expect(config.installed).toContain("@stormeoio/auth");
+    expect(config.installed).toContain("@stormeoio/crm");
 
     // Auth must come before CRM
-    const authIdx = config.installed.indexOf("@stormstack/auth");
-    const crmIdx = config.installed.indexOf("@stormstack/crm");
+    const authIdx = config.installed.indexOf("@stormeoio/auth");
+    const crmIdx = config.installed.indexOf("@stormeoio/crm");
     expect(authIdx).toBeLessThan(crmIdx);
   });
 });

@@ -3,12 +3,12 @@ import type { ScaffoldOptions } from "./prompts";
 import { resolveGeneratedPluginIds } from "./generated-plugin-definitions";
 
 export const PLUGIN_IDS = [
-  "@stormstack/auth",
-  "@stormstack/auth-social",
-  "@stormstack/consent",
-  "@stormstack/crm",
-  "@stormstack/ticketing",
-  "@stormstack/stripe",
+  "@stormeoio/auth",
+  "@stormeoio/auth-social",
+  "@stormeoio/consent",
+  "@stormeoio/crm",
+  "@stormeoio/ticketing",
+  "@stormeoio/stripe",
 ] as const;
 
 const PACKAGE_MANAGERS = ["npm", "pnpm", "yarn"] as const;
@@ -40,7 +40,7 @@ export function normalizePluginIds(value: string): string[] {
     .split(",")
     .map((plugin) => plugin.trim())
     .filter(Boolean)
-    .map((plugin) => (plugin.startsWith("@stormstack/") ? plugin : `@stormstack/${plugin}`));
+    .map((plugin) => (plugin.startsWith("@stormeoio/") ? plugin : `@stormeoio/${plugin}`));
 
   const unknown = requested.filter(
     (plugin): plugin is string => !PLUGIN_IDS.includes(plugin as (typeof PLUGIN_IDS)[number]),

@@ -1,11 +1,11 @@
-# @stormstack/auth
+# @stormeoio/auth
 
 Email/password authentication with JWT httpOnly cookies, role-based access control, and multi-tenant support.
 
 ## Installation
 
 ```bash
-npm install @stormstack/auth
+npm install @stormeoio/auth
 ```
 
 ## Features
@@ -19,8 +19,8 @@ npm install @stormstack/auth
 ## Usage
 
 ```ts
-import { authPlugin } from "@stormstack/auth";
-import { registry } from "@stormstack/core";
+import { authPlugin } from "@stormeoio/auth";
+import { registry } from "@stormeoio/core";
 
 registry.register(authPlugin);
 ```

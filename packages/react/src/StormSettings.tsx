@@ -76,7 +76,7 @@ export function StormSettings({ apiBase = "/api", children }: StormSettingsProps
   // Build tabs from configurable plugins
   const tabs = configurablePlugins.map((pluginId) => {
     const panel = panels.find((p) => pluginId.includes(p.id.replace("-settings", "")));
-    const shortName = pluginId.replace("@stormstack/", "");
+    const shortName = pluginId.replace("@stormeoio/", "");
     return {
       id: pluginId,
       label: panel?.label ?? shortName.charAt(0).toUpperCase() + shortName.slice(1),

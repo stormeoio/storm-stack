@@ -23,7 +23,7 @@ This generates a ready-to-build plugin with:
 Every plugin exports a `StormPlugin` object:
 
 ```ts
-import type { StormPlugin } from "@stormstack/core";
+import type { StormPlugin } from "@stormeoio/core";
 
 export const myPlugin: StormPlugin = {
   id: "@my-org/my-plugin",
@@ -32,7 +32,7 @@ export const myPlugin: StormPlugin = {
   description: "What the plugin does",
   tags: ["my-plugin"],
   pricing: "free",
-  requires: ["@stormstack/auth"],
+  requires: ["@stormeoio/auth"],
 
   schema: { tables: { myItems } },
 
@@ -74,7 +74,7 @@ npm run dev    # watch mode
 npm run build  # production build
 
 # 5. Test in a real project
-cd /tmp && npx create-storm-app test-app && cd test-app
+cd /tmp && npx @stormeoio/create-storm-app test-app && cd test-app
 storm add my-plugin --local /path/to/storm-stack --copy
 storm dev
 ```
@@ -107,7 +107,7 @@ Then open a pull request adding your plugin to `registry.json`.
 packages/
   core/              — Runtime: registry, event bus, bootstrap, tenant, config
   cli/               — CLI: add, remove, list, search, publish, create-plugin, dev
-  create-storm-app/  — npx create-storm-app scaffolder
+  create-storm-app/  — npx @stormeoio/create-storm-app scaffolder
   react/             — React components (settings forms, admin)
   plugin-auth/       — Auth plugin (JWT, RBAC, multi-tenant)
   plugin-crm/        — CRM plugin (contacts, orgs, deals)

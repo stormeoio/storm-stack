@@ -3,7 +3,7 @@ import type { DocsContentEntry } from "./docsContentTypes";
 export const DOC_CONTENT_PLUGINS: Record<string, DocsContentEntry> = {
   auth: {
     title: "Auth Plugin",
-    body: `## @stormstack/auth
+    body: `## @stormeoio/auth
 
 Email/password authentication with JWT httpOnly cookies, RBAC, and multi-tenant.
 
@@ -53,7 +53,7 @@ storm add auth --copy      # source copy mode
   },
   crm: {
     title: "CRM Plugin",
-    body: `## @stormstack/crm
+    body: `## @stormeoio/crm
 
 Contacts, organisations, and deal pipeline.
 
@@ -106,7 +106,7 @@ Contacts, organisations, and deal pipeline.
   },
   ticketing: {
     title: "Ticketing Plugin",
-    body: `## @stormstack/ticketing
+    body: `## @stormeoio/ticketing
 
 Support tickets with comments, labels, and status workflow.
 
@@ -168,10 +168,10 @@ Storm Stack plugins can define lifecycle hooks that run at specific moments:
 ## Defining Hooks
 
 \`\`\`ts
-import type { StormPlugin } from "@stormstack/core";
+import type { StormPlugin } from "@stormeoio/core";
 
 export const myPlugin: StormPlugin = {
-  id: "@stormstack/my-plugin",
+  id: "@stormeoio/my-plugin",
   name: "My Plugin",
   version: "0.1.0",
   description: "Example plugin with lifecycle hooks",
@@ -239,18 +239,18 @@ If \`onUninstall\` throws during \`storm remove\`, the removal continues with a 
     title: "Client-Side Plugin Loader",
     body: `## Overview
 
-The \`@stormstack/react\` package provides a dynamic plugin loader that automatically registers routes and navigation from your plugin manifests. Plugin pages are **lazy-loaded** — only downloaded when the user navigates to them.
+The \`@stormeoio/react\` package provides a dynamic plugin loader that automatically registers routes and navigation from your plugin manifests. Plugin pages are **lazy-loaded** — only downloaded when the user navigates to them.
 
 ## Quick Start — StormApp
 
 The easiest way to wire everything up:
 
 \`\`\`tsx
-import { StormApp, createPluginLoader } from "@stormstack/react";
+import { StormApp, createPluginLoader } from "@stormeoio/react";
 
 const { components } = createPluginLoader([
   {
-    pluginId: "@stormstack/crm",
+    pluginId: "@stormeoio/crm",
     components: {
       CrmPage: () => import("./plugins/crm/client/CrmPage"),
       DealsPage: () => import("./plugins/crm/client/DealsPage"),
@@ -279,7 +279,7 @@ Maps plugin IDs to their client-side component imports:
 \`\`\`ts
 const { components, pluginIds } = createPluginLoader([
   {
-    pluginId: "@stormstack/crm",
+    pluginId: "@stormeoio/crm",
     components: {
       CrmPage: () => import("./pages/ContactsPage"),
       DealsPage: () => import("./pages/DealsPage"),

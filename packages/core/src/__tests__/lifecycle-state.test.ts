@@ -23,49 +23,49 @@ describe("lifecycle-state", () => {
 
   it("starts empty when no state file exists", () => {
     expect(getInstalledPluginIds()).toEqual([]);
-    expect(isPluginInstalled("@stormstack/auth")).toBe(false);
+    expect(isPluginInstalled("@stormeoio/auth")).toBe(false);
   });
 
   it("marks a plugin as installed", () => {
-    markPluginInstalled("@stormstack/auth");
+    markPluginInstalled("@stormeoio/auth");
 
-    expect(isPluginInstalled("@stormstack/auth")).toBe(true);
-    expect(getInstalledPluginIds()).toEqual(["@stormstack/auth"]);
+    expect(isPluginInstalled("@stormeoio/auth")).toBe(true);
+    expect(getInstalledPluginIds()).toEqual(["@stormeoio/auth"]);
   });
 
   it("persists state to disk", () => {
-    markPluginInstalled("@stormstack/auth");
-    markPluginInstalled("@stormstack/crm");
+    markPluginInstalled("@stormeoio/auth");
+    markPluginInstalled("@stormeoio/crm");
 
     const raw = JSON.parse(fs.readFileSync(path.join(TMP, "storm-lifecycle.json"), "utf8"));
     expect(raw.version).toBe(1);
-    expect(raw.installed).toEqual(["@stormstack/auth", "@stormstack/crm"]);
+    expect(raw.installed).toEqual(["@stormeoio/auth", "@stormeoio/crm"]);
   });
 
   it("reloads state from disk", () => {
     fs.writeFileSync(
       path.join(TMP, "storm-lifecycle.json"),
-      JSON.stringify({ version: 1, installed: ["@stormstack/crm"] }),
+      JSON.stringify({ version: 1, installed: ["@stormeoio/crm"] }),
     );
 
     initLifecycleState(TMP);
-    expect(isPluginInstalled("@stormstack/crm")).toBe(true);
-    expect(isPluginInstalled("@stormstack/auth")).toBe(false);
+    expect(isPluginInstalled("@stormeoio/crm")).toBe(true);
+    expect(isPluginInstalled("@stormeoio/auth")).toBe(false);
   });
 
   it("marks a plugin as uninstalled", () => {
-    markPluginInstalled("@stormstack/auth");
-    markPluginInstalled("@stormstack/crm");
+    markPluginInstalled("@stormeoio/auth");
+    markPluginInstalled("@stormeoio/crm");
 
-    markPluginUninstalled("@stormstack/auth");
-    expect(isPluginInstalled("@stormstack/auth")).toBe(false);
-    expect(getInstalledPluginIds()).toEqual(["@stormstack/crm"]);
+    markPluginUninstalled("@stormeoio/auth");
+    expect(isPluginInstalled("@stormeoio/auth")).toBe(false);
+    expect(getInstalledPluginIds()).toEqual(["@stormeoio/crm"]);
   });
 
   it("is idempotent on double install", () => {
-    markPluginInstalled("@stormstack/auth");
-    markPluginInstalled("@stormstack/auth");
-    expect(getInstalledPluginIds()).toEqual(["@stormstack/auth"]);
+    markPluginInstalled("@stormeoio/auth");
+    markPluginInstalled("@stormeoio/auth");
+    expect(getInstalledPluginIds()).toEqual(["@stormeoio/auth"]);
   });
 
   it("handles corrupt state file gracefully", () => {

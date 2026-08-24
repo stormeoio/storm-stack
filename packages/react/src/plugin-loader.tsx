@@ -15,7 +15,7 @@ interface PluginModule {
  * ```ts
  * const { components } = createPluginLoader([
  *   {
- *     pluginId: "@stormstack/crm",
+ *     pluginId: "@stormeoio/crm",
  *     components: {
  *       CrmPage: () => import("../plugins/crm/client/CrmPage"),
  *       DealsPage: () => import("../plugins/crm/client/DealsPage"),

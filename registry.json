@@ -3,7 +3,7 @@
   "updatedAt": "2026-08-09T00:00:00.000Z",
   "plugins": [
     {
-      "id": "@stormstack/auth",
+      "id": "@stormeoio/auth",
       "name": "Auth",
       "shortName": "auth",
       "description": "Email/password + JWT cookies + RBAC + multi-tenant",
@@ -18,10 +18,10 @@
       ],
       "requires": [],
       "status": "available",
-      "npmPackage": "@stormstack/auth"
+      "npmPackage": "@stormeoio/auth"
     },
     {
-      "id": "@stormstack/auth-social",
+      "id": "@stormeoio/auth-social",
       "name": "Auth Social",
       "shortName": "auth-social",
       "description": "OAuth2 Google/GitHub/GitLab",
@@ -36,13 +36,13 @@
         "sso"
       ],
       "requires": [
-        "@stormstack/auth"
+        "@stormeoio/auth"
       ],
       "status": "available",
-      "npmPackage": "@stormstack/auth-social"
+      "npmPackage": "@stormeoio/auth-social"
     },
     {
-      "id": "@stormstack/consent",
+      "id": "@stormeoio/consent",
       "name": "Consentement",
       "shortName": "consent",
       "description": "Préférences de consentement et cookies par utilisateur",
@@ -56,13 +56,13 @@
         "gdpr"
       ],
       "requires": [
-        "@stormstack/auth"
+        "@stormeoio/auth"
       ],
       "status": "available",
-      "npmPackage": "@stormstack/consent"
+      "npmPackage": "@stormeoio/consent"
     },
     {
-      "id": "@stormstack/crm",
+      "id": "@stormeoio/crm",
       "name": "CRM",
       "shortName": "crm",
       "description": "Contacts, organisations et pipeline commercial",
@@ -76,13 +76,13 @@
         "sales"
       ],
       "requires": [
-        "@stormstack/auth"
+        "@stormeoio/auth"
       ],
       "status": "available",
-      "npmPackage": "@stormstack/crm"
+      "npmPackage": "@stormeoio/crm"
     },
     {
-      "id": "@stormstack/ticketing",
+      "id": "@stormeoio/ticketing",
       "name": "Ticketing",
       "shortName": "ticketing",
       "description": "Support tickets, commentaires, labels",
@@ -95,13 +95,13 @@
         "tickets"
       ],
       "requires": [
-        "@stormstack/auth"
+        "@stormeoio/auth"
       ],
       "status": "available",
-      "npmPackage": "@stormstack/ticketing"
+      "npmPackage": "@stormeoio/ticketing"
     },
     {
-      "id": "@stormstack/stripe",
+      "id": "@stormeoio/stripe",
       "name": "Stripe",
       "shortName": "stripe",
       "description": "Paiements Stripe, webhooks, abonnements",
@@ -115,13 +115,13 @@
         "webhooks"
       ],
       "requires": [
-        "@stormstack/auth"
+        "@stormeoio/auth"
       ],
       "status": "available",
-      "npmPackage": "@stormstack/stripe"
+      "npmPackage": "@stormeoio/stripe"
     },
     {
-      "id": "@stormstack/billing",
+      "id": "@stormeoio/billing",
       "name": "Billing",
       "shortName": "billing",
       "description": "Facturation, abonnements recurrents, devis",
@@ -134,13 +134,13 @@
         "quotes"
       ],
       "requires": [
-        "@stormstack/auth"
+        "@stormeoio/auth"
       ],
       "status": "coming-soon",
-      "npmPackage": "@stormstack/billing"
+      "npmPackage": "@stormeoio/billing"
     },
     {
-      "id": "@stormstack/cms",
+      "id": "@stormeoio/cms",
       "name": "CMS",
       "shortName": "cms",
       "description": "Gestion de contenu, pages, articles",
@@ -154,13 +154,13 @@
         "articles"
       ],
       "requires": [
-        "@stormstack/auth"
+        "@stormeoio/auth"
       ],
       "status": "coming-soon",
-      "npmPackage": "@stormstack/cms"
+      "npmPackage": "@stormeoio/cms"
     },
     {
-      "id": "@stormstack/messaging",
+      "id": "@stormeoio/messaging",
       "name": "Messaging",
       "shortName": "messaging",
       "description": "Messagerie interne, emails transactionnels",
@@ -173,13 +173,13 @@
         "chat"
       ],
       "requires": [
-        "@stormstack/auth"
+        "@stormeoio/auth"
       ],
       "status": "coming-soon",
-      "npmPackage": "@stormstack/messaging"
+      "npmPackage": "@stormeoio/messaging"
     },
     {
-      "id": "@stormstack/drive",
+      "id": "@stormeoio/drive",
       "name": "Drive",
       "shortName": "drive",
       "description": "Stockage de fichiers, GED, partage",
@@ -193,13 +193,13 @@
         "documents"
       ],
       "requires": [
-        "@stormstack/auth"
+        "@stormeoio/auth"
       ],
       "status": "coming-soon",
-      "npmPackage": "@stormstack/drive"
+      "npmPackage": "@stormeoio/drive"
     },
     {
-      "id": "@stormstack/monitoring",
+      "id": "@stormeoio/monitoring",
       "name": "Monitoring",
       "shortName": "monitoring",
       "description": "Uptime, health checks, alertes",
@@ -212,10 +212,10 @@
         "alerts"
       ],
       "requires": [
-        "@stormstack/auth"
+        "@stormeoio/auth"
       ],
       "status": "coming-soon",
-      "npmPackage": "@stormstack/monitoring"
+      "npmPackage": "@stormeoio/monitoring"
     }
   ]
 }

@@ -102,7 +102,7 @@ export function mergePlugins(remote: RegistryEntry[], installedIds: Set<string>)
 
     merged.push({
       id,
-      shortName: local?.shortName ?? rem?.shortName ?? id.replace("@stormstack/", ""),
+      shortName: local?.shortName ?? rem?.shortName ?? id.replace("@stormeoio/", ""),
       name: local?.name ?? rem?.name ?? id,
       description: local?.description ?? rem?.description ?? "",
       version: rem?.version,

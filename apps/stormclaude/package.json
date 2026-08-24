@@ -1,5 +1,5 @@
 {
-  "name": "@stormstack/stormclaude",
+  "name": "@stormeoio/stormclaude",
   "version": "0.1.1",
   "private": true,
   "description": "StormClaude — plugin management dashboard for Storm Stack apps",
@@ -10,8 +10,8 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@stormstack/core": "^0.1.1",
-    "@stormstack/react": "^0.1.1",
+    "@stormeoio/core": "^0.1.1",
+    "@stormeoio/react": "^0.1.1",
     "@tanstack/react-query": "^5.0.0",
     "clsx": "^2.1.0",
     "lucide-react": "^0.400.0",

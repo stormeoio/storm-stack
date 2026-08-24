@@ -1,4 +1,4 @@
-# @stormstack/crm — Claude Copilot Guide
+# @stormeoio/crm — Claude Copilot Guide
 
 ## What this plugin does
 Contacts, organizations, and a sales pipeline (deals). Provides CRUD APIs and React pages for managing customer relationships.
@@ -62,15 +62,15 @@ Contacts, organizations, and a sales pipeline (deals). Provides CRUD APIs and Re
 ## Exports
 ```ts
 // Server
-import { crmPlugin } from "@stormstack/crm";
-import { contacts, organizations, deals } from "@stormstack/crm";
+import { crmPlugin } from "@stormeoio/crm";
+import { contacts, organizations, deals } from "@stormeoio/crm";
 
 // Client
-import { CrmPage, ContactDetailPage, DealsPage } from "@stormstack/crm/client";
+import { CrmPage, ContactDetailPage, DealsPage } from "@stormeoio/crm/client";
 ```
 
 ## Requires
-- `@stormstack/auth` — uses `isAuthenticated` middleware and `users` table FK
+- `@stormeoio/auth` — uses `isAuthenticated` middleware and `users` table FK
 
 ## Common Customizations
 

@@ -40,10 +40,10 @@ function createProject(): string {
     serverEntry: "server/index.ts",
     drizzleConfig: "drizzle.config.ts",
     registry: "",
-    installed: ["@stormstack/auth"],
+    installed: ["@stormeoio/auth"],
   }, null, 2)}\n`);
-  write(root, "server/index.ts", `import { registry, bootstrapPlugins } from "@stormstack/core";
-import { authPlugin } from "@stormstack/auth";
+  write(root, "server/index.ts", `import { registry, bootstrapPlugins } from "@stormeoio/core";
+import { authPlugin } from "@stormeoio/auth";
 
 registry.register(authPlugin);
 
@@ -61,7 +61,7 @@ async function authPluginFiles(root: string, version = "0.1.0"): Promise<Record<
   const serverEntry = path.join(root, "server/index.ts");
   fs.writeFileSync(
     serverEntry,
-    fs.readFileSync(serverEntry, "utf8").replace('from "@stormstack/auth"', 'from "../plugins/auth"'),
+    fs.readFileSync(serverEntry, "utf8").replace('from "@stormeoio/auth"', 'from "../plugins/auth"'),
     "utf8",
   );
 
@@ -106,7 +106,7 @@ function fileFromRawUrl(url: string): string {
 function createNpmPackageFixture(root: string): string {
   const packageRoot = path.join(root, "npm-package");
   write(packageRoot, "package.json", `${JSON.stringify({
-    name: "@stormstack/auth",
+    name: "@stormeoio/auth",
     version: "0.1.1",
     main: "index.js",
   }, null, 2)}\n`);
@@ -129,7 +129,7 @@ const fs = require("node:fs");
 const { spawnSync } = require("node:child_process");
 const args = process.argv.slice(2);
 fs.writeFileSync(process.env.STORM_NPM_ARGUMENTS_LOG, JSON.stringify(args));
-if (args.join(" ") !== "install @stormstack/auth@^0.1.1") process.exit(64);
+if (args.join(" ") !== "install @stormeoio/auth@^0.1.1") process.exit(64);
 const result = spawnSync(
   process.env.STORM_REAL_NPM,
   ["install", process.env.STORM_NPM_PACKAGE, "--offline", "--ignore-scripts", "--no-audit", "--no-fund"],
@@ -164,8 +164,8 @@ afterEach(() => {
 describe("storm update command", () => {
   it("installe réellement le train npm 0.1.1 depuis un plugin 0.1.0", async () => {
     const root = createProject();
-    write(root, "node_modules/@stormstack/auth/package.json", `${JSON.stringify({
-      name: "@stormstack/auth",
+    write(root, "node_modules/@stormeoio/auth/package.json", `${JSON.stringify({
+      name: "@stormeoio/auth",
       version: "0.1.0",
     })}\n`);
 
@@ -173,26 +173,26 @@ describe("storm update command", () => {
 
     expect(result).toEqual({
       status: "success",
-      updatedPluginIds: ["@stormstack/auth"],
+      updatedPluginIds: ["@stormeoio/auth"],
       failures: [],
     });
     expect(runInstallMock).toHaveBeenCalledOnce();
     expect(runInstallMock).toHaveBeenCalledWith(
       fs.realpathSync(root),
       "npm",
-      ["@stormstack/auth@^0.1.1"],
+      ["@stormeoio/auth@^0.1.1"],
     );
     const server = fs.readFileSync(path.join(root, "server/index.ts"), "utf8");
     expect(server).toContain(
-      `import { authPlugin, createDatabaseRoleGuard } from "@stormstack/auth";`,
+      `import { authPlugin, createDatabaseRoleGuard } from "@stormeoio/auth";`,
     );
     expect(server).toContain(`requireAdmin: createDatabaseRoleGuard(ctx.db, "admin")`);
   });
 
   it("exécute réellement npm hors ligne depuis un package local", async () => {
     const root = createProject();
-    write(root, "node_modules/@stormstack/auth/package.json", `${JSON.stringify({
-      name: "@stormstack/auth",
+    write(root, "node_modules/@stormeoio/auth/package.json", `${JSON.stringify({
+      name: "@stormeoio/auth",
       version: "0.1.0",
     })}\n`);
     const packageFixture = createNpmPackageFixture(root);
@@ -212,16 +212,16 @@ describe("storm update command", () => {
       }>;
     };
     const installedPackage = JSON.parse(
-      fs.readFileSync(path.join(root, "node_modules/@stormstack/auth/package.json"), "utf8"),
+      fs.readFileSync(path.join(root, "node_modules/@stormeoio/auth/package.json"), "utf8"),
     ) as { version: string };
 
     expect(result.status).toBe("success");
     expect(JSON.parse(fs.readFileSync(argumentsLog, "utf8"))).toEqual([
       "install",
-      "@stormstack/auth@^0.1.1",
+      "@stormeoio/auth@^0.1.1",
     ]);
-    expect(projectPackage.dependencies["@stormstack/auth"]).toBe("file:npm-package");
-    expect(packageLock.packages[""]?.dependencies?.["@stormstack/auth"]).toBe("file:npm-package");
+    expect(projectPackage.dependencies["@stormeoio/auth"]).toBe("file:npm-package");
+    expect(packageLock.packages[""]?.dependencies?.["@stormeoio/auth"]).toBe("file:npm-package");
     expect(packageLock.packages["npm-package"]?.version).toBe("0.1.1");
     expect(installedPackage.version).toBe("0.1.1");
     expect(fs.readFileSync(path.join(root, "server/index.ts"), "utf8"))
@@ -275,7 +275,7 @@ describe("storm update command", () => {
       status: "failed",
       updatedPluginIds: [],
       failures: [{
-        pluginId: "@stormstack/auth",
+        pluginId: "@stormeoio/auth",
         message: expect.stringContaining("Backup de récupération existant"),
       }],
     });
@@ -318,7 +318,7 @@ describe("storm update command", () => {
       status: "failed",
       updatedPluginIds: [],
       failures: [{
-        pluginId: "@stormstack/auth",
+        pluginId: "@stormeoio/auth",
         message: expect.stringContaining("schema"),
       }],
     });
@@ -351,7 +351,7 @@ describe("storm update command", () => {
       status: "failed",
       updatedPluginIds: [],
       failures: [{
-        pluginId: "@stormstack/auth",
+        pluginId: "@stormeoio/auth",
         message: expect.stringContaining("Source copy introuvable"),
       }],
     });
@@ -388,7 +388,7 @@ describe("storm update command", () => {
       status: "failed",
       updatedPluginIds: [],
       failures: [{
-        pluginId: "@stormstack/auth",
+        pluginId: "@stormeoio/auth",
         message: expect.stringContaining("Source copy introuvable"),
       }],
     });
@@ -402,8 +402,8 @@ describe("storm update command", () => {
   it("restaure le serveur si la mise à jour npm échoue après la migration du garde", async () => {
     const root = createProject();
     const serverBefore = fs.readFileSync(path.join(root, "server/index.ts"), "utf8");
-    write(root, "node_modules/@stormstack/auth/package.json", `${JSON.stringify({
-      name: "@stormstack/auth",
+    write(root, "node_modules/@stormeoio/auth/package.json", `${JSON.stringify({
+      name: "@stormeoio/auth",
       version: "0.1.0",
     })}\n`);
     runInstallMock.mockImplementation(() => {
@@ -416,7 +416,7 @@ describe("storm update command", () => {
       status: "failed",
       updatedPluginIds: [],
       failures: [{
-        pluginId: "@stormstack/auth",
+        pluginId: "@stormeoio/auth",
         message: "npm update unavailable",
       }],
     });

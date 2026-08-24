@@ -54,7 +54,7 @@ export async function devCommand(opts: DevOptions = {}): Promise<void> {
 
   if (config.installed.length > 0) {
     const pluginList = config.installed
-      .map((id) => pc.cyan(id.replace("@stormstack/", "")))
+      .map((id) => pc.cyan(id.replace("@stormeoio/", "")))
       .join(pc.dim(", "));
     console.log(`  ${pc.dim("Plugins")}  ${pluginList}`);
   }

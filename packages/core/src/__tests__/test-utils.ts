@@ -62,7 +62,7 @@ let counter = 0;
 export function createMockPlugin(opts: MockPluginOptions = {}): StormPlugin {
   const n = ++counter;
   return {
-    id: opts.id ?? (`@stormstack/test-plugin-${n}` as PluginId),
+    id: opts.id ?? (`@stormeoio/test-plugin-${n}` as PluginId),
     name: opts.name ?? `TestPlugin${n}`,
     version: opts.version ?? "1.0.0",
     description: `Mock plugin #${n} for testing`,

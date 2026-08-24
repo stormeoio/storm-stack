@@ -25,7 +25,7 @@ const temporaryDirectories = [];
 const headCommit = "a".repeat(40);
 const packageInfo = {
   dir: "packages/core",
-  name: "@stormstack/core",
+  name: "@stormeoio/core",
   repository: {
     type: "git",
     url: "git+https://github.com/stormeoio/storm-stack.git",
@@ -107,8 +107,8 @@ case "$1" in
     exit 0
     ;;
   view)
-    if [ "\${SHIM_VIEW_MODE:-}" = "mismatch" ] && [ "$2" = "@stormstack/core@0.1.1" ]; then
-      printf '%s\\n' '{"name":"@stormstack/core","version":"0.1.1","gitHead":"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb","repository":{"type":"git","url":"git+https://github.com/stormeoio/storm-stack.git","directory":"packages/core"}}'
+    if [ "\${SHIM_VIEW_MODE:-}" = "mismatch" ] && [ "$2" = "@stormeoio/core@0.1.1" ]; then
+      printf '%s\\n' '{"name":"@stormeoio/core","version":"0.1.1","gitHead":"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb","repository":{"type":"git","url":"git+https://github.com/stormeoio/storm-stack.git","directory":"packages/core"}}'
       exit 0
     fi
     printf 'npm error code E404\\n' >&2
@@ -357,7 +357,7 @@ describe("live publication process guards", () => {
 
     expect(result.status).toBe(1);
     expect(result.stderr).toContain("already exists with gitHead");
-    expect(log).toContain("npm view @stormstack/core@0.1.1");
+    expect(log).toContain("npm view @stormeoio/core@0.1.1");
     expect(log).not.toContain("npm publish");
   });
 

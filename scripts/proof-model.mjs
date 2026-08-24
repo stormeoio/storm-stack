@@ -17,17 +17,17 @@ export const PROOF_STEPS = [
   "stopped-final",
 ];
 export const REQUIRED_RELEASE_PACKAGES = [
-  "@stormstack/core",
-  "@stormstack/react",
-  "@stormstack/testing",
-  "@stormstack/auth",
-  "@stormstack/auth-social",
-  "@stormstack/consent",
-  "@stormstack/crm",
-  "@stormstack/ticketing",
-  "@stormstack/stripe",
-  "@stormstack/cli",
-  "create-storm-app",
+  "@stormeoio/core",
+  "@stormeoio/react",
+  "@stormeoio/testing",
+  "@stormeoio/auth",
+  "@stormeoio/auth-social",
+  "@stormeoio/consent",
+  "@stormeoio/crm",
+  "@stormeoio/ticketing",
+  "@stormeoio/stripe",
+  "@stormeoio/cli",
+  "@stormeoio/create-storm-app",
 ];
 export const REQUIRED_GLOBAL_COMMAND_IDS = [
   "resolve-baseline",

@@ -1,4 +1,4 @@
-import type { StormPlugin } from "@stormstack/core";
+import type { StormPlugin } from "@stormeoio/core";
 import { oauthAccounts, oauthProviderEnum } from "./schema";
 import { createSocialAuthRoutes, type SocialAuthConfig } from "./routes";
 import { PACKAGE_VERSION } from "./version";
@@ -11,13 +11,13 @@ export function createSocialAuthPlugin(config: SocialAuthConfig): StormPlugin {
   const enabledProviders = (["google", "github", "gitlab"] as const).filter((p) => config[p] != null);
 
   return {
-    id: "@stormstack/auth-social",
+    id: "@stormeoio/auth-social",
     name: "Auth Social",
     version: PACKAGE_VERSION,
     description: `OAuth2 login via ${enabledProviders.join(", ")}`,
     tags: ["auth", "oauth", "social", "google", "github"],
     pricing: "free",
-    requires: ["@stormstack/auth"],
+    requires: ["@stormeoio/auth"],
 
     env: {
       ...(config.google ? {

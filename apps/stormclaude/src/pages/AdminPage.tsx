@@ -170,7 +170,7 @@ function OverviewTab() {
                 </span>
                 <span className="font-medium text-gray-700 font-mono">{e.name}</span>
                 <span className="text-gray-400 ml-auto font-mono">
-                  {e.source.replace("@stormstack/", "")}
+                  {e.source.replace("@stormeoio/", "")}
                 </span>
               </div>
             ))}

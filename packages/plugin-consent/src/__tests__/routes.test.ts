@@ -1,6 +1,6 @@
 import http from "node:http";
 import express, { type Express, type RequestHandler } from "express";
-import type { StormContext } from "@stormstack/core";
+import type { StormContext } from "@stormeoio/core";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { createConsentRoutes } from "../routes";
 import { consentPreferences, type ConsentPreference } from "../schema";
@@ -370,7 +370,7 @@ describe("routes consentement", () => {
         policyVersion: "2026-08",
         withdrawnAt: expect.any(String),
       }),
-      "@stormstack/consent",
+      "@stormeoio/consent",
     );
   });
 

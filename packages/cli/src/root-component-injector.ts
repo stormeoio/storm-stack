@@ -127,7 +127,7 @@ export function injectRootComponent(
     }
     const useStormAlreadyImported = hasUniqueRuntimeNamedImport(
       content,
-      "@stormstack/react",
+      "@stormeoio/react",
       "useStorm",
     );
     if (!useStormAlreadyImported && findNamedImportBinding(content, "useStorm")) {
@@ -140,7 +140,7 @@ export function injectRootComponent(
     if (!useStormAlreadyImported) {
       content = insertImport(
         content,
-        `import { useStorm } from "@stormstack/react"; // ${importMarker(plugin, "auth")}`,
+        `import { useStorm } from "@stormeoio/react"; // ${importMarker(plugin, "auth")}`,
       );
     }
 
@@ -206,7 +206,7 @@ function rootComponentIsConfigured(
   const helperName = wrapperName(plugin);
   return content.includes(authMarker(plugin, "start"))
     && content.includes(authMarker(plugin, "end"))
-    && hasUniqueRuntimeNamedImport(content, "@stormstack/react", "useStorm")
+    && hasUniqueRuntimeNamedImport(content, "@stormeoio/react", "useStorm")
     && content.includes(`function ${helperName}`)
     && content.includes(`return user ? <${componentName} /> : null`)
     && content.includes(`<${helperName} />`);

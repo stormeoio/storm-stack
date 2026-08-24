@@ -199,7 +199,7 @@ ${pc.bold("Options (deps):")}
   --json           Sortie JSON (pour scripting)
 
 ${pc.bold("Options (create-plugin):")}
-  --yes, -y        Utiliser les valeurs par défaut (scope @stormstack, avec auth)
+  --yes, -y        Utiliser les valeurs par défaut (scope @stormeoio, avec auth)
 
 ${pc.bold("Options (update):")}
   --dry-run        Voir les mises à jour sans appliquer

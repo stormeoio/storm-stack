@@ -1,18 +1,18 @@
-# @stormstack/testing
+# @stormeoio/testing
 
 Testing utilities for Storm Stack plugins: test contexts, Express test apps, request helpers, mock plugins, and event assertions.
 
 ## Installation
 
 ```bash
-npm install -D @stormstack/testing vitest
+npm install -D @stormeoio/testing vitest
 ```
 
 ## Usage
 
 ```ts
 import { describe, expect, it } from "vitest";
-import { createTestApp, createMockPlugin, expectEventEmitted } from "@stormstack/testing";
+import { createTestApp, createMockPlugin, expectEventEmitted } from "@stormeoio/testing";
 
 describe("my plugin", () => {
   it("boots and emits events", async () => {

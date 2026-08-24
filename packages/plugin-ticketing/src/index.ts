@@ -1,4 +1,4 @@
-import type { StormPlugin } from "@stormstack/core";
+import type { StormPlugin } from "@stormeoio/core";
 import { z } from "zod";
 import { tickets, ticketComments, ticketLabels, ticketStatusEnum, ticketPriorityEnum } from "./schema";
 import { createTicketingRoutes } from "./routes";
@@ -14,13 +14,13 @@ export {
 export type { Ticket, InsertTicket, TicketComment, TicketLabel } from "./schema";
 
 export const ticketingPlugin: StormPlugin = {
-  id: "@stormstack/ticketing",
+  id: "@stormeoio/ticketing",
   name: "Ticketing",
   version: PACKAGE_VERSION,
   description: "Tickets support, commentaires internes et labels pour gérer les demandes clients",
   tags: ["support", "tickets", "feedback", "helpdesk"],
   pricing: "free",
-  requires: ["@stormstack/auth"],
+  requires: ["@stormeoio/auth"],
 
   events: {
     emits: [

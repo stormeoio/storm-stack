@@ -1,5 +1,5 @@
 {
-  "name": "create-storm-app",
+  "name": "@stormeoio/create-storm-app",
   "version": "0.1.1",
   "description": "Scaffold a new Storm Stack application",
   "bin": {

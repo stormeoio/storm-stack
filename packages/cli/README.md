@@ -1,17 +1,17 @@
-# @stormstack/cli
+# @stormeoio/cli
 
 CLI for managing Storm Stack plugins.
 
 ## Install
 
 ```bash
-npm install -g @stormstack/cli
+npm install -g @stormeoio/cli
 ```
 
 Or use directly with `npx`:
 
 ```bash
-npx @stormstack/cli add auth
+npx @stormeoio/cli add auth
 ```
 
 ## Commands
@@ -68,7 +68,7 @@ storm init
   "pluginsDir": "plugins",
   "serverEntry": "server/index.ts",
   "drizzleConfig": "drizzle.config.ts",
-  "installed": ["@stormstack/auth", "@stormstack/crm"]
+  "installed": ["@stormeoio/auth", "@stormeoio/crm"]
 }
 ```
 

@@ -38,7 +38,7 @@ export async function createPluginCommand(nameArg?: string, opts: CreatePluginOp
     const scope = await p.text({
       message: "Scope npm (organisation)",
       placeholder: "@my-org",
-      defaultValue: "@stormstack",
+      defaultValue: "@stormeoio",
     });
     if (p.isCancel(scope)) { p.cancel("Annulé."); return; }
     orgScope = (scope as string).replace(/^@?/, "@");
@@ -52,13 +52,13 @@ export async function createPluginCommand(nameArg?: string, opts: CreatePluginOp
     description = desc as string;
 
     const auth = await p.confirm({
-      message: "Dépend de @stormstack/auth ?",
+      message: "Dépend de @stormeoio/auth ?",
       initialValue: true,
     });
     if (p.isCancel(auth)) { p.cancel("Annulé."); return; }
     requiresAuth = auth as boolean;
   } else {
-    orgScope = "@stormstack";
+    orgScope = "@stormeoio";
     description = `Plugin ${pluginName}`;
   }
 
@@ -117,7 +117,7 @@ export async function createPluginCommand(nameArg?: string, opts: CreatePluginOp
 // ── Template renderers ──────────────────────────────────────────────────────
 
 function renderPluginIndex(id: string, shortName: string, exportName: string, description: string, requiresAuth: boolean, tableName: string): string {
-  return `import type { StormPlugin } from "@stormstack/core";
+  return `import type { StormPlugin } from "@stormeoio/core";
 import { z } from "zod";
 import { ${tableName}s } from "./schema";
 import { create${toPascalCase(shortName)}Routes } from "./routes";
@@ -131,7 +131,7 @@ export const ${exportName}: StormPlugin = {
   description: "${description}",
   tags: ["${shortName}"],
   pricing: "free",
-  ${requiresAuth ? `requires: ["@stormstack/auth"],` : `requires: [],`}
+  ${requiresAuth ? `requires: ["@stormeoio/auth"],` : `requires: [],`}
 
   schema: {
     tables: { ${tableName}s },
@@ -182,7 +182,7 @@ function renderPluginRoutes(tableName: string): string {
 import { eq, and, desc } from "drizzle-orm";
 import { z } from "zod";
 import { ${tableName}s } from "./schema";
-import type { StormContext } from "@stormstack/core";
+import type { StormContext } from "@stormeoio/core";
 import type { RequestHandler } from "express";
 
 const createSchema = z.object({
@@ -266,10 +266,10 @@ function renderPackageJson(id: string, description: string, requiresAuth: boolea
     "zod": "^3.22.0",
   };
   const peerDeps: Record<string, string> = {
-    "@stormstack/core": STORM_PACKAGE_RANGE,
+    "@stormeoio/core": STORM_PACKAGE_RANGE,
   };
   if (requiresAuth) {
-    peerDeps["@stormstack/auth"] = STORM_PACKAGE_RANGE;
+    peerDeps["@stormeoio/auth"] = STORM_PACKAGE_RANGE;
   }
 
   return JSON.stringify({
@@ -360,7 +360,7 @@ storm add ${shortName} --copy
 
 \`\`\`ts
 import { ${exportName} } from "${id}";
-import { registry } from "@stormstack/core";
+import { registry } from "@stormeoio/core";
 
 registry.register(${exportName});
 \`\`\`
@@ -381,7 +381,7 @@ registry.register(${exportName});
 - \`${shortName}.updated\` — emitted after item update
 - \`${shortName}.deleted\` — emitted after item deletion
 
-${requiresAuth ? "## Requirements\n\n- `@stormstack/auth` (peer dependency)\n" : ""}
+${requiresAuth ? "## Requirements\n\n- `@stormeoio/auth` (peer dependency)\n" : ""}
 ## License
 
 MIT

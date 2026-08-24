@@ -7,16 +7,16 @@ import { findProjectRoot, readConfig } from "../config";
 // ─── Plugin catalog (same as manifest-route) ────────────────────────────────
 
 const PLUGIN_META: Record<string, { name: string; icon: string }> = {
-  "@stormstack/auth": { name: "Auth", icon: "🔐" },
-  "@stormstack/auth-social": { name: "Auth Social", icon: "🌐" },
-  "@stormstack/crm": { name: "CRM", icon: "👥" },
-  "@stormstack/ticketing": { name: "Ticketing", icon: "🎫" },
-  "@stormstack/stripe": { name: "Stripe", icon: "💳" },
-  "@stormstack/billing": { name: "Billing", icon: "📄" },
-  "@stormstack/cms": { name: "CMS", icon: "📝" },
-  "@stormstack/messaging": { name: "Messaging", icon: "💬" },
-  "@stormstack/drive": { name: "Drive", icon: "📁" },
-  "@stormstack/monitoring": { name: "Monitoring", icon: "📡" },
+  "@stormeoio/auth": { name: "Auth", icon: "🔐" },
+  "@stormeoio/auth-social": { name: "Auth Social", icon: "🌐" },
+  "@stormeoio/crm": { name: "CRM", icon: "👥" },
+  "@stormeoio/ticketing": { name: "Ticketing", icon: "🎫" },
+  "@stormeoio/stripe": { name: "Stripe", icon: "💳" },
+  "@stormeoio/billing": { name: "Billing", icon: "📄" },
+  "@stormeoio/cms": { name: "CMS", icon: "📝" },
+  "@stormeoio/messaging": { name: "Messaging", icon: "💬" },
+  "@stormeoio/drive": { name: "Drive", icon: "📁" },
+  "@stormeoio/monitoring": { name: "Monitoring", icon: "📡" },
 };
 
 export async function infoCommand(): Promise<void> {
@@ -48,7 +48,7 @@ export async function infoCommand(): Promise<void> {
     for (const id of config.installed) {
       const meta = PLUGIN_META[id];
       const icon = meta?.icon ?? "📦";
-      const name = meta?.name ?? id.replace("@stormstack/", "");
+      const name = meta?.name ?? id.replace("@stormeoio/", "");
       console.log(`           ${icon} ${pc.cyan(name)} ${pc.dim(id)}`);
     }
   }

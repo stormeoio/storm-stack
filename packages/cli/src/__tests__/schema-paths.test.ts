@@ -7,7 +7,7 @@ import { injectDrizzleSchema } from "../injector";
 import { drizzleSchemaReference, pluginSchemaCandidates, resolvePluginSchemaFile } from "../schema-paths";
 import { PLUGINS, type PluginMeta } from "../registry";
 
-const authPlugin = PLUGINS.find((plugin) => plugin.id === "@stormstack/auth") as PluginMeta;
+const authPlugin = PLUGINS.find((plugin) => plugin.id === "@stormeoio/auth") as PluginMeta;
 
 let root: string;
 
@@ -49,7 +49,7 @@ export default defineConfig({
       "plugins",
     )).toMatchObject({ modified: false, configured: true });
     const drizzle = readFile("drizzle.config.ts");
-    expect(drizzle).toContain('"node_modules/@stormstack/auth/dist/index.js"');
+    expect(drizzle).toContain('"node_modules/@stormeoio/auth/dist/index.js"');
     expect(drizzle).not.toContain("/dist/schema.js");
   });
 
@@ -61,7 +61,7 @@ export default defineConfig({
 
   it("resolves local source schemas before packaged entrypoints", () => {
     writeFile("vendor/plugins/auth/schema.ts", "export const localSchema = true;");
-    writeFile("node_modules/@stormstack/auth/dist/index.js", "export const packageSchema = true;");
+    writeFile("node_modules/@stormeoio/auth/dist/index.js", "export const packageSchema = true;");
 
     expect(resolvePluginSchemaFile(root, authPlugin, "vendor/plugins")).toBe(
       path.join(root, "vendor/plugins/auth/schema.ts"),
@@ -69,15 +69,15 @@ export default defineConfig({
   });
 
   it("falls back to legacy dist/schema.js for older packages", () => {
-    writeFile("node_modules/@stormstack/auth/dist/schema.js", "export const legacySchema = true;");
+    writeFile("node_modules/@stormeoio/auth/dist/schema.js", "export const legacySchema = true;");
 
     expect(pluginSchemaCandidates(root, authPlugin, "plugins")).toEqual([
       path.join(root, "plugins/auth/schema.ts"),
-      path.join(root, "node_modules/@stormstack/auth/dist/index.js"),
-      path.join(root, "node_modules/@stormstack/auth/dist/schema.js"),
+      path.join(root, "node_modules/@stormeoio/auth/dist/index.js"),
+      path.join(root, "node_modules/@stormeoio/auth/dist/schema.js"),
     ]);
     expect(resolvePluginSchemaFile(root, authPlugin, "plugins")).toBe(
-      path.join(root, "node_modules/@stormstack/auth/dist/schema.js"),
+      path.join(root, "node_modules/@stormeoio/auth/dist/schema.js"),
     );
   });
 });

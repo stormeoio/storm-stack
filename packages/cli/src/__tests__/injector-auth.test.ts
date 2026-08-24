@@ -36,7 +36,7 @@ afterEach(() => {
 
 describe("auth plugin server injection", () => {
   it("adds and removes the guard in compact bootstrap syntax without deleting bootstrap options", () => {
-    const serverEntry = createServer(`import { registry, bootstrapPlugins } from "@stormstack/core";\n\nasync function main() {\n  await bootstrapPlugins({ app, ctx: { db: ctx.db, env, logger } });\n}\n`);
+    const serverEntry = createServer(`import { registry, bootstrapPlugins } from "@stormeoio/core";\n\nasync function main() {\n  await bootstrapPlugins({ app, ctx: { db: ctx.db, env, logger } });\n}\n`);
 
     expect(injectPluginRegistration(serverEntry, authPlugin(), "npm", "plugins")).toEqual({ modified: true });
 
@@ -56,7 +56,7 @@ describe("auth plugin server injection", () => {
   });
 
   it("uses ctx.db when ctx is the last shorthand bootstrap option", () => {
-    const serverEntry = createServer(`import { registry, bootstrapPlugins } from "@stormstack/core";\nconst ctx = { db };\nasync function main() {\n  await bootstrapPlugins({ app, ctx });\n}\n`);
+    const serverEntry = createServer(`import { registry, bootstrapPlugins } from "@stormeoio/core";\nconst ctx = { db };\nasync function main() {\n  await bootstrapPlugins({ app, ctx });\n}\n`);
 
     expect(injectPluginRegistration(serverEntry, authPlugin(), "npm", "plugins")).toEqual({ modified: true });
     expect(fs.readFileSync(serverEntry, "utf8")).toContain(
@@ -65,7 +65,7 @@ describe("auth plugin server injection", () => {
   });
 
   it("finds a safe inline db member even when db is not the first context property", () => {
-    const serverEntry = createServer(`import { registry, bootstrapPlugins } from "@stormstack/core";\nasync function main() {\n  await bootstrapPlugins({\n    app,\n    ctx: { env, db: services.database, logger },\n  });\n}\n`);
+    const serverEntry = createServer(`import { registry, bootstrapPlugins } from "@stormeoio/core";\nasync function main() {\n  await bootstrapPlugins({\n    app,\n    ctx: { env, db: services.database, logger },\n  });\n}\n`);
 
     expect(injectPluginRegistration(serverEntry, authPlugin(), "npm", "plugins")).toEqual({ modified: true });
     expect(fs.readFileSync(serverEntry, "utf8")).toContain(
@@ -74,7 +74,7 @@ describe("auth plugin server injection", () => {
   });
 
   it("ignores requireAdmin occurrences outside the exact bootstrap options object", () => {
-    const serverEntry = createServer(`import { registry, bootstrapPlugins } from "@stormstack/core";\nconst routeMetadata = { requireAdmin: false };\nasync function main() {\n  await bootstrapPlugins({ app, ctx });\n}\n`);
+    const serverEntry = createServer(`import { registry, bootstrapPlugins } from "@stormeoio/core";\nconst routeMetadata = { requireAdmin: false };\nasync function main() {\n  await bootstrapPlugins({ app, ctx });\n}\n`);
 
     expect(injectPluginRegistration(serverEntry, authPlugin(), "npm", "plugins")).toEqual({ modified: true });
     const injected = fs.readFileSync(serverEntry, "utf8");
@@ -84,7 +84,7 @@ describe("auth plugin server injection", () => {
   });
 
   it("injects and verifies the guard when whitespace separates bootstrapPlugins and its call", () => {
-    const serverEntry = createServer(`import { registry, bootstrapPlugins } from "@stormstack/core";\nasync function main() {\n  await bootstrapPlugins ({ app, ctx });\n}\n`);
+    const serverEntry = createServer(`import { registry, bootstrapPlugins } from "@stormeoio/core";\nasync function main() {\n  await bootstrapPlugins ({ app, ctx });\n}\n`);
 
     expect(injectPluginRegistration(serverEntry, authPlugin(), "npm", "plugins")).toEqual({ modified: true });
     const injected = fs.readFileSync(serverEntry, "utf8");
@@ -97,11 +97,11 @@ describe("auth plugin server injection", () => {
   // Runtime bootstrap exports stay grouped.
   registry,
   bootstrapPlugins,
-} from "@stormstack/core";
+} from "@stormeoio/core";
 import type {
   StormContext,
   StormEnv,
-} from "@stormstack/core"; // type-only import
+} from "@stormeoio/core"; // type-only import
 
 /*
 import { fakePlugin } from "comment-only";
@@ -116,8 +116,8 @@ async function main() {
     expect(injectPluginRegistration(serverEntry, authPlugin(), "npm", "plugins")).toEqual({ modified: true });
 
     const injected = fs.readFileSync(serverEntry, "utf8");
-    const typeImport = `} from "@stormstack/core"; // type-only import`;
-    const authImport = `import { authPlugin, createDatabaseRoleGuard } from "@stormstack/auth";`;
+    const typeImport = `} from "@stormeoio/core"; // type-only import`;
+    const authImport = `import { authPlugin, createDatabaseRoleGuard } from "@stormeoio/auth";`;
     expect(injected.indexOf(authImport)).toBeGreaterThan(injected.indexOf(typeImport));
     expect(injected.indexOf(authImport)).toBeLessThan(injected.indexOf("/*\nimport { fakePlugin }"));
     expect(injected).toContain("// Runtime bootstrap exports stay grouped.");
@@ -129,7 +129,7 @@ async function main() {
   });
 
   it("migrates an existing auth registration without duplicating it", () => {
-    const serverEntry = createServer(`import { registry, bootstrapPlugins } from "@stormstack/core";\nimport { authPlugin } from "@stormstack/auth";\nconst routeMetadata = { requireAdmin: false };\nregistry.register(authPlugin);\nasync function main() {\n  await bootstrapPlugins ({ app, ctx });\n}\n`);
+    const serverEntry = createServer(`import { registry, bootstrapPlugins } from "@stormeoio/core";\nimport { authPlugin } from "@stormeoio/auth";\nconst routeMetadata = { requireAdmin: false };\nregistry.register(authPlugin);\nasync function main() {\n  await bootstrapPlugins ({ app, ctx });\n}\n`);
 
     expect(ensureDatabaseAdminGuardWiring(serverEntry)).toEqual({
       modified: true,
@@ -137,7 +137,7 @@ async function main() {
     });
     const migrated = fs.readFileSync(serverEntry, "utf8");
     expect(migrated).toContain(
-      `import { authPlugin, createDatabaseRoleGuard } from "@stormstack/auth";`,
+      `import { authPlugin, createDatabaseRoleGuard } from "@stormeoio/auth";`,
     );
     expect(migrated.match(/registry\.register\(authPlugin\)/g)).toHaveLength(1);
     expect(migrated).toContain(`requireAdmin: createDatabaseRoleGuard(ctx.db, "admin")`);
@@ -145,7 +145,7 @@ async function main() {
   });
 
   it("fails closed without touching an ambiguous server containing two bootstrap calls", () => {
-    const original = `import { registry, bootstrapPlugins } from "@stormstack/core";\nimport { authPlugin } from "@stormstack/auth";\nregistry.register(authPlugin);\nasync function first() { await bootstrapPlugins({ app, ctx }); }\nasync function second() { await bootstrapPlugins({ app, ctx }); }\n`;
+    const original = `import { registry, bootstrapPlugins } from "@stormeoio/core";\nimport { authPlugin } from "@stormeoio/auth";\nregistry.register(authPlugin);\nasync function first() { await bootstrapPlugins({ app, ctx }); }\nasync function second() { await bootstrapPlugins({ app, ctx }); }\n`;
     const serverEntry = createServer(original);
 
     expect(ensureDatabaseAdminGuardWiring(serverEntry)).toMatchObject({
@@ -160,7 +160,7 @@ async function main() {
     "createContext(db)",
     "{ env, db: createDatabase(), logger }",
   ])("refuses the ambiguous context expression %s without modifying the file", (contextExpression) => {
-    const original = `import { registry, bootstrapPlugins } from "@stormstack/core";\nasync function main() {\n  await bootstrapPlugins({ app, ctx: ${contextExpression} });\n}\n`;
+    const original = `import { registry, bootstrapPlugins } from "@stormeoio/core";\nasync function main() {\n  await bootstrapPlugins({ app, ctx: ${contextExpression} });\n}\n`;
     const serverEntry = createServer(original);
 
     expect(injectPluginRegistration(serverEntry, authPlugin(), "npm", "plugins")).toMatchObject({

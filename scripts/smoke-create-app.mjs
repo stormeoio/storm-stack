@@ -13,13 +13,13 @@ const rootPackageVersion = readRootPackageJson().version;
 
 const packageWorkspaces = releasePackageDirs.map((workspace) => [readPackageJson(workspace).name, workspace]);
 const generatedStormDependencies = [
-  "@stormstack/core",
-  "@stormstack/react",
-  "@stormstack/auth",
-  "@stormstack/consent",
-  "@stormstack/crm",
-  "@stormstack/ticketing",
-  "@stormstack/stripe",
+  "@stormeoio/core",
+  "@stormeoio/react",
+  "@stormeoio/auth",
+  "@stormeoio/consent",
+  "@stormeoio/crm",
+  "@stormeoio/ticketing",
+  "@stormeoio/stripe",
 ];
 
 function run(command, args, options = {}) {
@@ -68,11 +68,11 @@ function patchStormDependencies(appDir, tarballs) {
 function assertGeneratedApp(appDir) {
   const pkg = JSON.parse(readFileSync(path.join(appDir, "package.json"), "utf8"));
   const expectedStormRange = `^${rootPackageVersion}`;
-  if (!pkg.devDependencies?.["@stormstack/cli"]) {
-    throw new Error("Generated app must include @stormstack/cli because scripts call storm dev");
+  if (!pkg.devDependencies?.["@stormeoio/cli"]) {
+    throw new Error("Generated app must include @stormeoio/cli because scripts call storm dev");
   }
-  if (pkg.devDependencies["@stormstack/cli"] !== expectedStormRange) {
-    throw new Error(`Generated app must use ${expectedStormRange} for @stormstack/cli`);
+  if (pkg.devDependencies["@stormeoio/cli"] !== expectedStormRange) {
+    throw new Error(`Generated app must use ${expectedStormRange} for @stormeoio/cli`);
   }
   for (const name of generatedStormDependencies) {
     if (pkg.dependencies?.[name] !== expectedStormRange) {
@@ -139,7 +139,7 @@ async function main() {
     scaffold(
       {
         projectName: "generated-app",
-        plugins: ["@stormstack/auth", "@stormstack/consent", "@stormstack/crm", "@stormstack/ticketing", "@stormstack/stripe"],
+        plugins: ["@stormeoio/auth", "@stormeoio/consent", "@stormeoio/crm", "@stormeoio/ticketing", "@stormeoio/stripe"],
         packageManager: "npm",
         withClient: true,
       },
@@ -153,7 +153,7 @@ async function main() {
     run("npm", ["run", "typecheck"], { cwd: appDir, stdio: "inherit" });
     run("npm", ["run", "build"], { cwd: appDir, stdio: "inherit" });
 
-    console.log("create-storm-app smoke test passed");
+    console.log("@stormeoio/create-storm-app smoke test passed");
   } finally {
     rmSync(workDir, { recursive: true, force: true });
   }

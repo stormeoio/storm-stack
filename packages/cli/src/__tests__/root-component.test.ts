@@ -19,7 +19,7 @@ function fixture(): { root: string; appPath: string } {
   temporaryDirectories.push(root);
   const appPath = path.join(root, "client/src/App.tsx");
   fs.mkdirSync(path.dirname(appPath), { recursive: true });
-  fs.writeFileSync(appPath, `import { StormLayout } from "@stormstack/react";
+  fs.writeFileSync(appPath, `import { StormLayout } from "@stormeoio/react";
 
 export default function App() {
   return (
@@ -95,12 +95,12 @@ describe("root component injection", () => {
     expect(injectRootComponent(root, consent, "npm", "plugins"))
       .toMatchObject({ modified: false, configured: true });
     let source = fs.readFileSync(appPath, "utf8");
-    expect(source).toContain('import { ConsentBanner } from "@stormstack/consent/client"');
-    expect(source).toContain('import { useStorm } from "@stormstack/react"');
+    expect(source).toContain('import { ConsentBanner } from "@stormeoio/consent/client"');
+    expect(source).toContain('import { useStorm } from "@stormeoio/react"');
     expect(source).toContain("const { user } = useStorm()");
     expect(source).toContain("return user ? <ConsentBanner /> : null");
     expect(source).toContain("<StormRootConsentBanner />");
-    expect(source).toContain("storm:root-component @stormstack/consent:start");
+    expect(source).toContain("storm:root-component @stormeoio/consent:start");
 
     expect(removeRootComponent(root, consent).modified).toBe(true);
     expect(removeRootComponent(root, consent).modified).toBe(false);
@@ -119,11 +119,11 @@ describe("root component injection", () => {
   // The auth hook remains an active binding after this comment.
   useStorm,
   StormRouter,
-} from "@stormstack/react";
+} from "@stormeoio/react";
 import {
   /* The banner is already imported and must not be duplicated. */
   ConsentBanner,
-} from "@stormstack/consent/client";
+} from "@stormeoio/consent/client";
 
 export default function App() {
   return <StormLayout appName="Test">
@@ -166,7 +166,7 @@ export default function App() {
     const before = `import {
   /* Keep the existing client binding. */
   ConsentBanner,
-} from "@stormstack/consent/client";
+} from "@stormeoio/consent/client";
 
 export const STORM_COMPONENTS = {
   ConsentBanner: ConsentBanner,
@@ -211,7 +211,7 @@ export const STORM_COMPONENTS = {
     const before = `import {
   StormLayout,
   StormRouter,
-} from "@stormstack/react";
+} from "@stormeoio/react";
 
 export default function Shell() {
   return <StormLayout appName="Test">
@@ -246,25 +246,25 @@ export default function Shell() {
     const consent = resolvePlugin("consent");
     if (!consent) throw new Error("Consent plugin metadata missing");
     const { root, appPath } = fixture();
-    fs.writeFileSync(appPath, `import { StormLayout, StormRouter } from "@stormstack/react";
-import { useStorm } from "@stormstack/react"; // storm:root-auth-import @stormstack/consent
-import { ConsentBanner } from "@stormstack/consent/client"; // storm:root-component-import @stormstack/consent
+    fs.writeFileSync(appPath, `import { StormLayout, StormRouter } from "@stormeoio/react";
+import { useStorm } from "@stormeoio/react"; // storm:root-auth-import @stormeoio/consent
+import { ConsentBanner } from "@stormeoio/consent/client"; // storm:root-component-import @stormeoio/consent
 
-/* storm:root-auth @stormstack/consent:start */
+/* storm:root-auth @stormeoio/consent:start */
 function StormRootConsentBanner() {
   const { user } = useStorm();
   return user ? <ConsentBanner policyVersion="2026-08" /> : null;
 }
-/* storm:root-auth @stormstack/consent:end */
+/* storm:root-auth @stormeoio/consent:end */
 
 export default function App() {
   return (
     <>
       <StormLayout appName="Test"><StormRouter /></StormLayout>
       {/* storm:root-components */}
-      {/* storm:root-component @stormstack/consent:start */}
+      {/* storm:root-component @stormeoio/consent:start */}
       <StormRootConsentBanner />
-      {/* storm:root-component @stormstack/consent:end */}
+      {/* storm:root-component @stormeoio/consent:end */}
     </>
   );
 }
@@ -281,7 +281,7 @@ export default function App() {
     const consent = resolvePlugin("consent");
     if (!consent) throw new Error("Consent plugin metadata missing");
     const { root, appPath } = fixture();
-    fs.writeFileSync(appPath, `import { useStorm } from "@stormstack/react";
+    fs.writeFileSync(appPath, `import { useStorm } from "@stormeoio/react";
 
 export default function App(): JSX.Element {
   const { user } = useStorm();
@@ -295,7 +295,7 @@ export default function App(): JSX.Element {
     expect(injectRootComponent(root, consent, "npm", "plugins").modified).toBe(true);
     expect(removeRootComponent(root, consent).modified).toBe(true);
     const source = fs.readFileSync(appPath, "utf8");
-    expect(source).toContain('import { useStorm } from "@stormstack/react"');
+    expect(source).toContain('import { useStorm } from "@stormeoio/react"');
     expect(source).toContain("const { user } = useStorm()");
     expect(source).toContain("console.log(user)");
     expect(source).not.toContain("ConsentBanner");
@@ -305,8 +305,8 @@ export default function App(): JSX.Element {
     const consent = resolvePlugin("consent");
     if (!consent) throw new Error("Consent plugin metadata missing");
     const { root, appPath } = fixture();
-    fs.writeFileSync(appPath, `import { StormLayout, useStorm as existingStormHook } from "@stormstack/react";
-import { ConsentBanner as ExistingConsentBanner } from "@stormstack/consent/client";
+    fs.writeFileSync(appPath, `import { StormLayout, useStorm as existingStormHook } from "@stormeoio/react";
+import { ConsentBanner as ExistingConsentBanner } from "@stormeoio/consent/client";
 
 void existingStormHook;
 void ExistingConsentBanner;
@@ -321,8 +321,8 @@ export default function App() {
 
     expect(injectRootComponent(root, consent, "npm", "plugins").modified).toBe(true);
     const source = fs.readFileSync(appPath, "utf8");
-    expect(source).toContain('import { useStorm } from "@stormstack/react";');
-    expect(source).toContain('import { ConsentBanner } from "@stormstack/consent/client";');
+    expect(source).toContain('import { useStorm } from "@stormeoio/react";');
+    expect(source).toContain('import { ConsentBanner } from "@stormeoio/consent/client";');
     expect(source).toContain("const { user } = useStorm()");
     expect(source).toContain("return user ? <ConsentBanner /> : null");
   });
@@ -331,7 +331,7 @@ export default function App() {
     const consent = resolvePlugin("consent");
     if (!consent) throw new Error("Consent plugin metadata missing");
     const { root, appPath } = fixture();
-    const before = `import type { useStorm } from "@stormstack/react";
+    const before = `import type { useStorm } from "@stormeoio/react";
 
 export default function App() {
   return <>
@@ -354,8 +354,8 @@ export default function App() {
     if (!consent) throw new Error("Consent plugin metadata missing");
     const { root, appPath } = fixture();
     const before = fs.readFileSync(appPath, "utf8").replace(
-      'import { StormLayout } from "@stormstack/react";',
-      'import { StormLayout } from "@stormstack/react";\nimport { useStorm } from "custom-hooks";',
+      'import { StormLayout } from "@stormeoio/react";',
+      'import { StormLayout } from "@stormeoio/react";\nimport { useStorm } from "custom-hooks";',
     );
     fs.writeFileSync(appPath, before);
 
@@ -372,7 +372,7 @@ export default function App() {
     const { root, appPath } = fixture();
     expect(injectRootComponent(root, consent, "npm", "plugins").modified).toBe(true);
     const before = fs.readFileSync(appPath, "utf8").replace(
-      "      {/* storm:root-component @stormstack/consent:end */}\n",
+      "      {/* storm:root-component @stormeoio/consent:end */}\n",
       "",
     );
     fs.writeFileSync(appPath, before);
@@ -390,8 +390,8 @@ export default function App() {
     if (!consent) throw new Error("Consent plugin metadata missing");
     const { root, appPath } = fixture();
     const before = fs.readFileSync(appPath, "utf8").replace(
-      'import { StormLayout } from "@stormstack/react";',
-      'import { StormLayout } from "@stormstack/react";\nimport { ConsentBanner } from "@stormstack/consent/client"; // storm:root-component-import @stormstack/consent',
+      'import { StormLayout } from "@stormeoio/react";',
+      'import { StormLayout } from "@stormeoio/react";\nimport { ConsentBanner } from "@stormeoio/consent/client"; // storm:root-component-import @stormeoio/consent',
     );
     fs.writeFileSync(appPath, before);
 

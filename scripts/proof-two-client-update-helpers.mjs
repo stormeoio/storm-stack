@@ -663,7 +663,7 @@ export function patchStormDependencies(packageJson, artifacts) {
       installed.push(name);
     }
   }
-  if (!installed.includes("@stormstack/core") || !installed.includes("@stormstack/cli")) {
+  if (!installed.includes("@stormeoio/core") || !installed.includes("@stormeoio/cli")) {
     throw new ProofBlockedError("Generated fixture is missing core or CLI Storm Stack dependencies", "install");
   }
   return { packageJson: patched, installed: [...new Set(installed)].sort() };
@@ -693,7 +693,7 @@ export function assertInstalledTrain(appDir, artifacts, expectedVersion) {
 
   for (const section of ["dependencies", "devDependencies", "optionalDependencies"]) {
     for (const [name, specifier] of Object.entries(packageJson[section] ?? {})) {
-      if (!name.startsWith("@stormstack/") && name !== "create-storm-app") continue;
+      if (!name.startsWith("@stormeoio/") && name !== "@stormeoio/create-storm-app") continue;
       const artifact = byName.get(name);
       if (!artifact || specifier !== `file:${artifact.tarballPath}`) {
         throw new ProofBlockedError(`Package manifest does not pin the expected tarball for ${name}`, "lockfile");

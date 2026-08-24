@@ -8,11 +8,11 @@ const selectedPluginDefinitions = (plugins: string[]) =>
   selectGeneratedPluginDefinitions(plugins);
 const hasPlugin = (plugins: string[], id: string) =>
   selectedPluginDefinitions(plugins).some((definition) => definition.id === id);
-const hasAuth = (plugins: string[]) => hasPlugin(plugins, "@stormstack/auth");
-const hasCrm = (plugins: string[]) => hasPlugin(plugins, "@stormstack/crm");
-const hasTicketing = (plugins: string[]) => hasPlugin(plugins, "@stormstack/ticketing");
-const hasStripe = (plugins: string[]) => hasPlugin(plugins, "@stormstack/stripe");
-const hasConsent = (plugins: string[]) => hasPlugin(plugins, "@stormstack/consent");
+const hasAuth = (plugins: string[]) => hasPlugin(plugins, "@stormeoio/auth");
+const hasCrm = (plugins: string[]) => hasPlugin(plugins, "@stormeoio/crm");
+const hasTicketing = (plugins: string[]) => hasPlugin(plugins, "@stormeoio/ticketing");
+const hasStripe = (plugins: string[]) => hasPlugin(plugins, "@stormeoio/stripe");
+const hasConsent = (plugins: string[]) => hasPlugin(plugins, "@stormeoio/consent");
 
 export const SESSION_SECRET_PLACEHOLDER = "change-me-to-a-random-32-char-secret-minimum";
 export const SESSION_SECRET_SETUP_SCRIPT =
@@ -55,7 +55,7 @@ function renderRootPackageJson(opts: ScaffoldOptions): string {
   }
 
   const deps: Record<string, string> = {
-    "@stormstack/core": STORM_PACKAGE_RANGE,
+    "@stormeoio/core": STORM_PACKAGE_RANGE,
     cors: "^2.8.5",
     dotenv: "^16.4.0",
     "drizzle-orm": "^0.45.2",
@@ -69,7 +69,7 @@ function renderRootPackageJson(opts: ScaffoldOptions): string {
   }
 
   const devDeps: Record<string, string> = {
-    "@stormstack/cli": STORM_PACKAGE_RANGE,
+    "@stormeoio/cli": STORM_PACKAGE_RANGE,
     "@types/cors": "^2.8.17",
     "@types/express": "^5.0.0",
     "@types/node": "^20.19.0",
@@ -82,7 +82,7 @@ function renderRootPackageJson(opts: ScaffoldOptions): string {
   if (opts.withClient) {
     deps["react"] = "^18.3.0";
     deps["react-dom"] = "^18.3.0";
-    deps["@stormstack/react"] = STORM_PACKAGE_RANGE;
+    deps["@stormeoio/react"] = STORM_PACKAGE_RANGE;
     deps["@tanstack/react-query"] = "^5.0.0";
     deps["wouter"] = "^3.3.0";
     deps["clsx"] = "^2.1.0";
@@ -183,9 +183,9 @@ function renderServerIndex(opts: ScaffoldOptions): string {
     `import cors from "cors";`,
     `import { drizzle } from "drizzle-orm/node-postgres";`,
     `import { Pool } from "pg";`,
-    `import { registry, bootstrapPlugins, eventBus } from "@stormstack/core";`,
-    `import type { StormContext, StormEnv } from "@stormstack/core";`,
-    `import { createCsrfProtection } from "@stormstack/core/csrf";`,
+    `import { registry, bootstrapPlugins, eventBus } from "@stormeoio/core";`,
+    `import type { StormContext, StormEnv } from "@stormeoio/core";`,
+    `import { createCsrfProtection } from "@stormeoio/core/csrf";`,
     `import { normalizeAppOrigin } from "./app-origin.js";`,
   ];
   const selectedPlugins = selectedPluginDefinitions(opts.plugins);
@@ -403,7 +403,7 @@ function renderMainTsx(): string {
   return `import React from "react";
 import ReactDOM from "react-dom/client";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { StormProvider } from "@stormstack/react";
+import { StormProvider } from "@stormeoio/react";
 import App from "./App";
 import { STORM_COMPONENTS } from "./storm-components";
 import "./index.css";
@@ -437,7 +437,7 @@ body {
 }
 
 function renderApiLib(): string {
-  return `import { csrfFetch } from "@stormstack/core/csrf-client";
+  return `import { csrfFetch } from "@stormeoio/core/csrf-client";
 
 const BASE = "/api";
 const MUTATION_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
@@ -472,18 +472,18 @@ function renderAppTsx(opts: ScaffoldOptions): string {
   const hasConsentPlugin = hasConsent(opts.plugins);
 
   return `import { Route } from "wouter";
-import { StormLayout, StormRouter } from "@stormstack/react";
-${hasConsentPlugin ? `import { useStorm } from "@stormstack/react"; // storm:root-auth-import @stormstack/consent\n` : ""}import { useQueryClient } from "@tanstack/react-query";
+import { StormLayout, StormRouter } from "@stormeoio/react";
+${hasConsentPlugin ? `import { useStorm } from "@stormeoio/react"; // storm:root-auth-import @stormeoio/consent\n` : ""}import { useQueryClient } from "@tanstack/react-query";
 import { api } from "./lib/api";
 import { DashboardPage } from "./pages/DashboardPage";
 ${hasAuthPlugin ? `import { LoginPage } from "./pages/LoginPage";\n` : ""}
-${hasConsentPlugin ? `import { ConsentBanner } from "@stormstack/consent/client"; // storm:root-component-import @stormstack/consent\n` : ""}
-${hasConsentPlugin ? `/* storm:root-auth @stormstack/consent:start */
+${hasConsentPlugin ? `import { ConsentBanner } from "@stormeoio/consent/client"; // storm:root-component-import @stormeoio/consent\n` : ""}
+${hasConsentPlugin ? `/* storm:root-auth @stormeoio/consent:start */
 function StormRootConsentBanner() {
   const { user } = useStorm();
   return user ? <ConsentBanner /> : null;
 }
-/* storm:root-auth @stormstack/consent:end */
+/* storm:root-auth @stormeoio/consent:end */
 
 ` : ""}export default function App() {
   const qc = useQueryClient();
@@ -509,7 +509,7 @@ function StormRootConsentBanner() {
 ${hasAuthPlugin ? `          <Route path="/login" component={LoginPage} />\n` : ""}        </StormRouter>
       </StormLayout>
       {/* storm:root-components */}
-${hasConsentPlugin ? `      {/* storm:root-component @stormstack/consent:start */}\n      <StormRootConsentBanner />\n      {/* storm:root-component @stormstack/consent:end */}\n` : ""}    </>
+${hasConsentPlugin ? `      {/* storm:root-component @stormeoio/consent:start */}\n      <StormRootConsentBanner />\n      {/* storm:root-component @stormeoio/consent:end */}\n` : ""}    </>
   );
 }
 `;
@@ -890,7 +890,7 @@ function renderClaudeMd(opts: ScaffoldOptions): string {
 ## Stack
 - **Server:** Express 5 + TypeScript + Drizzle ORM + PostgreSQL
 - **Client:** React 18 + wouter + TanStack Query + Tailwind CSS
-- **Plugin system:** \`@stormstack/core\` registry + bootstrap
+- **Plugin system:** \`@stormeoio/core\` registry + bootstrap
 
 ## Commands
 \`\`\`bash
@@ -916,7 +916,7 @@ CLAUDE.md                — This file (auto-updated by storm CLI)
 
 ## Conventions
 - API routes mounted at \`/api/<plugin-name>/\`
-- Auth routes use \`isAuthenticated\` from \`@stormstack/auth\`
+- Auth routes use \`isAuthenticated\` from \`@stormeoio/auth\`
 - Zod validation on all POST/PATCH/PUT bodies
 - French UI text for user-facing strings
 
@@ -929,7 +929,7 @@ function renderStormComponents(opts: ScaffoldOptions): string {
   const imports = selectedPlugins.flatMap((plugin) => plugin.componentImports ?? []);
   const entries = selectedPlugins.flatMap((plugin) => plugin.componentEntries ?? []);
 
-  return `${imports.length > 0 ? imports.join("\n") + "\n" : ""}import type { ComponentMap } from "@stormstack/react";
+  return `${imports.length > 0 ? imports.join("\n") + "\n" : ""}import type { ComponentMap } from "@stormeoio/react";
 
 /**
  * Maps plugin component names (from server manifest) to actual React components.

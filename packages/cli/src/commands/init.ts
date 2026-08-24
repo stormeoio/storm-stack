@@ -3,12 +3,24 @@ import pc from "picocolors";
 import fs from "fs";
 import { findProjectRoot, readConfig, writeConfig, createDefaultConfig } from "../config";
 
+export function detectInstalledPluginIds(content: string): string[] {
+  const installed = new Set<string>();
+  const importMatches = content.matchAll(/\bfrom\s+["']@stormeoio\/([^/"']+)(?:\/[^"']*)?["']/g);
+
+  for (const match of importMatches) {
+    const id = `@stormeoio/${match[1]}`;
+    if (id !== "@stormeoio/core") installed.add(id);
+  }
+
+  return [...installed];
+}
+
 export async function initCommand(): Promise<void> {
   const root = findProjectRoot();
 
   if (!root) {
     p.log.error("Aucun projet détecté (pas de package.json trouvé).");
-    p.log.info(`Lancez ${pc.cyan("npx create-storm-app my-app")} pour créer un nouveau projet.`);
+    p.log.info(`Lancez ${pc.cyan("npx @stormeoio/create-storm-app my-app")} pour créer un nouveau projet.`);
     process.exit(1);
   }
 
@@ -51,12 +63,8 @@ export async function initCommand(): Promise<void> {
   const serverPath = `${root}/${config.serverEntry}`;
   if (fs.existsSync(serverPath)) {
     const content = fs.readFileSync(serverPath, "utf8");
-    const importMatches = content.matchAll(/from\s+["']@stormstack\/([^"']+)["']/g);
-    for (const match of importMatches) {
-      const id = `@stormstack/${match[1]}`;
-      if (id !== "@stormstack/core" && !config.installed.includes(id)) {
-        config.installed.push(id);
-      }
+    for (const id of detectInstalledPluginIds(content)) {
+      if (!config.installed.includes(id)) config.installed.push(id);
     }
   }
 

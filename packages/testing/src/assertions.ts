@@ -1,4 +1,4 @@
-import type { StormEventBus } from "@stormstack/core";
+import type { StormEventBus } from "@stormeoio/core";
 
 export function expectEventEmitted(events: StormEventBus, eventName: string): void {
   const history = events.getHistory(200);

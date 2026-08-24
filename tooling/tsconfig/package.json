@@ -1,5 +1,5 @@
 {
-  "name": "@stormstack/tsconfig",
+  "name": "@stormeoio/tsconfig",
   "version": "0.0.2",
   "description": "Shared TypeScript configs for Storm Stack",
   "private": true,

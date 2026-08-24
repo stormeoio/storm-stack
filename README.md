@@ -5,7 +5,7 @@ A plugin-based framework for building full-stack SaaS applications with Express,
 ## Quick Start
 
 ```bash
-npx create-storm-app my-app
+npx @stormeoio/create-storm-app my-app
 cd my-app
 docker compose up -d
 cp .env.example .env
@@ -20,17 +20,17 @@ npm run dev
 
 | Package | Description |
 |---------|-------------|
-| [`@stormstack/core`](./packages/core) | Plugin registry & bootstrap engine |
-| [`@stormstack/auth`](./packages/plugin-auth) | Email/password + JWT + RBAC |
-| [`@stormstack/auth-social`](./packages/plugin-auth-social) | OAuth2 Google/GitHub/GitLab |
-| [`@stormstack/consent`](./packages/plugin-consent) | Préférences de consentement et bannière cookies |
-| [`@stormstack/crm`](./packages/plugin-crm) | Contacts, organisations, pipeline |
-| [`@stormstack/ticketing`](./packages/plugin-ticketing) | Support tickets & helpdesk |
-| [`@stormstack/stripe`](./packages/plugin-stripe) | Stripe payments & webhooks |
-| [`@stormstack/react`](./packages/react) | React app shell, router, admin UI |
-| [`@stormstack/testing`](./packages/testing) | Plugin test helpers |
-| [`@stormstack/cli`](./packages/cli) | Plugin install, publish, migrations, Docker |
-| [`create-storm-app`](./packages/create-storm-app) | CLI scaffold |
+| [`@stormeoio/core`](./packages/core) | Plugin registry & bootstrap engine |
+| [`@stormeoio/auth`](./packages/plugin-auth) | Email/password + JWT + RBAC |
+| [`@stormeoio/auth-social`](./packages/plugin-auth-social) | OAuth2 Google/GitHub/GitLab |
+| [`@stormeoio/consent`](./packages/plugin-consent) | Préférences de consentement et bannière cookies |
+| [`@stormeoio/crm`](./packages/plugin-crm) | Contacts, organisations, pipeline |
+| [`@stormeoio/ticketing`](./packages/plugin-ticketing) | Support tickets & helpdesk |
+| [`@stormeoio/stripe`](./packages/plugin-stripe) | Stripe payments & webhooks |
+| [`@stormeoio/react`](./packages/react) | React app shell, router, admin UI |
+| [`@stormeoio/testing`](./packages/testing) | Plugin test helpers |
+| [`@stormeoio/cli`](./packages/cli) | Plugin install, publish, migrations, Docker |
+| [`@stormeoio/create-storm-app`](./packages/create-storm-app) | CLI scaffold |
 
 ## Architecture
 
@@ -38,9 +38,9 @@ npm run dev
 ┌─────────────────────────────────────────────┐
 │               Your Application              │
 ├─────────────────────────────────────────────┤
-│  @stormstack/auth  │  @stormstack/crm  │ …  │  ← Plugins
+│  @stormeoio/auth  │  @stormeoio/crm  │ …  │  ← Plugins
 ├─────────────────────────────────────────────┤
-│              @stormstack/core                │  ← Registry + Bootstrap
+│              @stormeoio/core                │  ← Registry + Bootstrap
 ├─────────────────────────────────────────────┤
 │   Express 5  │  Drizzle ORM  │  PostgreSQL  │  ← Foundation
 └─────────────────────────────────────────────┘
@@ -56,7 +56,7 @@ Each plugin provides:
 ## Creating a plugin
 
 ```ts
-import type { StormPlugin } from "@stormstack/core";
+import type { StormPlugin } from "@stormeoio/core";
 import { Router } from "express";
 import { myTable } from "./schema";
 
@@ -65,7 +65,7 @@ export const myPlugin: StormPlugin = {
   name: "Analytics",
   version: "1.0.0",
   description: "Page views and event tracking",
-  requires: ["@stormstack/auth"],
+  requires: ["@stormeoio/auth"],
 
   schema: { tables: { myTable } },
 
@@ -90,13 +90,13 @@ Use the `storm` CLI to add plugins to an existing project:
 
 ```bash
 # Install as npm package
-npx @stormstack/cli add auth
+npx @stormeoio/cli add auth
 
 # Or copy source code into your project (shadcn-style)
-npx @stormstack/cli add crm --copy
+npx @stormeoio/cli add crm --copy
 
 # List all available plugins
-npx @stormstack/cli list
+npx @stormeoio/cli list
 ```
 
 The CLI auto-wires everything: imports, registry registration, Drizzle schema, npm dependencies.
@@ -134,15 +134,15 @@ Storm Stack v0.1.1 is release-ready: the monorepo lints, typechecks, builds, pas
 - [x] Plugin lifecycle state (`onInstall`, `onBoot`, `onUninstall`)
 - [x] Multi-tenant middleware and scoped query helpers
 - [x] Auto-generated plugin settings UI from Zod schemas
-- [x] `@stormstack/auth` — JWT + RBAC + multi-tenant
-- [x] `@stormstack/auth-social` — OAuth2 (Google, GitHub, GitLab)
-- [x] `@stormstack/consent` — préférences RGPD et bannière cookies
-- [x] `@stormstack/crm` — contacts, organisations, pipeline
-- [x] `@stormstack/ticketing` — tickets, comments, labels
-- [x] `@stormstack/stripe` — payments and webhooks
-- [x] `@stormstack/react` — app shell, dynamic router, admin dashboard
-- [x] `@stormstack/testing` — plugin test utilities
-- [x] `create-storm-app` — full-stack scaffold CLI
+- [x] `@stormeoio/auth` — JWT + RBAC + multi-tenant
+- [x] `@stormeoio/auth-social` — OAuth2 (Google, GitHub, GitLab)
+- [x] `@stormeoio/consent` — préférences RGPD et bannière cookies
+- [x] `@stormeoio/crm` — contacts, organisations, pipeline
+- [x] `@stormeoio/ticketing` — tickets, comments, labels
+- [x] `@stormeoio/stripe` — payments and webhooks
+- [x] `@stormeoio/react` — app shell, dynamic router, admin dashboard
+- [x] `@stormeoio/testing` — plugin test utilities
+- [x] `@stormeoio/create-storm-app` — full-stack scaffold CLI
 - [x] `apps/stormclaude` — admin dashboard
 - [x] `storm add <plugin>` CLI — shadcn-style plugin management
 - [x] `storm search`, `storm publish`, `storm create-plugin`

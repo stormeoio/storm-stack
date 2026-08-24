@@ -89,7 +89,7 @@ export async function addCommand(pluginArg: string | undefined, opts: AddOptions
   const missingDeps = plugin.requires.filter((dep) => !config!.installed.includes(dep));
   const pluginsToInstall: PluginMeta[] = [];
   if (missingDeps.length > 0) {
-    p.log.info(`${pc.cyan(plugin.shortName)} requiert : ${missingDeps.map((d) => pc.yellow(d.replace("@stormstack/", ""))).join(", ")}`);
+    p.log.info(`${pc.cyan(plugin.shortName)} requiert : ${missingDeps.map((d) => pc.yellow(d.replace("@stormeoio/", ""))).join(", ")}`);
     if (!opts.yes) {
       const installDeps = await p.confirm({
         message: `Installer les dépendances manquantes d'abord ?`,
@@ -158,7 +158,7 @@ async function addSinglePlugin(
       await installNpmPlugin(root, pm, plugin);
     }
 
-    if (plugin.id === "@stormstack/stripe") {
+    if (plugin.id === "@stormeoio/stripe") {
       const rawBodyResult = injectStripeWebhookRawBody(serverEntryPath);
       if (!rawBodyResult.configured) {
         throw new Error(

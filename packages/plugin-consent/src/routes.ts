@@ -2,7 +2,7 @@ import type { RequestHandler } from "express";
 import { Router } from "express";
 import { eq } from "drizzle-orm";
 import { z } from "zod";
-import type { StormContext } from "@stormstack/core";
+import type { StormContext } from "@stormeoio/core";
 import { consentPreferences } from "./schema";
 
 export const consentConfigSchema = z.object({
@@ -94,7 +94,7 @@ export function createConsentRoutes(
     events.emit("consent.preferences_updated", {
       userId: req.user!.id,
       policyVersion: consent.policyVersion,
-    }, "@stormstack/consent").catch(() => {});
+    }, "@stormeoio/consent").catch(() => {});
   });
 
   router.post("/withdraw", isAuthenticated, async (req, res) => {
@@ -146,7 +146,7 @@ export function createConsentRoutes(
       userId: req.user!.id,
       policyVersion: consent.policyVersion,
       withdrawnAt: consent.withdrawnAt?.toISOString() ?? now.toISOString(),
-    }, "@stormstack/consent").catch(() => {});
+    }, "@stormeoio/consent").catch(() => {});
   });
 
   return router;

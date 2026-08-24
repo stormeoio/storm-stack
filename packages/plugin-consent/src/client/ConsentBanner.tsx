@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { csrfFetch } from "@stormstack/core/csrf-client";
+import { csrfFetch } from "@stormeoio/core/csrf-client";
 import { resolveConsentEndpoints } from "./endpoints";
 
 export interface ConsentBannerProps {

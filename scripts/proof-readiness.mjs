@@ -222,15 +222,15 @@ export async function runReadiness(options) {
     mkdirSync(packDir, { recursive: true });
     const tarballs = new Map([
       [
-        "@stormstack/core",
+        "@stormeoio/core",
         await packWorkspace(execute, gateWorktree, packDir, "packages/core", "pack-core"),
       ],
       [
-        "@stormstack/auth",
+        "@stormeoio/auth",
         await packWorkspace(execute, gateWorktree, packDir, "packages/plugin-auth", "pack-auth"),
       ],
       [
-        "@stormstack/cli",
+        "@stormeoio/cli",
         await packWorkspace(execute, gateWorktree, packDir, "packages/cli", "pack-cli"),
       ],
     ]);
@@ -251,7 +251,7 @@ export async function runReadiness(options) {
           appDir,
           JSON.stringify({
             projectName: "readiness-external-app",
-            plugins: ["@stormstack/auth"],
+            plugins: ["@stormeoio/auth"],
             packageManager: "npm",
             withClient: false,
           }),
@@ -281,7 +281,7 @@ export async function runReadiness(options) {
       }),
     );
     requireSuccess(
-      await execute("npm", ["ls", "@stormstack/core", "@stormstack/auth", "@stormstack/cli", "--all"], {
+      await execute("npm", ["ls", "@stormeoio/core", "@stormeoio/auth", "@stormeoio/cli", "--all"], {
         cwd: appDir,
         env: appEnv,
         id: "verify-external-tarball-install",

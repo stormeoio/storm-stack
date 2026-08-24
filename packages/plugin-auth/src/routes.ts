@@ -4,7 +4,7 @@ import bcrypt from "bcryptjs";
 import { z } from "zod";
 import { users } from "./schema";
 import { signToken, setAuthCookie, clearAuthCookie, isAuthenticated } from "./middleware";
-import type { StormContext } from "@stormstack/core";
+import type { StormContext } from "@stormeoio/core";
 
 const registerSchema = z.object({
   email: z.string().email(),
@@ -52,7 +52,7 @@ export function createAuthRoutes(ctx: StormContext): Router {
     setAuthCookie(res, token);
     res.status(201).json({ user: { id: user.id, email: user.email, name: user.name, role: user.role } });
 
-    events.emit("user.registered", { userId: user.id, email: user.email }, "@stormstack/auth").catch(() => {});
+    events.emit("user.registered", { userId: user.id, email: user.email }, "@stormeoio/auth").catch(() => {});
   });
 
   // POST /login
@@ -85,7 +85,7 @@ export function createAuthRoutes(ctx: StormContext): Router {
     setAuthCookie(res, token);
     res.json({ user: { id: user.id, email: user.email, name: user.name, role: user.role } });
 
-    events.emit("user.logged_in", { userId: user.id, email: user.email }, "@stormstack/auth").catch(() => {});
+    events.emit("user.logged_in", { userId: user.id, email: user.email }, "@stormeoio/auth").catch(() => {});
   });
 
   // POST /logout

@@ -107,7 +107,7 @@ export async function updateCommand(
     const mode = detectPluginMode(root, config.pluginsDir, plugin);
     const currentVersion = detectCurrentVersion(root, config.pluginsDir, plugin, mode);
     const latestVersion = plugin.status === "available" ? resolveLatestVersion(plugin) : currentVersion;
-    const needsAdminGuardMigration = plugin.id === "@stormstack/auth"
+    const needsAdminGuardMigration = plugin.id === "@stormeoio/auth"
       && !hasBootstrapAdminGuard(path.join(root, config.serverEntry));
 
     if (mode === "copy") {
@@ -395,7 +395,7 @@ async function detectCopyChanges(
     }
   }
 
-  if (plugin.id === "@stormstack/auth") {
+  if (plugin.id === "@stormeoio/auth") {
     for (const file of missingDatabaseGuardCopyFiles(localDir)) {
       changed.add(file);
     }
@@ -466,7 +466,7 @@ async function updateCopyPlugin(
       writeFile(path.join(targetDir, file), content);
     }
 
-    if (candidate.plugin.id === "@stormstack/auth") {
+    if (candidate.plugin.id === "@stormeoio/auth") {
       const missingGuardFiles = missingDatabaseGuardCopyFiles(targetDir);
       if (missingGuardFiles.length > 0) {
         throw new Error(

@@ -3,6 +3,7 @@ import path from "node:path";
 import ts from "typescript";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { copyPluginSource } from "../commands/add";
+import { rewriteCopiedPluginImports } from "../copy-source-files";
 import { pluginSourceUrl, resolvePlugin, type PluginMeta } from "../registry";
 import { VERSION } from "../version";
 
@@ -82,7 +83,26 @@ describe("plugin copy mode", () => {
 
     const routes = fs.readFileSync(path.join(projectRoot, "plugins/auth-social/routes.ts"), "utf8");
     expect(routes).toContain('import("../auth")');
-    expect(routes).not.toContain('import("@stormstack/auth")');
+    expect(routes).not.toContain('import("@stormeoio/auth")');
+  });
+
+  it("rewrites every supported import form, including package subpaths", () => {
+    const content = [
+      'import { authPlugin } from "@stormeoio/auth";',
+      'import "@stormeoio/auth/client";',
+      'const lazyAuth = import("@stormeoio/auth/client");',
+      'const requiredAuth = require("@stormeoio/auth");',
+      'import { createStormApp } from "@stormeoio/core";',
+    ].join("\n");
+
+    expect(rewriteCopiedPluginImports(content, requiredPlugin("auth-social"), "routes.ts"))
+      .toBe([
+        'import { authPlugin } from "../auth";',
+        'import "../auth/client";',
+        'const lazyAuth = import("../auth/client");',
+        'const requiredAuth = require("../auth");',
+        'import { createStormApp } from "@stormeoio/core";',
+      ].join("\n"));
   });
 
   it("pins remote copy sources to the exact CLI release tag", () => {

@@ -69,7 +69,7 @@ async function loadGeneratedAppOriginNormalizer(
 
 const proofOptions: ScaffoldOptions = {
   projectName: "alpha",
-  plugins: ["@stormstack/auth", "@stormstack/consent"],
+  plugins: ["@stormeoio/auth", "@stormeoio/consent"],
   packageManager: "npm",
   withClient: true,
 };
@@ -95,16 +95,16 @@ describe("non-interactive CLI options", () => {
   });
 
   it("accepts full IDs, removes duplicates and uses canonical plugin order", () => {
-    expect(normalizePluginIds("@stormstack/consent,auth,@stormstack/auth")).toEqual([
-      "@stormstack/auth",
-      "@stormstack/consent",
+    expect(normalizePluginIds("@stormeoio/consent,auth,@stormeoio/auth")).toEqual([
+      "@stormeoio/auth",
+      "@stormeoio/consent",
     ]);
   });
 
   it("adds required plugins in canonical order", () => {
     expect(normalizePluginIds("consent")).toEqual([
-      "@stormstack/auth",
-      "@stormstack/consent",
+      "@stormeoio/auth",
+      "@stormeoio/consent",
     ]);
   });
 
@@ -164,21 +164,21 @@ describe("scaffold output", () => {
     };
     expect(packageJson.scripts["db:generate"]).toBe("drizzle-kit generate");
     expect(packageJson.scripts["db:migrate"]).toBe("drizzle-kit migrate");
-    expect(packageJson.dependencies).toHaveProperty("@stormstack/consent");
+    expect(packageJson.dependencies).toHaveProperty("@stormeoio/consent");
 
     expect(read(target, "drizzle.config.ts")).toContain(
-      "node_modules/@stormstack/consent/dist/index.js",
+      "node_modules/@stormeoio/consent/dist/index.js",
     );
     expect(read(target, ".gitignore")).not.toContain("drizzle/meta/");
 
     const server = read(target, "server/index.ts");
     expect(server).toContain(
-      'import { authPlugin, createDatabaseRoleGuard } from "@stormstack/auth"',
+      'import { authPlugin, createDatabaseRoleGuard } from "@stormeoio/auth"',
     );
     expect(server).toContain('requireAdmin: createDatabaseRoleGuard(db, "admin")');
-    expect(server).toContain('import { consentPlugin } from "@stormstack/consent"');
+    expect(server).toContain('import { consentPlugin } from "@stormeoio/consent"');
     expect(server).toContain("registry.register(consentPlugin)");
-    expect(server).toContain('import { createCsrfProtection } from "@stormstack/core/csrf"');
+    expect(server).toContain('import { createCsrfProtection } from "@stormeoio/core/csrf"');
     expect(server).toContain('import { normalizeAppOrigin } from "./app-origin.js"');
     expect(server).toContain('const APP_ORIGIN = normalizeAppOrigin(process.env["APP_ORIGIN"])');
     expect(server).toContain("env.SESSION_SECRET === SESSION_SECRET_PLACEHOLDER");
@@ -188,17 +188,17 @@ describe("scaffold output", () => {
     expect(server.indexOf("csrf.protect")).toBeLessThan(server.indexOf("await bootstrapPlugins"));
 
     const api = read(target, "client/src/lib/api.ts");
-    expect(api).toContain('import { csrfFetch } from "@stormstack/core/csrf-client"');
+    expect(api).toContain('import { csrfFetch } from "@stormeoio/core/csrf-client"');
     expect(api).toContain("MUTATION_METHODS.has(method) ? csrfFetch : fetch");
     expect(api).toContain('method: "PUT"');
 
     const components = read(target, "client/src/storm-components.ts");
-    expect(components).toContain('ConsentBanner } from "@stormstack/consent/client"');
+    expect(components).toContain('ConsentBanner } from "@stormeoio/consent/client"');
     expect(components).toContain("ConsentBanner,");
     const app = read(target, "client/src/App.tsx");
     expect(app).toContain("return user ? <ConsentBanner /> : null");
     expect(app).toContain("<StormRootConsentBanner />");
-    expect(app).toContain("storm:root-component @stormstack/consent");
+    expect(app).toContain("storm:root-component @stormeoio/consent");
     expect(app).toContain("const { user } = useStorm()");
     expect(app.match(/import \{ useQueryClient \}/g)).toHaveLength(1);
 
@@ -250,13 +250,13 @@ describe("scaffold output", () => {
 
   it("resolves dependencies for direct scaffold callers", () => {
     const target = path.join(makeTemporaryDirectory(), "consent-only");
-    scaffold({ ...proofOptions, plugins: ["@stormstack/consent"] }, target);
+    scaffold({ ...proofOptions, plugins: ["@stormeoio/consent"] }, target);
 
     const packageJson = JSON.parse(read(target, "package.json")) as {
       dependencies: Record<string, string>;
     };
-    expect(packageJson.dependencies).toHaveProperty("@stormstack/auth");
-    expect(packageJson.dependencies).toHaveProperty("@stormstack/consent");
+    expect(packageJson.dependencies).toHaveProperty("@stormeoio/auth");
+    expect(packageJson.dependencies).toHaveProperty("@stormeoio/consent");
     const server = read(target, "server/index.ts");
     expect(server).toContain("registry.register(authPlugin)");
     expect(server).toContain("registry.register(consentPlugin)");
@@ -274,7 +274,7 @@ describe("scaffold output", () => {
 
   it("makes Docker, server and Vite ports independently configurable", () => {
     const target = path.join(makeTemporaryDirectory(), "alpha");
-    scaffold({ ...proofOptions, plugins: [...proofOptions.plugins, "@stormstack/stripe"] }, target);
+    scaffold({ ...proofOptions, plugins: [...proofOptions.plugins, "@stormeoio/stripe"] }, target);
 
     const env = read(target, ".env.example");
     expect(env).toContain("COMPOSE_PROJECT_NAME=alpha");

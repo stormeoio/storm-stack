@@ -3,12 +3,12 @@ import express from "express";
 import cors from "cors";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { Pool } from "pg";
-import { registry, bootstrapPlugins, eventBus } from "@stormstack/core";
-import type { StormContext, StormEnv } from "@stormstack/core";
-import { authPlugin, createDatabaseRoleGuard } from "@stormstack/auth";
-import { crmPlugin } from "@stormstack/crm";
-import { ticketingPlugin } from "@stormstack/ticketing";
-import { createSocialAuthPlugin } from "@stormstack/auth-social";
+import { registry, bootstrapPlugins, eventBus } from "@stormeoio/core";
+import type { StormContext, StormEnv } from "@stormeoio/core";
+import { authPlugin, createDatabaseRoleGuard } from "@stormeoio/auth";
+import { crmPlugin } from "@stormeoio/crm";
+import { ticketingPlugin } from "@stormeoio/ticketing";
+import { createSocialAuthPlugin } from "@stormeoio/auth-social";
 
 const PORT = parseInt(process.env["PORT"] ?? "3000", 10);
 

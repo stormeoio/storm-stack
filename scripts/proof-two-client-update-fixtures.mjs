@@ -54,8 +54,8 @@ export {
 } from "./proof-two-client-update-processes.mjs";
 
 export function customizeConsentPolicySource(source, policyVersion) {
-  const startMarker = "/* storm:root-auth @stormstack/consent:start */";
-  const endMarker = "/* storm:root-auth @stormstack/consent:end */";
+  const startMarker = "/* storm:root-auth @stormeoio/consent:start */";
+  const endMarker = "/* storm:root-auth @stormeoio/consent:end */";
   const start = source.indexOf(startMarker);
   const end = source.indexOf(endMarker, start + startMarker.length);
   if (start < 0 || end < 0 || source.indexOf(startMarker, start + 1) >= 0) {
@@ -163,12 +163,12 @@ assert.match(app, /${definition.route.replace("/", "\\/")}/);
 assert.match(index, /data-storm-proof-page-errors/);
 assert.ok(index.indexOf("data-storm-proof-page-errors") < index.indexOf('type="module"'));
 assert.match(page, /${definition.sentinelText}/);
-assert.equal(config["@stormstack/consent"].policyVersion, "${definition.policyVersion}");
+assert.equal(config["@stormeoio/consent"].policyVersion, "${definition.policyVersion}");
 `;
   writeFileSync(path.join(appDir, "proof/customization.test.mjs"), sentinelTest, "utf8");
 
   atomicWriteJson(path.join(appDir, "storm-config.json"), {
-    "@stormstack/consent": { policyVersion: definition.policyVersion },
+    "@stormeoio/consent": { policyVersion: definition.policyVersion },
   });
 }
 
@@ -196,9 +196,9 @@ function packageTreeSnapshot(appDir) {
   for (const relative of ["package.json", "package-lock.json"]) {
     manifest[relative] = sha256File(path.join(appDir, relative));
   }
-  const packageRoot = path.join(appDir, "node_modules", "@stormstack");
+  const packageRoot = path.join(appDir, "node_modules", "@stormeoio");
   if (existsSync(packageRoot)) {
-    manifest["node_modules/@stormstack"] = hashTree(packageRoot, { ignores: [] });
+    manifest["node_modules/@stormeoio"] = hashTree(packageRoot, { ignores: [] });
   }
   return hashFileManifest(manifest);
 }

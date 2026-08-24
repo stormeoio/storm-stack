@@ -10,17 +10,17 @@ const FEATURES = [
 ];
 
 const STEPS = [
-  { num: "1", title: "Scaffold", code: "npx create-storm-app my-saas", desc: "Full-stack project with server, client, Docker — 30 seconds." },
+  { num: "1", title: "Scaffold", code: "npx @stormeoio/create-storm-app my-saas", desc: "Full-stack project with server, client, Docker — 30 seconds." },
   { num: "2", title: "Add plugins", code: "storm add auth crm ticketing", desc: "Auto-wires imports, routes, schema, dependencies." },
   { num: "3", title: "Ship", code: "npm run dev", desc: "Login page, CRM, ticketing — all working. Build your product, not infrastructure." },
 ];
 
 const PLUGINS_STABLE = [
-  { name: "auth", pkg: "@stormstack/auth", desc: "JWT + RBAC + multi-tenant", icon: Shield, color: "text-red-600 bg-red-50" },
-  { name: "auth-social", pkg: "@stormstack/auth-social", desc: "OAuth2 Google/GitHub/GitLab", icon: Shield, color: "text-red-600 bg-red-50" },
-  { name: "crm", pkg: "@stormstack/crm", desc: "Contacts, orgs, pipeline", icon: Briefcase, color: "text-blue-600 bg-blue-50" },
-  { name: "ticketing", pkg: "@stormstack/ticketing", desc: "Support tickets + helpdesk", icon: Briefcase, color: "text-blue-600 bg-blue-50" },
-  { name: "stripe", pkg: "@stormstack/stripe", desc: "Payments + webhooks", icon: CreditCard, color: "text-green-600 bg-green-50" },
+  { name: "auth", pkg: "@stormeoio/auth", desc: "JWT + RBAC + multi-tenant", icon: Shield, color: "text-red-600 bg-red-50" },
+  { name: "auth-social", pkg: "@stormeoio/auth-social", desc: "OAuth2 Google/GitHub/GitLab", icon: Shield, color: "text-red-600 bg-red-50" },
+  { name: "crm", pkg: "@stormeoio/crm", desc: "Contacts, orgs, pipeline", icon: Briefcase, color: "text-blue-600 bg-blue-50" },
+  { name: "ticketing", pkg: "@stormeoio/ticketing", desc: "Support tickets + helpdesk", icon: Briefcase, color: "text-blue-600 bg-blue-50" },
+  { name: "stripe", pkg: "@stormeoio/stripe", desc: "Payments + webhooks", icon: CreditCard, color: "text-green-600 bg-green-50" },
 ];
 
 const PLUGINS_SOON = [
@@ -97,11 +97,11 @@ export function HomePage() {
 
           {/* Terminal demo */}
           <div className="mt-12 max-w-lg mx-auto">
-            <TerminalBlock copyText="npx create-storm-app my-saas && cd my-saas && storm add auth crm ticketing">
+            <TerminalBlock copyText="npx @stormeoio/create-storm-app my-saas && cd my-saas && storm add auth crm ticketing">
               <code>
                 <span className="text-gray-500">$</span>{" "}
                 <span className="text-green-400">npx</span>{" "}
-                <span className="text-white">create-storm-app my-saas</span>
+                <span className="text-white">@stormeoio/create-storm-app my-saas</span>
                 {"\n"}
                 <span className="text-green-400">{"  ✓"}</span>{" "}
                 <span className="text-gray-300">Project generated</span>
@@ -189,7 +189,7 @@ export function HomePage() {
               <span className="text-blue-300">crmPlugin</span>
               <span className="text-white">{": StormPlugin = {"}</span>{"\n"}
               <span className="text-white">{"  id: "}</span>
-              <span className="text-green-300">{'"@stormstack/crm"'}</span>
+              <span className="text-green-300">{'"@stormeoio/crm"'}</span>
               <span className="text-white">,</span>{"\n"}
               <span className="text-white">{"  schema: { tables: { contacts, deals } },"}</span>{"\n"}
               <span className="text-white">{"  routes: ({ ctx, isAuthenticated }) =>"}</span>{"\n"}
@@ -253,9 +253,9 @@ export function HomePage() {
           </p>
           <div className="flex items-center justify-center gap-3">
             <code className="bg-storm-900 text-storm-100 px-4 py-2 rounded-lg font-mono text-sm">
-              npx create-storm-app my-saas
+              npx @stormeoio/create-storm-app my-saas
             </code>
-            <CopyButton text="npx create-storm-app my-saas" />
+            <CopyButton text="npx @stormeoio/create-storm-app my-saas" />
           </div>
         </div>
       </section>

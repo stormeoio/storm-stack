@@ -6,7 +6,7 @@ export const DOC_CONTENT_CORE: Record<string, DocsContentEntry> = {
     body: `## Installation
 
 \`\`\`bash
-npx create-storm-app my-app
+npx @stormeoio/create-storm-app my-app
 cd my-app
 docker compose up -d
 cp .env.example .env
@@ -61,7 +61,7 @@ Storm Stack uses a plugin registry with dependency resolution, typed events, and
 ├─────────────────────────────────────────┤
 │     Events  │  Config  │  Tenant       │  ← Core Services
 ├─────────────────────────────────────────┤
-│           @stormstack/core              │  ← Registry
+│           @stormeoio/core              │  ← Registry
 ├─────────────────────────────────────────┤
 │  Express 5  │  Drizzle  │  PostgreSQL  │  ← Foundation
 └─────────────────────────────────────────┘
@@ -82,7 +82,7 @@ Storm Stack uses a plugin registry with dependency resolution, typed events, and
 
 Every plugin declares:
 
-- **id** — unique identifier (e.g. \`@stormstack/crm\`)
+- **id** — unique identifier (e.g. \`@stormeoio/crm\`)
 - **schema** — Drizzle tables it owns
 - **routes** — Express router factory
 - **client** — nav items, routes, settings panels
@@ -204,7 +204,7 @@ Auto-detects plugins already imported in your server entry.
     body: `## Minimal Plugin
 
 \`\`\`ts
-import type { StormPlugin } from "@stormstack/core";
+import type { StormPlugin } from "@stormeoio/core";
 import { Router } from "express";
 
 export const helloPlugin: StormPlugin = {
@@ -242,7 +242,7 @@ export const notesPlugin: StormPlugin = {
   id: "my-org/notes",
   name: "Notes",
   version: "1.0.0",
-  requires: ["@stormstack/auth"],
+  requires: ["@stormeoio/auth"],
   schema: { tables: { notes } },
 
   configSchema: z.object({
@@ -316,7 +316,7 @@ ctx.events.emit("contact.created", {
   contactId: row.id,
   email: data.email,
   tenantId: req.tenant!.tenantId,
-}, "@stormstack/crm").catch(() => {});
+}, "@stormeoio/crm").catch(() => {});
 \`\`\`
 
 ## Built-in Event Types
@@ -380,7 +380,7 @@ Users select their active tenant via the \`x-storm-tenant\` header.
 ## Tenant Guards
 
 \`\`\`ts
-import { requireTenant, requireTenantRole } from "@stormstack/core";
+import { requireTenant, requireTenantRole } from "@stormeoio/core";
 
 router.get("/admin", requireTenant, requireTenantRole("admin", "owner"), handler);
 \`\`\`
@@ -388,7 +388,7 @@ router.get("/admin", requireTenant, requireTenantRole("admin", "owner"), handler
 ## Query Helpers
 
 \`\`\`ts
-import { tenantScope, tenantAnd } from "@stormstack/core";
+import { tenantScope, tenantAnd } from "@stormeoio/core";
 
 // Simple tenant filter
 const rows = await db.select().from(contacts)
@@ -415,7 +415,7 @@ The plugin registry is a JSON file served over HTTP:
   "version": 1,
   "plugins": [
     {
-      "id": "@stormstack/auth",
+      "id": "@stormeoio/auth",
       "name": "Auth",
       "shortName": "auth",
       "version": "0.1.0",
@@ -458,7 +458,7 @@ This generates a registry entry from your plugin metadata and writes it to the n
 1. **npm** (default) — \`storm add auth\` installs the npm package
 2. **copy** (shadcn-style) — \`storm add auth --copy\` copies source into your project
 
-Copy mode gives you full ownership of the code. The CLI rewrites imports from \`@stormstack/<plugin>\` to relative paths automatically.
+Copy mode gives you full ownership of the code. The CLI rewrites imports from \`@stormeoio/<plugin>\` to relative paths automatically.
 `,
   },
   admin: {
@@ -496,10 +496,10 @@ This becomes a form with number inputs, toggles, and validation — zero UI code
 
 ## StormAdmin Component
 
-Drop-in admin panel from \`@stormstack/react\` — four tabs: plugin overview, configuration, events, and catalog.
+Drop-in admin panel from \`@stormeoio/react\` — four tabs: plugin overview, configuration, events, and catalog.
 
 \`\`\`tsx
-import { StormAdmin } from "@stormstack/react";
+import { StormAdmin } from "@stormeoio/react";
 
 // In your routes:
 <Route path="/admin" component={() => <StormAdmin />} />
